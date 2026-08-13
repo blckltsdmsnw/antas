@@ -34,6 +34,29 @@ designed in the specification but deliberately unbuilt — see
 - **Report submission** — a body-height slider, three taps, no typing. Signed-in users
   only, and the database enforces that you can only file in your own name.
 
+## Screens
+
+| Route | Who it's for |
+|---|---|
+| `/` | Anyone. The map and street history, no sign-in required |
+| `/report` | Signed-in users. Log how deep the water is |
+| `/sos` | Signed-in users in danger. Live photo, three-second hold |
+| `/console` | Barangay moderators. Triage queue, live |
+
+The console link appears in the header only for users who hold a moderator row.
+That is discoverability, not access control — the queue is scoped by
+`auth.uid()` inside the database, so typing the URL gets a non-moderator
+nothing.
+
+Grant the role with:
+
+```bash
+npm run make-moderator -- someone@example.com Malanday
+```
+
+Deliberately a script rather than a UI: a moderator is a vetted person at a
+barangay desk, not somebody who signed up.
+
 ## Why the body-height scale
 
 It is the whole idea. Existing tools report river gauges and rainfall; none capture

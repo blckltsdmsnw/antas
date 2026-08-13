@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Archivo, Public_Sans } from "next/font/google";
+import { ModeratorLink } from "@/components/ModeratorLink";
 import "./globals.css";
 
 /** Headings. A grotesque with signage DNA — it should read like something
@@ -48,6 +49,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Link href="/report" className="nav-link">
               Mag-report
             </Link>
+            {/* Prominent by design. The accidental-press risk lives in the
+                submit - which needs a live photo and a three-second hold -
+                not in navigating to the page. Someone in a flood should not
+                have to hunt for this. */}
+            <Link href="/sos" className="nav-link nav-link-sos">
+              Tulong
+            </Link>
+            <ModeratorLink />
           </nav>
         </header>
         {children}
