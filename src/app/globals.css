@@ -652,3 +652,96 @@ a.btn {
   background: var(--ink);
   border-radius: var(--radius-card);
 }
+
+/* Console */
+.sim-banner {
+  margin: 0;
+  padding: 10px 16px;
+  background: #fef3c7;
+  border-bottom: 1px solid #fcd34d;
+  color: #78350f;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.console-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px 16px 48px;
+}
+
+.reason-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.reason {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.reason-mark {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.reason[data-kind="supporting"] .reason-mark { background: var(--success-tint); color: var(--success); }
+.reason[data-kind="concerning"] .reason-mark { background: var(--danger-tint); color: var(--danger); }
+.reason[data-kind="unknown"]    .reason-mark { background: var(--raised);      color: var(--ink-muted); }
+
+.reason-empty {
+  color: var(--ink-muted);
+  font-size: 15px;
+}
+
+.signal-card {
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  text-decoration: none;
+  color: inherit;
+  background: var(--ground);
+}
+
+.signal-card:hover { background: var(--raised); }
+
+.signal-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.signal-band {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.signal-band[data-band="high"]   { background: var(--danger-tint); color: var(--danger); }
+.signal-band[data-band="medium"] { background: #fef3c7;            color: #78350f; }
+.signal-band[data-band="low"]    { background: var(--raised);      color: var(--ink-muted); }
+.signal-band[data-band="none"]   { background: var(--raised);      color: var(--ink-muted); }
+
+.signal-meta {
+  color: var(--ink-muted);
+  font-size: 14px;
+}
