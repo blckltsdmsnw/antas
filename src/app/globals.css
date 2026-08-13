@@ -1072,6 +1072,192 @@ a.btn {
 }
 
 /* --------------------------------------------------------------------------
+   Night map
+   Only the map screen. The task pages stay light in every condition - the
+   design doc's objection to dark UI ("worse outdoors in daylight, which is
+   when floods happen") still holds for a form you are filling in. It stops
+   holding for a full-screen white map in a dark street at 2am.
+   -------------------------------------------------------------------------- */
+
+[data-map-theme="dark"] {
+  --panel: #131a26;
+  --panel-line: #2a3646;
+  --panel-ink: #e8eef6;
+  --panel-ink-muted: #9aa8ba;
+}
+
+[data-map-theme="dark"] body {
+  background: #0d131d;
+}
+
+/* The header sits above the map, so leaving it white puts a bright band across
+   the top of a night screen - exactly the glare the dark map is avoiding. */
+[data-map-theme="dark"] .site-header {
+  background: var(--panel);
+  border-bottom-color: var(--panel-line);
+}
+
+[data-map-theme="dark"] .wordmark {
+  color: var(--panel-ink);
+}
+
+[data-map-theme="dark"] .wordmark-gloss,
+[data-map-theme="dark"] .nav-link {
+  color: var(--panel-ink-muted);
+}
+
+/* The SOS link keeps its red. The rule above outranks `.nav-link-sos` on
+   specificity, and quietly greying out the emergency entry point at night is
+   the last thing this interface should do. `--danger` is too dark to read on a
+   dark panel, so the night variant is lighter rather than the same red. */
+[data-map-theme="dark"] .nav-link-sos {
+  color: #fca5a5;
+}
+
+[data-map-theme="dark"] .nav-link-sos:hover {
+  background: rgba(220, 38, 38, 0.16);
+}
+
+[data-map-theme="dark"] .weather-strip,
+[data-map-theme="dark"] .legend,
+[data-map-theme="dark"] .history-sheet,
+[data-map-theme="dark"] .detail-sheet {
+  background: var(--panel);
+  border-color: var(--panel-line);
+  color: var(--panel-ink);
+}
+
+[data-map-theme="dark"] .weather-strip {
+  background: rgba(19, 26, 38, 0.94);
+}
+
+[data-map-theme="dark"] .sheet-hint,
+[data-map-theme="dark"] .report-when,
+[data-map-theme="dark"] .detail-sub,
+[data-map-theme="dark"] .detail-clock,
+[data-map-theme="dark"] .weather-temp,
+[data-map-theme="dark"] .legend-row {
+  color: var(--panel-ink-muted);
+}
+
+[data-map-theme="dark"] .sheet-count,
+[data-map-theme="dark"] .deepest-label,
+[data-map-theme="dark"] .detail-depth,
+[data-map-theme="dark"] .report-label,
+[data-map-theme="dark"] .legend-title {
+  color: var(--panel-ink);
+}
+
+[data-map-theme="dark"] .report-row {
+  border-bottom-color: var(--panel-line);
+}
+
+[data-map-theme="dark"] .report-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+[data-map-theme="dark"] .report-list,
+[data-map-theme="dark"] .detail-when {
+  border-color: var(--panel-line);
+}
+
+/* The rain badge keeps its pale-blue fill, which needs dark ink either way -
+   see the contrast caution in the design doc. */
+[data-map-theme="dark"] .detail-nophoto,
+[data-map-theme="dark"] .report-thumb {
+  background: #1c2432;
+}
+
+[data-map-theme="dark"] .detail-close {
+  background: rgba(19, 26, 38, 0.92);
+  color: var(--panel-ink);
+}
+
+[data-map-theme="dark"] .depth-meter-step {
+  background: var(--panel-line);
+}
+
+/* --------------------------------------------------------------------------
+   Rain
+   Shown only when measured precipitation says it is raining on the user - see
+   RainOverlay. Two composited gradient layers, because the person looking at
+   this is on a cheap phone during a storm and an effect that eats their battery
+   is actively harmful.
+   -------------------------------------------------------------------------- */
+
+.rain {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow: hidden;
+  /* Must never swallow a tap meant for a pin. */
+  pointer-events: none;
+}
+
+.rain::before,
+.rain::after {
+  content: "";
+  position: absolute;
+  /* Oversized so the sheet can translate without exposing an edge. */
+  inset: -60% -20%;
+  background-image: repeating-linear-gradient(
+    102deg,
+    transparent 0 7px,
+    rgba(255, 255, 255, 0.9) 7px 8px,
+    transparent 8px 15px
+  );
+  opacity: var(--rain-opacity, 0.2);
+  will-change: transform;
+}
+
+/* A second, slower layer at a different scale reads as depth rather than as
+   one flat sheet sliding past. */
+.rain::after {
+  transform: scale(1.7);
+  opacity: calc(var(--rain-opacity, 0.2) * 0.55);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rain::before {
+    animation: rainfall var(--rain-duration, 0.9s) linear infinite;
+  }
+
+  .rain::after {
+    animation: rainfall calc(var(--rain-duration, 0.9s) * 1.9) linear infinite;
+  }
+}
+
+@keyframes rainfall {
+  to {
+    transform: translate3d(-60px, 300px, 0);
+  }
+}
+
+/* The second layer keeps its scale while translating, or it would snap back to
+   1x the moment the animation takes over the transform. */
+@media (prefers-reduced-motion: no-preference) {
+  .rain::after {
+    animation-name: rainfall-far;
+  }
+}
+
+@keyframes rainfall-far {
+  from {
+    transform: scale(1.7) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.7) translate3d(-40px, 200px, 0);
+  }
+}
+
+/* On the night map the drops sit against a dark ground, so they need less
+   opacity to read, not more. */
+[data-map-theme="dark"] .rain::before,
+[data-map-theme="dark"] .rain::after {
+  filter: brightness(1.25);
+}
+
+/* --------------------------------------------------------------------------
    Weather strip
    Top-left, opposite the legend, so the two never collide.
    -------------------------------------------------------------------------- */
@@ -1080,6 +1266,10 @@ a.btn {
   position: absolute;
   top: 12px;
   left: 12px;
+  /* Stops short of the legend, which is pinned top-right. Without this the
+     rain figure - the one number on the strip that matters - slid underneath
+     it as soon as the strip grew. */
+  max-width: calc(100% - 24px - 190px);
   z-index: 10;
   display: flex;
   align-items: baseline;
@@ -1116,6 +1306,20 @@ a.btn {
 .weather-temp {
   color: var(--ink-muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* On a narrow phone the temperature is the first thing to go: it is the least
+   useful of the three for deciding whether a street is passable. */
+@media (max-width: 480px) {
+  .weather-temp {
+    display: none;
+  }
+}
+
+.weather-now {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Rain is the number that matters on a flood map, so it is the one that gets

@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MapLibreMap, Marker, type MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { depthLabel, type DepthLevel } from "@/lib/depth/scale";
 import { DEPTH_HEX } from "@/lib/depth/presentation";
 import { clusterByProximity, CLUSTER_RADIUS_PX } from "@/lib/map/cluster";
+import { mapThemeFor, type MapTheme } from "@/lib/map/theme";
 import { freshnessOf, freshnessOpacity } from "@/lib/reports/freshness";
 import { reportPhotoUrl } from "@/lib/reports/photo";
 
@@ -44,11 +45,31 @@ function colorForDepth(depth: DepthLevel): string {
  *    without one, so the failure presented as a blank map rather than an error.
  *    Raster tiles decode on the main thread and avoid the worker entirely.
  */
-const CARTO_RASTER_TILES = [
-  "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-  "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-  "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-];
+function cartoTiles(variant: "light_all" | "dark_all"): string[] {
+  return ["a", "b", "c"].map(
+    (host) => `https://${host}.basemaps.cartocdn.com/${variant}/{z}/{x}/{y}@2x.png`,
+  );
+}
+
+const TILES: Record<MapTheme, string[]> = {
+  light: cartoTiles("light_all"),
+  dark: cartoTiles("dark_all"),
+};
+
+/**
+ * The resolved colour-scheme preference, or null where none is stated.
+ *
+ * Read on demand rather than held in state so the map can be *built* with the
+ * right tiles. Deciding after mount meant the first paint was always light and
+ * then swapped, which at night is a white flash in a dark room.
+ */
+function resolvePreference(): boolean | null {
+  if (typeof window === "undefined") return null;
+  if (window.matchMedia("(prefers-color-scheme: no-preference)").matches) {
+    return null;
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
 
 const BASEMAP_ATTRIBUTION =
   '© <a href="https://carto.com/attributions">CARTO</a>, ' +
@@ -59,6 +80,12 @@ interface FloodMapProps {
   onPick: (lat: number, lon: number) => void;
   onSelect: (report: MapReport) => void;
   selectedId: string | null;
+  /**
+   * Reported upward so the page can mark the shell, which is what the floating
+   * panels are children of. They are siblings of the canvas, so an attribute on
+   * the map element itself is unreachable from their selectors.
+   */
+  onTheme?: (theme: MapTheme) => void;
 }
 
 /**
@@ -129,9 +156,30 @@ export function FloodMap({
   onPick,
   onSelect,
   selectedId,
+  onTheme,
 }: FloodMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
+  const [theme, setTheme] = useState<MapTheme>("light");
+
+  /**
+   * Follows the clock, and re-checks periodically so a map left open through
+   * dusk changes with it rather than staying bright until the tab is reloaded.
+   * An explicit prefers-color-scheme always wins - see `mapThemeFor`.
+   */
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-color-scheme: dark)");
+    const decide = () => setTheme(mapThemeFor(new Date(), resolvePreference()));
+
+    decide();
+    const timer = window.setInterval(decide, 5 * 60_000);
+    query.addEventListener("change", decide);
+
+    return () => {
+      window.clearInterval(timer);
+      query.removeEventListener("change", decide);
+    };
+  }, []);
 
   useEffect(() => {
     if (!container.current || map.current) return;
@@ -143,7 +191,9 @@ export function FloodMap({
         sources: {
           basemap: {
             type: "raster",
-            tiles: CARTO_RASTER_TILES,
+            // Decided here, not read from state: state has not settled on the
+            // first commit, and building light-then-swapping is a white flash.
+            tiles: TILES[mapThemeFor(new Date(), resolvePreference())],
             tileSize: 256,
             attribution: BASEMAP_ATTRIBUTION,
           },
@@ -170,6 +220,17 @@ export function FloodMap({
 
     map.current.on("click", (e: MapMouseEvent) => onPick(e.lngLat.lat, e.lngLat.lng));
   }, [onPick]);
+
+  // Swap the basemap in place rather than rebuilding the style: setStyle would
+  // drop every marker and reset the camera, so the map would visibly flash and
+  // jump back to Metro Manila at dusk.
+  useEffect(() => {
+    const source = map.current?.getSource("basemap");
+    if (source && "setTiles" in source) {
+      (source as { setTiles: (tiles: string[]) => void }).setTiles(TILES[theme]);
+    }
+    onTheme?.(theme);
+  }, [theme, onTheme]);
 
   useEffect(() => {
     const instance = map.current;

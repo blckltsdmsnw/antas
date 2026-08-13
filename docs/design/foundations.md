@@ -166,6 +166,32 @@ the only part of a report a careless slider drag cannot fake.
 - "Walang larawan ang report na ito" is a plain statement, not an error. Most reports have no
   photo and that is fine
 
+### Map clustering
+Pins closer than 44px merge into one counted marker. Clustering happens in **screen space**,
+not in metres: whether two pins collide is a question about pixels, and reports 200m apart are
+inseparable at city zoom and distinct at street zoom.
+
+- A cluster takes the depth of its **deepest** member, never an average. Eleven ankle-deep
+  reports and one above-head report must not render as pale blue and tell someone a street is
+  passable at the moment it is not. Same rule as "Pinakamalalim" in the street history
+- Tapping a cluster zooms in. It never picks one of its members for you
+- The count is text, so the information is not carried by size alone
+
+### Report freshness
+Pins fade with age - full strength under an hour, down to 42% past a day. Floodwater recedes
+in hours, so a day-old pin describes a street that has almost certainly changed.
+
+Opacity is a **secondary** cue only. The detail card and street history state the age in words,
+which is what someone who cannot perceive the fade relies on. A stale pin never fades below
+tappable.
+
+### Rain
+Shown only when measured precipitation says it is raining **on the user** - never as
+decoration, and never when the weather provider is unreachable. Two composited gradient
+layers, no canvas and no per-drop DOM: the person looking at this is on a cheap phone during a
+storm, and an effect that eats their battery is actively harmful. Stops entirely under
+`prefers-reduced-motion`, and never intercepts a tap meant for a pin.
+
 ### Buttons
 - Primary: `waist` fill, white text, 48px tall, full-width on mobile
 - Secondary: white with `line` border
@@ -215,9 +241,32 @@ it is a focused task, not a dashboard.
 - Colour is never the sole carrier of meaning: every depth colour is accompanied by its
   Filipino label
 
+## 7a. The night map — a deliberate exception
+
+The rule below says this product avoids dark UI, and the reasoning holds for anything you
+*fill in*: a dark form is worse outdoors in daylight, which is when floods happen.
+
+That argument inverts after sunset. A full-screen white map at 2am is glare in a dark street,
+and typhoon flooding does not stop at 6pm. So:
+
+| | Follows the clock | Always light |
+|---|---|---|
+| Basemap, map chrome, header | yes | — |
+| Report, SOS, console | — | yes |
+
+- Light 06:00–18:00 Manila time, dark from 18:01. The hour is read in `Asia/Manila`, never the
+  device's zone - a phone left on another region's clock must not darken the map at midday
+- An explicit `prefers-color-scheme` **always wins** over the clock. Someone who set their
+  phone to dark meant it
+- The theme is decided *before* the map is built. Deciding afterwards meant the first paint
+  was always light and then swapped, which at night is a white flash in a dark room
+- The SOS link keeps a red at night, lightened for contrast. Greying out the emergency entry
+  point after dark is the last thing this interface should do
+
 ## 8. What this deliberately avoids
 
-- Dark UI - worse outdoors in daylight, which is when floods happen
+- Dark UI **on task pages** - worse outdoors in daylight, which is when floods happen. The
+  map is the documented exception; see 7a
 - Decorative illustration, gradients, glassmorphism - this is a safety tool
 - Animated transitions beyond 150ms feedback - nobody in a flood wants to wait for an
   animation
