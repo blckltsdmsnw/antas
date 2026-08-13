@@ -5,6 +5,9 @@ import { MapLibreMap, Marker, type MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { depthLabel, type DepthLevel } from "@/lib/depth/scale";
 import { DEPTH_HEX } from "@/lib/depth/presentation";
+import { clusterByProximity, CLUSTER_RADIUS_PX } from "@/lib/map/cluster";
+import { freshnessOf, freshnessOpacity } from "@/lib/reports/freshness";
+import { reportPhotoUrl } from "@/lib/reports/photo";
 
 export interface MapReport {
   id: string;
@@ -61,21 +64,62 @@ interface FloodMapProps {
 /**
  * A pin, as a real button rather than MapLibre's default teardrop.
  *
- * Two things the default cannot express: which reports carry a photo, and which
- * one is currently open. Both matter now that tapping a pin is how you see the
- * water - without the camera mark, finding a report with a picture means
- * tapping pins at random.
+ * Three things the default cannot express: which reports carry a photo, which
+ * one is open, and how old the report is. A photo pin now shows the photograph
+ * itself - the previous ring gap was too subtle to decode, so nobody discovered
+ * which pins were worth tapping.
  */
-function pinElement(report: MapReport, isSelected: boolean): HTMLButtonElement {
+function singlePinElement(
+  report: MapReport,
+  isSelected: boolean,
+): HTMLButtonElement {
+  const photo = reportPhotoUrl(report.photoPath);
   const el = document.createElement("button");
   el.type = "button";
-  el.className = `pin${report.photoPath ? " pin--photo" : ""}${
-    isSelected ? " pin--selected" : ""
-  }`;
+  el.className = `pin${photo ? " pin--photo" : ""}${isSelected ? " pin--selected" : ""}`;
   el.style.setProperty("--pin-color", colorForDepth(report.depth));
+
+  // Age as opacity. Secondary only: the detail card states it in words, which
+  // is what someone who cannot perceive the fade relies on.
+  el.style.opacity = String(freshnessOpacity(freshnessOf(report.reportedAt)));
+
+  if (photo) {
+    const img = document.createElement("img");
+    img.src = photo;
+    img.alt = "";
+    img.className = "pin-thumb";
+    // A broken thumbnail degrades to an ordinary coloured pin rather than to a
+    // torn-image icon sitting on the map.
+    img.addEventListener("error", () => {
+      el.classList.remove("pin--photo");
+      img.remove();
+    });
+    el.appendChild(img);
+  }
+
   el.setAttribute(
     "aria-label",
-    `${depthLabel(report.depth).tl}${report.photoPath ? ", may larawan" : ""}`,
+    `${depthLabel(report.depth).tl}${photo ? ", may larawan" : ""}`,
+  );
+  return el;
+}
+
+/**
+ * A group of pins too close together to tap apart.
+ *
+ * Takes the colour of its deepest member, never an average - see
+ * `clusterByProximity`. The count is rendered as text so the information does
+ * not live in size alone.
+ */
+function clusterElement(depth: DepthLevel, count: number): HTMLButtonElement {
+  const el = document.createElement("button");
+  el.type = "button";
+  el.className = "pin-cluster";
+  el.style.setProperty("--pin-color", colorForDepth(depth));
+  el.textContent = String(count);
+  el.setAttribute(
+    "aria-label",
+    `${count} report dito, pinakamalalim: ${depthLabel(depth).tl}. Pindutin para lakihan.`,
   );
   return el;
 }
@@ -128,25 +172,66 @@ export function FloodMap({
   }, [onPick]);
 
   useEffect(() => {
-    if (!map.current) return;
+    const instance = map.current;
+    if (!instance) return;
 
-    const markers = reports.map((report) => {
-      const element = pinElement(report, report.id === selectedId);
+    let markers: Marker[] = [];
 
-      // Without stopPropagation the map's own click handler also fires, so
-      // tapping a pin would open that report and then immediately replace it
-      // with the street list for the point underneath.
-      element.addEventListener("click", (event) => {
-        event.stopPropagation();
-        onSelect(report);
+    /**
+     * Clusters in screen space, so grouping follows the zoom.
+     *
+     * Whether two pins collide is a question about pixels, not about metres:
+     * reports 200m apart are inseparable at city zoom and comfortably distinct
+     * at street zoom. That means this has to run again whenever the view
+     * changes - on `moveend` rather than `move`, so a pan is not recomputing
+     * hundreds of DOM nodes every frame.
+     */
+    function draw() {
+      markers.forEach((marker) => marker.remove());
+
+      const projected = reports.map((report) => {
+        const point = instance!.project([report.lon, report.lat]);
+        return { id: report.id, x: point.x, y: point.y, depth: report.depth, report };
       });
 
-      return new Marker({ element })
-        .setLngLat([report.lon, report.lat])
-        .addTo(map.current!);
-    });
+      markers = clusterByProximity(projected, CLUSTER_RADIUS_PX).map((cluster) => {
+        const single = cluster.members.length === 1 ? cluster.members[0].report : null;
 
-    return () => markers.forEach((marker) => marker.remove());
+        const element = single
+          ? singlePinElement(single, single.id === selectedId)
+          : clusterElement(cluster.depth, cluster.members.length);
+
+        // Without stopPropagation the map's own click handler also fires, so a
+        // tap would open the report and then immediately replace it with the
+        // street list for the point underneath.
+        element.addEventListener("click", (event) => {
+          event.stopPropagation();
+          if (single) {
+            onSelect(single);
+            return;
+          }
+          // Zooming in is the only honest response to "there are 12 reports
+          // here" - picking one of them for the user would be a guess.
+          instance!.easeTo({
+            center: instance!.unproject([cluster.x, cluster.y]),
+            zoom: Math.min(instance!.getZoom() + 2, 17),
+            duration: 400,
+          });
+        });
+
+        return new Marker({ element })
+          .setLngLat(instance!.unproject([cluster.x, cluster.y]))
+          .addTo(instance!);
+      });
+    }
+
+    draw();
+    instance.on("moveend", draw);
+
+    return () => {
+      instance.off("moveend", draw);
+      markers.forEach((marker) => marker.remove());
+    };
   }, [reports, onSelect, selectedId]);
 
   // Fills whatever the parent gives it — the map page makes that the full

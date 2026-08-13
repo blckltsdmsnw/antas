@@ -3,11 +3,14 @@
 import {
   DEPTH_LEVELS,
   depthLabel,
-  depthRangeCm,
   depthRank,
   type DepthLevel,
 } from "@/lib/depth/scale";
-import { DEPTH_SHORT_LABEL, DEPTH_VAR } from "@/lib/depth/presentation";
+import {
+  DEPTH_SHORT_LABEL,
+  DEPTH_VAR,
+  depthRangeLabel,
+} from "@/lib/depth/presentation";
 
 interface DepthSliderProps {
   value: DepthLevel;
@@ -21,7 +24,6 @@ function fillPercent(level: DepthLevel): number {
 
 export function DepthSlider({ value, onChange }: DepthSliderProps) {
   const label = depthLabel(value);
-  const range = depthRangeCm(value);
 
   return (
     <div>
@@ -60,6 +62,9 @@ export function DepthSlider({ value, onChange }: DepthSliderProps) {
           />
         </div>
 
+        {/* Labels reach the full width as ruler graduations - see the leader
+            line in `.gauge-legend-item::after`. That is what fills the space
+            beside the track; the column used to end at its longest word. */}
         <div className="gauge-legend" aria-hidden="true">
           {DEPTH_LEVELS.map((level) => (
             <span
@@ -75,14 +80,12 @@ export function DepthSlider({ value, onChange }: DepthSliderProps) {
         </div>
       </div>
 
+      {/* Full width, under both columns. Tucking it into the right-hand column
+          only moved the empty space to the bottom left. */}
       <p className="gauge-readout">
         <strong className="gauge-readout-label">{label.tl}</strong>
         <span className="gauge-readout-en">{label.en}</span>
-        <span className="gauge-readout-cm">
-          {range.maxCm === null
-            ? `${range.minCm} cm pataas`
-            : `${range.minCm}–${range.maxCm} cm`}
-        </span>
+        <span className="gauge-readout-cm">{depthRangeLabel(value)}</span>
       </p>
     </div>
   );
