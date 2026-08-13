@@ -259,31 +259,70 @@ h3 {
   border-top: 1px solid var(--line);
 }
 
+/* A row is now a control - it opens that report's photo - so it carries a real
+   touch target and hit feedback rather than looking like static text. */
 .report-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 0;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 4px;
+  background: none;
+  border: 0;
   border-bottom: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  font-family: inherit;
   font-size: 15px;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.report-row:last-child {
+.report-row:hover {
+  background: var(--raised);
+}
+
+.report-list li:last-child .report-row {
   border-bottom: none;
 }
 
 .report-swatch {
   width: 8px;
-  height: 24px;
+  height: 28px;
   border-radius: 4px;
   flex: none;
 }
 
+.report-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .report-when {
-  margin-left: auto;
   color: var(--ink-muted);
   font-size: 14px;
   font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+/* Reserved whether or not a photo exists, so rows do not jog left and right
+   down the list as the eye scans them. */
+.report-thumb {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: var(--radius-control);
+  object-fit: cover;
+  background: var(--raised);
+}
+
+.report-thumb--empty {
+  border: 1px dashed var(--line);
+  background: none;
 }
 
 /* --------------------------------------------------------------------------
@@ -684,13 +723,308 @@ a.btn {
   color: #fff;
 }
 
-.camera-view {
+/* --------------------------------------------------------------------------
+   Photo capture - resting, live, preview
+   The resting card exists so a page can offer the camera without opening it.
+   -------------------------------------------------------------------------- */
+
+.capture-card {
+  margin-top: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--raised);
+  overflow: hidden;
+}
+
+.capture-card--resting {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 24px 20px;
+  text-align: center;
+  /* A dashed edge reads as a slot waiting to be filled, which is exactly what
+     an optional photo is. Solid would read as a component that failed to load. */
+  border-style: dashed;
+}
+
+.capture-card--resting .btn {
+  margin-top: 8px;
+}
+
+/* A lens, drawn in CSS. No icon font, no SVG asset to ship - and it stays
+   crisp at any density, which matters more than detail on a cracked screen. */
+.capture-glyph {
+  width: 44px;
+  height: 36px;
+  border: 2.5px solid var(--accent);
+  border-radius: 8px;
+  position: relative;
+}
+
+.capture-glyph::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 2.5px solid var(--accent);
+  border-radius: 50%;
+}
+
+.capture-glyph::after {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 12px;
+  width: 16px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 3px 3px 0 0;
+}
+
+.capture-prompt {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.capture-note {
+  margin: 0;
+  max-width: 34ch;
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+
+.capture-card--live,
+.capture-card--shot {
+  padding: 0;
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.capture-view,
+.capture-shot {
   display: block;
   width: 100%;
   aspect-ratio: 3 / 4;
   object-fit: cover;
   background: var(--ink);
-  border-radius: var(--radius-card);
+}
+
+.capture-card--shot {
+  margin: 24px 0 0;
+}
+
+.capture-actions {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  padding: 16px;
+  background: var(--ground);
+}
+
+.capture-actions .quiet-link {
+  color: var(--ink-muted);
+}
+
+/* Round, large, unmistakable. This is the one control on screen that matters
+   while the viewfinder is open, and it has to be hittable without looking. */
+.shutter {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 4px solid var(--ink);
+  background: var(--ground);
+  box-shadow: inset 0 0 0 4px var(--ground), inset 0 0 0 999px var(--accent);
+  cursor: pointer;
+}
+
+.shutter:active {
+  transform: scale(0.94);
+}
+
+.capture-file {
+  display: block;
+  padding: 12px 16px;
+  font-size: 15px;
+}
+
+.capture-file span {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   Map pins
+   Custom elements, not MapLibre's default teardrop: a pin has to say which
+   depth it is AND whether tapping it will show you a photo.
+   -------------------------------------------------------------------------- */
+
+.pin {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2.5px solid #fff;
+  background: var(--pin-color, var(--accent));
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.45);
+  cursor: pointer;
+  /* The visual dot stays small so clusters stay readable, but the hit area is
+     padded out to a finger via a transparent ::after. */
+  position: relative;
+}
+
+.pin::after {
+  content: "";
+  position: absolute;
+  inset: -14px;
+  border-radius: 50%;
+}
+
+/* A photo pin carries a white ring gap - visible against every depth colour
+   and against the map, unlike a tint or an opacity change. */
+.pin--photo {
+  box-shadow: 0 0 0 2px var(--pin-color, var(--accent)), 0 1px 4px rgba(15, 23, 42, 0.45);
+}
+
+.pin--selected {
+  width: 28px;
+  height: 28px;
+  z-index: 2;
+  box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.3), 0 2px 8px rgba(15, 23, 42, 0.5);
+}
+
+/* --------------------------------------------------------------------------
+   Report detail - one pin, opened
+   -------------------------------------------------------------------------- */
+
+.detail-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 12;
+  background: var(--ground);
+  border-top: 1px solid var(--line);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  box-shadow: var(--shadow-lifted);
+  padding-bottom: env(safe-area-inset-bottom);
+  max-height: 74%;
+  overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+  .detail-sheet {
+    left: 16px;
+    bottom: 16px;
+    right: auto;
+    width: 380px;
+    max-height: calc(100% - 32px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+  }
+}
+
+.detail-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+/* The photo is the hero: full-bleed to the sheet edges, no frame, no caption
+   overlay competing with it. */
+.detail-photo {
+  display: block;
+  width: 100%;
+  max-height: 46dvh;
+  object-fit: cover;
+  background: var(--raised);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+
+.detail-nophoto {
+  margin: 0;
+  padding: 28px 20px;
+  background: var(--raised);
+  color: var(--ink-muted);
+  font-size: 15px;
+  text-align: center;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+
+.detail-body {
+  padding: 16px 20px 20px;
+}
+
+.detail-depth {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+/* Carries the depth colour at display size without putting pale blue on white.
+   A bar reads as a level, which is what the value actually is. */
+.detail-swatch {
+  width: 10px;
+  height: 32px;
+  flex: none;
+  border-radius: 5px;
+}
+
+.detail-sub {
+  margin: 4px 0 0;
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+
+.detail-when {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 15px;
+}
+
+.detail-clock {
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Five segments, filled to the reported level. Colour alone never carries the
+   meaning - the label above says it in words, this says it as a quantity. */
+.depth-meter {
+  display: flex;
+  gap: 3px;
+  margin-top: 14px;
+}
+
+.depth-meter-step {
+  height: 6px;
+  flex: 1;
+  border-radius: 3px;
+  background: var(--line);
 }
 
 /* Console */

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FloodMap, type MapReport } from "@/components/FloodMap";
 import { StreetHistory } from "@/components/StreetHistory";
+import { ReportDetail } from "@/components/ReportDetail";
 import { MapLegend } from "@/components/MapLegend";
 import { createClient } from "@/lib/supabase/client";
 import type { DepthLevel } from "@/lib/depth/scale";
@@ -26,11 +27,14 @@ interface NearbyRow {
   depth: DepthLevel;
   lat: number;
   lon: number;
+  photo_path: string | null;
+  reported_at: string;
 }
 
 export default function HomePage() {
   const [reports, setReports] = useState<MapReport[]>([]);
   const [point, setPoint] = useState<{ lat: number; lon: number } | null>(null);
+  const [selected, setSelected] = useState<MapReport | null>(null);
 
   useEffect(() => {
     createClient()
@@ -47,9 +51,24 @@ export default function HomePage() {
             depth: row.depth,
             lat: row.lat,
             lon: row.lon,
+            photoPath: row.photo_path,
+            reportedAt: row.reported_at,
           })),
         );
       });
+  }, []);
+
+  // Tapping a pin and tapping the street it sits on are different questions -
+  // "what does this report say" versus "what has happened here" - so opening
+  // one closes the other rather than stacking two sheets.
+  const openReport = useCallback((report: MapReport) => {
+    setPoint(null);
+    setSelected(report);
+  }, []);
+
+  const openStreet = useCallback((lat: number, lon: number) => {
+    setSelected(null);
+    setPoint({ lat, lon });
   }, []);
 
   return (
@@ -58,11 +77,17 @@ export default function HomePage() {
       <div className="map-canvas">
         <FloodMap
           reports={reports}
-          onPick={(lat, lon) => setPoint({ lat, lon })}
+          onPick={openStreet}
+          onSelect={openReport}
+          selectedId={selected?.id ?? null}
         />
       </div>
       <MapLegend />
-      <StreetHistory point={point} />
+      {selected ? (
+        <ReportDetail report={selected} onClose={() => setSelected(null)} />
+      ) : (
+        <StreetHistory point={point} onSelect={openReport} />
+      )}
     </main>
   );
 }

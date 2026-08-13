@@ -3,15 +3,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import { DepthSlider } from "@/components/DepthSlider";
+import { PhotoCapture } from "@/components/PhotoCapture";
 import { submitReport, type SubmitErrorCode } from "@/app/actions/submit-report";
 import {
   formatAccuracy,
   needsLocationConfirmation,
 } from "@/lib/reports/accuracy";
+import { reportPhotoPath, REPORT_PHOTO_BUCKET } from "@/lib/reports/photo";
+import { createClient } from "@/lib/supabase/client";
 import type { DepthLevel } from "@/lib/depth/scale";
 
-/** Everything the page can display, including the one failure it detects itself. */
-type PageErrorCode = SubmitErrorCode | "no_location";
+/** Everything the page can display, including the failures it detects itself. */
+type PageErrorCode = SubmitErrorCode | "no_location" | "upload_failed";
 
 const ERROR_MESSAGES: Record<PageErrorCode, string> = {
   invalid_depth: "Pumili ng lalim ng tubig.",
@@ -20,6 +23,7 @@ const ERROR_MESSAGES: Record<PageErrorCode, string> = {
   not_signed_in: "Mag-sign in muna bago mag-report.",
   insert_failed: "May problema sa pag-save. Subukan ulit.",
   no_location: "Buksan ang location para makapag-report.",
+  upload_failed: "Hindi naipadala ang larawan. Subukan ulit.",
 };
 
 /** A single geolocation reading, kept while the user confirms it. */
@@ -35,16 +39,53 @@ export default function ReportPage() {
     "idle" | "locating" | "confirming" | "sending" | "sent"
   >("idle");
   const [fix, setFix] = useState<Fix | null>(null);
+  const [photo, setPhoto] = useState<{ file: File; url: string } | null>(null);
   const [errors, setErrors] = useState<PageErrorCode[]>([]);
+
+  /**
+   * Uploads the photo, if there is one, and returns its storage path.
+   *
+   * `undefined` means "nothing to upload"; `null` means the upload failed and
+   * the caller should stop. Collapsing those two into one falsy value would
+   * turn a failed upload into a silently photo-less report.
+   */
+  async function uploadPhoto(): Promise<string | null | undefined> {
+    if (!photo) return undefined;
+
+    const supabase = createClient();
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      setErrors(["not_signed_in"]);
+      return null;
+    }
+
+    const path = reportPhotoPath(userData.user.id);
+    const { error } = await supabase.storage
+      .from(REPORT_PHOTO_BUCKET)
+      .upload(path, photo.file, { contentType: "image/jpeg" });
+
+    if (error) {
+      setErrors(["upload_failed"]);
+      return null;
+    }
+    return path;
+  }
 
   async function send(from: Fix) {
     setStatus("sending");
+
+    const photoPath = await uploadPhoto();
+    if (photoPath === null) {
+      setStatus("idle");
+      return;
+    }
 
     const result = await submitReport({
       depth,
       lat: from.lat,
       lon: from.lon,
       gpsAccuracyM: from.accuracyM,
+      photoPath,
     });
 
     if (!result.ok) {
@@ -160,6 +201,37 @@ export default function ReportPage() {
       </p>
 
       <DepthSlider value={depth} onChange={setDepth} />
+
+      {/* Optional, and second - the slider is the report. A photo makes it
+          checkable by someone who was not there, which is worth a lot, but
+          demanding one would lose every report made in heavy rain. */}
+      {photo ? (
+        <figure className="capture-card capture-card--shot">
+          <img className="capture-shot" src={photo.url} alt="Ang larawang kinuha mo" />
+          <figcaption className="capture-actions">
+            <button
+              type="button"
+              className="btn btn-quiet"
+              onClick={() => {
+                URL.revokeObjectURL(photo.url);
+                setPhoto(null);
+              }}
+            >
+              Alisin ang larawan
+            </button>
+          </figcaption>
+        </figure>
+      ) : (
+        <PhotoCapture
+          prompt="Magdagdag ng larawan ng tubig"
+          note="Opsyonal. Makikita ito ng lahat sa mapa."
+          openLabel="Kumuha ng larawan"
+          variant="secondary"
+          onCapture={(file) =>
+            setPhoto({ file, url: URL.createObjectURL(file) })
+          }
+        />
+      )}
 
       <div style={{ marginTop: 28 }}>
         <button className="btn" onClick={handleSubmit} disabled={isBusy}>

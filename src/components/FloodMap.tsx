@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { MapLibreMap, Marker, type MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { type DepthLevel } from "@/lib/depth/scale";
+import { depthLabel, type DepthLevel } from "@/lib/depth/scale";
 import { DEPTH_HEX } from "@/lib/depth/presentation";
 
 export interface MapReport {
@@ -11,6 +11,8 @@ export interface MapReport {
   lat: number;
   lon: number;
   depth: DepthLevel;
+  photoPath: string | null;
+  reportedAt: string;
 }
 
 /** Deepest colour in the scale - used as a fallback when a depth value falls
@@ -52,9 +54,38 @@ const BASEMAP_ATTRIBUTION =
 interface FloodMapProps {
   reports: MapReport[];
   onPick: (lat: number, lon: number) => void;
+  onSelect: (report: MapReport) => void;
+  selectedId: string | null;
 }
 
-export function FloodMap({ reports, onPick }: FloodMapProps) {
+/**
+ * A pin, as a real button rather than MapLibre's default teardrop.
+ *
+ * Two things the default cannot express: which reports carry a photo, and which
+ * one is currently open. Both matter now that tapping a pin is how you see the
+ * water - without the camera mark, finding a report with a picture means
+ * tapping pins at random.
+ */
+function pinElement(report: MapReport, isSelected: boolean): HTMLButtonElement {
+  const el = document.createElement("button");
+  el.type = "button";
+  el.className = `pin${report.photoPath ? " pin--photo" : ""}${
+    isSelected ? " pin--selected" : ""
+  }`;
+  el.style.setProperty("--pin-color", colorForDepth(report.depth));
+  el.setAttribute(
+    "aria-label",
+    `${depthLabel(report.depth).tl}${report.photoPath ? ", may larawan" : ""}`,
+  );
+  return el;
+}
+
+export function FloodMap({
+  reports,
+  onPick,
+  onSelect,
+  selectedId,
+}: FloodMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
 
@@ -99,14 +130,24 @@ export function FloodMap({ reports, onPick }: FloodMapProps) {
   useEffect(() => {
     if (!map.current) return;
 
-    const markers = reports.map((report) =>
-      new Marker({ color: colorForDepth(report.depth) })
+    const markers = reports.map((report) => {
+      const element = pinElement(report, report.id === selectedId);
+
+      // Without stopPropagation the map's own click handler also fires, so
+      // tapping a pin would open that report and then immediately replace it
+      // with the street list for the point underneath.
+      element.addEventListener("click", (event) => {
+        event.stopPropagation();
+        onSelect(report);
+      });
+
+      return new Marker({ element })
         .setLngLat([report.lon, report.lat])
-        .addTo(map.current!),
-    );
+        .addTo(map.current!);
+    });
 
     return () => markers.forEach((marker) => marker.remove());
-  }, [reports]);
+  }, [reports, onSelect, selectedId]);
 
   // Fills whatever the parent gives it — the map page makes that the full
   // viewport below the header, so the map is the product rather than a panel.

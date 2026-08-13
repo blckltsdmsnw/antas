@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { DepthSlider } from "@/components/DepthSlider";
 import { HoldToConfirm } from "@/components/HoldToConfirm";
-import { LiveCamera } from "@/components/LiveCamera";
+import { PhotoCapture } from "@/components/PhotoCapture";
 import { createClient } from "@/lib/supabase/client";
 import { submitSos, type SosErrorCode } from "@/app/actions/submit-sos";
 import {
@@ -130,14 +130,15 @@ export default function SosPage() {
         nito. Sa totoong emergency, tumawag sa 911.
       </p>
 
-      <p className="task-lede">
-        Kailangan ng larawan ng tubig ngayon. Hindi puwedeng galing sa gallery.
-      </p>
-
       {photo ? (
         <p className="notice">May larawan na. Handa nang ipadala.</p>
       ) : (
-        <LiveCamera onCapture={setPhoto} />
+        <PhotoCapture
+          prompt="Kailangan ng larawan ng tubig ngayon"
+          note="Hindi puwedeng galing sa gallery. Ang barangay lang ang makakakita nito."
+          openLabel="Buksan ang camera"
+          onCapture={setPhoto}
+        />
       )}
 
       <div style={{ marginTop: 28 }}>

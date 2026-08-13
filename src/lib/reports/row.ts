@@ -6,6 +6,8 @@ export interface ValidatedReportInput {
   lat: number;
   lon: number;
   gpsAccuracyM: number | null;
+  /** Optional here, unlike SOS: most reports are a slider drag in the rain. */
+  photoPath?: string | null;
 }
 
 export interface ReportRow {
@@ -13,6 +15,7 @@ export interface ReportRow {
   location: string;
   depth: DepthLevel;
   gps_accuracy_m: number | null;
+  photo_path: string | null;
   source: "user";
 }
 
@@ -25,6 +28,9 @@ export function buildReportRow(
     location: `SRID=4326;POINT(${input.lon} ${input.lat})`,
     depth: input.depth,
     gps_accuracy_m: input.gpsAccuracyM,
+    // Normalised to null so an absent photo and an omitted field are the same
+    // row - the column is nullable and `undefined` would be dropped silently.
+    photo_path: input.photoPath ?? null,
     source: "user",
   };
 }

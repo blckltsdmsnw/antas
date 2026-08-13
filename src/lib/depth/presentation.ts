@@ -1,4 +1,4 @@
-import type { DepthLevel } from "@/lib/depth/scale";
+import { depthRangeCm, type DepthLevel } from "@/lib/depth/scale";
 
 /**
  * How the depth scale is *shown*. Kept out of `scale.ts`, which stays a pure
@@ -37,3 +37,14 @@ export const DEPTH_SHORT_LABEL: Record<DepthLevel, string> = {
   chest: "Dibdib",
   above_head: "Lampas sa ulo",
 };
+
+/**
+ * The centimetre range as a phrase. Informative, never the input - the slider
+ * is the input, and a number is not how anyone judges water they are standing
+ * in. The deepest level is open-ended, so it reads "pataas" rather than
+ * inventing a ceiling.
+ */
+export function depthRangeLabel(level: DepthLevel): string {
+  const { minCm, maxCm } = depthRangeCm(level);
+  return maxCm === null ? `${minCm} cm pataas` : `${minCm}–${maxCm} cm`;
+}

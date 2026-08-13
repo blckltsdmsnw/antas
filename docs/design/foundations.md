@@ -64,6 +64,23 @@ filled label.
 Red is unambiguous here precisely because the depth ramp runs blue to purple. Nothing in the
 depth scale can be mistaken for an error state.
 
+### Photographs
+
+Photos are the one element in the product with a colour palette of their own, and they are
+allowed to keep it - no tinting, no duotone, no gradient scrim. A photo of floodwater is
+evidence, and styling evidence undermines it.
+
+Two buckets, two rules, and the asymmetry is deliberate:
+
+| | Depth report | SOS |
+|---|---|---|
+| Bucket | `report-photos`, public | `sos-photos`, private |
+| Who sees it | anyone who taps the pin | moderators, via signed URL |
+| Why | it is a picture of a street | it is a picture of a person in distress |
+
+The capture screen states the visibility *before* offering the shutter - "Makikita ito ng
+lahat sa mapa" - never afterwards.
+
 ## 3. Typography
 
 **Geist Sans**, already installed by the project scaffold. Neutral and modern, reading as
@@ -113,6 +130,41 @@ Sits over the map as a raised sheet, not a separate black region below it.
 - Individual reports as a quiet list: depth label and relative date ("kahapon", "3 araw ang
   nakalipas")
 - Empty state is plain and reassuring, not an error
+
+### Photo capture card
+Three stages, and the first one is the point: **the camera is never opened by arriving on a
+page.** A resting card shows a CSS-drawn lens, says what the photo is for, and waits for a
+tap. Opening a page must not raise a permission prompt or put a live viewfinder on a shared
+phone.
+
+- Resting: dashed border - it reads as a slot waiting to be filled, which is what an optional
+  photo is. Solid would read as a component that failed to load
+- Live: full-bleed viewfinder on `ink`, one round 68px shutter, and a way out
+- Preview: the shot, with *Gamitin* and *Kumuha ulit*. The shutter never commits - a blurred
+  frame of your own thumb is the normal first attempt
+- `variant="secondary"` where the photo is optional, so the page's real action keeps the only
+  `waist` fill. Two full-width blue buttons make neither of them primary
+
+### Map pins
+Custom elements, not MapLibre's default teardrop, because a pin has to carry two facts at
+once: how deep, and whether tapping it will show you a photo.
+
+- 20px dot, depth-coloured, 2.5px white border, hit area padded to a finger via `::after`
+- A photo pin adds a ring gap in its own depth colour - visible against every basemap tone,
+  unlike a tint or an opacity change
+- Selected grows to 28px with a `waist` halo
+
+### Report detail sheet
+Opened by tapping a pin. The photo is the hero, full-bleed to the sheet edge, because it is
+the only part of a report a careless slider drag cannot fake.
+
+- Depth label at display size in **`ink`**, with the depth colour as a bar beside it - see the
+  contrast caution above; this is exactly where pale blue on white would bite hardest
+- Both time readings: relative ("2 oras") for staleness, wall clock ("2:04 PM") for judging
+  whether the photo still describes the street. Manila time, pinned, never the device's
+- A five-segment meter filled to the reported level - colour never carries the meaning alone
+- "Walang larawan ang report na ito" is a plain statement, not an error. Most reports have no
+  photo and that is fine
 
 ### Buttons
 - Primary: `waist` fill, white text, 48px tall, full-width on mobile

@@ -2,13 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import type { MapReport } from "@/components/FloodMap";
 import { depthLabel, depthRank, type DepthLevel } from "@/lib/depth/scale";
 import { DEPTH_VAR } from "@/lib/depth/presentation";
+import { reportPhotoUrl } from "@/lib/reports/photo";
+import { relativeTime } from "@/lib/time/relative";
 
 interface NearbyReport {
   id: string;
   depth: DepthLevel;
   reported_at: string;
+  photo_path: string | null;
   lat: number;
   lon: number;
   distance_m: number;
@@ -16,19 +20,23 @@ interface NearbyReport {
 
 interface StreetHistoryProps {
   point: { lat: number; lon: number } | null;
+  onSelect: (report: MapReport) => void;
 }
 
 const STREET_RADIUS_M = 150;
 
-/** "kahapon" reads better than a date to someone deciding a route right now. */
-function relativeDay(iso: string): string {
-  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-  if (days <= 0) return "ngayon";
-  if (days === 1) return "kahapon";
-  return `${days} araw`;
+function toMapReport(row: NearbyReport): MapReport {
+  return {
+    id: row.id,
+    depth: row.depth,
+    lat: row.lat,
+    lon: row.lon,
+    photoPath: row.photo_path,
+    reportedAt: row.reported_at,
+  };
 }
 
-export function StreetHistory({ point }: StreetHistoryProps) {
+export function StreetHistory({ point, onSelect }: StreetHistoryProps) {
   const [reports, setReports] = useState<NearbyReport[] | null>(null);
 
   useEffect(() => {
@@ -78,6 +86,8 @@ export function StreetHistory({ point }: StreetHistoryProps) {
     <section className="history-sheet">
       <h2 className="sheet-count">{reports.length} report sa lugar na ito</h2>
 
+      {/* The worst case leads. Someone reading this is deciding whether to walk
+          down the street, and the average depth is not what would stop them. */}
       <p className="deepest">
         <span
           className="deepest-dot"
@@ -89,16 +99,30 @@ export function StreetHistory({ point }: StreetHistoryProps) {
       </p>
 
       <ul className="report-list">
-        {reports.map((report) => (
-          <li key={report.id} className="report-row">
-            <span
-              className="report-swatch"
-              style={{ background: DEPTH_VAR[report.depth] }}
-            />
-            {depthLabel(report.depth).tl}
-            <span className="report-when">{relativeDay(report.reported_at)}</span>
-          </li>
-        ))}
+        {reports.map((report) => {
+          const thumb = reportPhotoUrl(report.photo_path);
+          return (
+            <li key={report.id}>
+              <button
+                type="button"
+                className="report-row"
+                onClick={() => onSelect(toMapReport(report))}
+              >
+                <span
+                  className="report-swatch"
+                  style={{ background: DEPTH_VAR[report.depth] }}
+                />
+                <span className="report-label">{depthLabel(report.depth).tl}</span>
+                <span className="report-when">{relativeTime(report.reported_at)}</span>
+                {thumb ? (
+                  <img className="report-thumb" src={thumb} alt="" aria-hidden="true" />
+                ) : (
+                  <span className="report-thumb report-thumb--empty" aria-hidden="true" />
+                )}
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

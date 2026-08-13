@@ -25,6 +25,12 @@ export interface ReportInput {
   lat: number;
   lon: number;
   gpsAccuracyM: number | null;
+  /**
+   * Carried, not validated. The storage policy already restricts a user to
+   * their own folder, and whether the photo is any good is a human judgement
+   * this module has no way to make.
+   */
+  photoPath?: string | null;
 }
 
 export type ReportErrorCode =
