@@ -113,7 +113,12 @@ A person stating *I need help*. Separate table, separate lifecycle, separate per
 separate audience. Deliberately expensive to create: hold-to-confirm, mandatory live photo,
 one active signal per account, server-stamped location and time.
 
-Status transitions: `pending → under_review → confirmed | dismissed`, then `resolved`.
+Status transitions: `pending → under_review → confirmed | dismissed`. Only a `confirmed`
+signal can subsequently move to `resolved`; a `dismissed` signal is terminal.
+
+A signal counts as **active** — and therefore blocks the account from creating another —
+while its status is `pending`, `under_review`, or `confirmed`. `dismissed` and `resolved`
+signals do not block.
 
 ### Why depth alone must not trigger rescue
 
@@ -213,8 +218,10 @@ The confirm/dismiss decision writes back to reputation. Dismissal requires a rea
 `false_report`, `duplicate`, `resolved_already`, `insufficient_info` — because a dismissal for
 duplication must not damage a reporter's history the way a dismissal for fabrication does.
 
-Three confirmed false reports trigger suspension. This is disclosed during onboarding: visible
-accountability deters more effectively than hidden accountability.
+Three signals dismissed with the reason code `false_report` — and only that code — trigger
+suspension. Dismissals for `duplicate`, `resolved_already`, or `insufficient_info` never count
+toward suspension. This threshold is disclosed during onboarding: visible accountability
+deters more effectively than hidden accountability.
 
 ---
 
