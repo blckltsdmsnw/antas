@@ -227,6 +227,7 @@ export default function ReportPage() {
           note="Opsyonal. Makikita ito ng lahat sa mapa."
           openLabel="Kumuha ng larawan"
           variant="secondary"
+          source="native"
           onCapture={(file) =>
             setPhoto({ file, url: URL.createObjectURL(file) })
           }

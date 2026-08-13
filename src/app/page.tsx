@@ -5,6 +5,7 @@ import { FloodMap, type MapReport } from "@/components/FloodMap";
 import { StreetHistory } from "@/components/StreetHistory";
 import { ReportDetail } from "@/components/ReportDetail";
 import { MapLegend } from "@/components/MapLegend";
+import { WeatherStrip } from "@/components/WeatherStrip";
 import { createClient } from "@/lib/supabase/client";
 import type { DepthLevel } from "@/lib/depth/scale";
 
@@ -82,6 +83,7 @@ export default function HomePage() {
           selectedId={selected?.id ?? null}
         />
       </div>
+      <WeatherStrip />
       <MapLegend />
       {selected ? (
         <ReportDetail report={selected} onClose={() => setSelected(null)} />

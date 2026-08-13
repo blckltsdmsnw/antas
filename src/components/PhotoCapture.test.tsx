@@ -110,6 +110,46 @@ describe("PhotoCapture", () => {
     ).toBeInTheDocument();
   });
 
+  it("hands off to the phone's own camera in native mode", async () => {
+    const onCapture = vi.fn();
+    const { container } = render(
+      <PhotoCapture
+        onCapture={onCapture}
+        prompt="Magdagdag ng larawan"
+        source="native"
+      />,
+    );
+
+    const input = container.querySelector("input[type=file]") as HTMLInputElement;
+    expect(input).not.toBeNull();
+    expect(input.accept).toBe("image/*");
+    // Without capture the picker opens the gallery first, which is the wrong
+    // default for "what does this street look like right now".
+    expect(input.getAttribute("capture")).toBe("environment");
+
+    const file = new File(["x"], "shot.jpg", { type: "image/jpeg" });
+    await userEvent.setup().upload(input, file);
+    expect(onCapture).toHaveBeenCalledWith(file);
+  });
+
+  it("never touches getUserMedia in native mode", async () => {
+    const user = userEvent.setup();
+    render(
+      <PhotoCapture
+        onCapture={vi.fn()}
+        prompt="Magdagdag ng larawan"
+        source="native"
+      />,
+    );
+
+    await user.click(screen.getByText("Buksan ang camera"));
+
+    // The whole point of the native hand-off: no permission prompt, no
+    // in-page viewfinder, no stream to leak.
+    expect(getUserMedia).not.toHaveBeenCalled();
+    expect(document.querySelector("video")).toBeNull();
+  });
+
   it("offers a skip only when the photo is optional", async () => {
     const onSkip = vi.fn();
     const { rerender } = render(

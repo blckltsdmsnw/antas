@@ -20,6 +20,17 @@ interface PhotoCaptureProps {
    * neither of them the primary one.
    */
   variant?: "primary" | "secondary";
+  /**
+   * "native" hands off to the phone's own camera app via a file input.
+   * Cleaner, better quality, correct rotation, and no permission dance - the
+   * right default wherever a photo is merely useful.
+   *
+   * "live" keeps the in-page viewfinder, which SOS needs: it is an anti-abuse
+   * measure, not a UI choice. `capture="environment"` is only a hint, and
+   * plenty of browsers happily offer the gallery instead - which would let
+   * someone attach a downloaded picture to a fake rescue request.
+   */
+  source?: "live" | "native";
 }
 
 type Stage = "resting" | "opening" | "live" | "preview" | "denied";
@@ -47,6 +58,7 @@ export function PhotoCapture({
   onSkip,
   skipLabel,
   variant = "primary",
+  source = "live",
 }: PhotoCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -214,14 +226,34 @@ export function PhotoCapture({
       <span className="capture-glyph" aria-hidden="true" />
       <p className="capture-prompt">{prompt}</p>
       {note && <p className="capture-note">{note}</p>}
-      <button
-        type="button"
-        className={variant === "secondary" ? "btn btn-quiet" : "btn"}
-        onClick={() => void open()}
-        disabled={stage === "opening"}
-      >
-        {stage === "opening" ? "Binubuksan ang camera..." : openLabel}
-      </button>
+      {source === "native" ? (
+        // A label, not a button: the file input has to be the thing that is
+        // activated, and styling the input itself is not reliable across
+        // browsers. The input stays in the DOM but visually hidden so it
+        // remains reachable by keyboard and by assistive tech.
+        <label className={variant === "secondary" ? "btn btn-quiet" : "btn"}>
+          {openLabel}
+          <input
+            className="sr-only"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) onCapture(file);
+            }}
+          />
+        </label>
+      ) : (
+        <button
+          type="button"
+          className={variant === "secondary" ? "btn btn-quiet" : "btn"}
+          onClick={() => void open()}
+          disabled={stage === "opening"}
+        >
+          {stage === "opening" ? "Binubuksan ang camera..." : openLabel}
+        </button>
+      )}
       {onSkip && (
         <button type="button" className="quiet-link" onClick={onSkip}>
           {skipLabel ?? "Laktawan"}

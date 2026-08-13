@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { MapReport } from "@/components/FloodMap";
+import { PhotoLightbox } from "@/components/PhotoLightbox";
 import { depthLabel, depthRank, DEPTH_LEVELS } from "@/lib/depth/scale";
 import { DEPTH_VAR, depthRangeLabel } from "@/lib/depth/presentation";
 import { reportPhotoUrl } from "@/lib/reports/photo";
@@ -22,9 +23,14 @@ interface ReportDetailProps {
 export function ReportDetail({ report, onClose }: ReportDetailProps) {
   const photo = reportPhotoUrl(report.photoPath);
   const [photoFailed, setPhotoFailed] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
 
   // A previous pin's photo may have failed; don't blame this one for it.
-  useEffect(() => setPhotoFailed(false), [report.id]);
+  // Closing the viewer too, so switching pins never leaves the old photo open.
+  useEffect(() => {
+    setPhotoFailed(false);
+    setZoomed(false);
+  }, [report.id]);
 
   const label = depthLabel(report.depth);
   const rank = depthRank(report.depth);
@@ -41,12 +47,24 @@ export function ReportDetail({ report, onClose }: ReportDetailProps) {
       </button>
 
       {photo && !photoFailed ? (
-        <img
-          className="detail-photo"
-          src={photo}
-          alt={`Tubig na ${label.tl.toLowerCase()}`}
-          onError={() => setPhotoFailed(true)}
-        />
+        // A button, not a bare image: opening full screen is a real action and
+        // has to be reachable by keyboard as well as by tap.
+        <button
+          type="button"
+          className="detail-photo-button"
+          onClick={() => setZoomed(true)}
+          aria-label="Buksan ang larawan sa buong screen"
+        >
+          <img
+            className="detail-photo"
+            src={photo}
+            alt={`Tubig na ${label.tl.toLowerCase()}`}
+            onError={() => setPhotoFailed(true)}
+          />
+          <span className="detail-photo-cue" aria-hidden="true">
+            Pindutin para lakihan
+          </span>
+        </button>
       ) : (
         // Not an error state. Most reports are a slider drag in the rain, and
         // saying so plainly beats an empty frame or a broken-image icon.
@@ -94,6 +112,15 @@ export function ReportDetail({ report, onClose }: ReportDetailProps) {
           ))}
         </div>
       </div>
+
+      {zoomed && photo && (
+        <PhotoLightbox
+          src={photo}
+          alt={`Tubig na ${label.tl.toLowerCase()}`}
+          caption={`${label.tl} · ${relativeTime(report.reportedAt)} · ${clockTime(report.reportedAt)}`}
+          onClose={() => setZoomed(false)}
+        />
+      )}
     </section>
   );
 }
