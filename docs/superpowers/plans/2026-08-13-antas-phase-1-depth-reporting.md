@@ -448,7 +448,15 @@ Confirm `.env.local` is listed in `.gitignore` — `create-next-app` adds `.env*
 
 Create `supabase/migrations/0001_init.sql`:
 ```sql
-create extension if not exists postgis;
+-- Install into `extensions`, NOT `public`. PostGIS ships a writable catalog table,
+-- spatial_ref_sys, and PostgREST serves every table in `public` — so installing here
+-- would expose it at the REST API with anon holding DELETE and TRUNCATE and no RLS,
+-- letting anyone drop the SRID 4326 definition every geography column depends on.
+-- The `extensions` schema is not in PostgREST's exposed list, and this matches what
+-- hosted Supabase does by default. postgis is not relocatable, so it must be created
+-- in the right schema up front rather than moved later.
+create schema if not exists extensions;
+create extension if not exists postgis with schema extensions;
 
 create type depth_level as enum ('ankle', 'knee', 'waist', 'chest', 'above_head');
 
@@ -1335,7 +1343,9 @@ returns table (
 language sql
 stable
 security invoker
-set search_path = public
+-- `extensions` must be on the path: PostGIS lives there, not in public, so pinning
+-- to public alone would make st_dwithin and st_distance unresolvable inside here.
+set search_path = public, extensions
 as $$
   select
     r.id,
