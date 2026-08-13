@@ -18,7 +18,9 @@ export async function createClient() {
               cookieStore.set(name, value, options),
             );
           } catch {
-            // Called from a Server Component; session refresh happens elsewhere.
+            // Writes from a Server Component are read-only — Next.js enforces
+            // this at runtime. `src/middleware.ts` performs the actual
+            // session refresh and persists the rotated cookies instead.
           }
         },
       },
