@@ -19,6 +19,23 @@ interface StreetHistoryProps {
 
 const STREET_RADIUS_M = 150;
 
+/** Matches the ramp in globals.css and FloodMap. */
+const LEVEL_COLOR: Record<DepthLevel, string> = {
+  ankle: "var(--depth-ankle)",
+  knee: "var(--depth-knee)",
+  waist: "var(--depth-waist)",
+  chest: "var(--depth-chest)",
+  above_head: "var(--depth-above-head)",
+};
+
+/** "kahapon" reads better than a date to someone deciding a route right now. */
+function relativeDay(iso: string): string {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days <= 0) return "ngayon";
+  if (days === 1) return "kahapon";
+  return `${days} araw`;
+}
+
 export function StreetHistory({ point }: StreetHistoryProps) {
   const [reports, setReports] = useState<NearbyReport[] | null>(null);
 
@@ -37,10 +54,28 @@ export function StreetHistory({ point }: StreetHistoryProps) {
       .then(({ data }) => setReports((data as NearbyReport[]) ?? []));
   }, [point]);
 
-  if (!point) return <p>Pindutin ang mapa para makita ang kasaysayan.</p>;
-  if (reports === null) return <p>Naghahanap...</p>;
+  if (!point) {
+    return (
+      <section className="history-sheet">
+        <p className="sheet-hint">Pindutin ang mapa para makita ang kasaysayan.</p>
+      </section>
+    );
+  }
+
+  if (reports === null) {
+    return (
+      <section className="history-sheet">
+        <p className="sheet-hint">Naghahanap...</p>
+      </section>
+    );
+  }
+
   if (reports.length === 0) {
-    return <p>Walang naitalang baha sa lugar na ito.</p>;
+    return (
+      <section className="history-sheet">
+        <p className="sheet-hint">Walang naitalang baha sa lugar na ito.</p>
+      </section>
+    );
   }
 
   const deepest = reports.reduce((worst, report) =>
@@ -48,14 +83,28 @@ export function StreetHistory({ point }: StreetHistoryProps) {
   );
 
   return (
-    <section>
-      <h2>{reports.length} report sa lugar na ito</h2>
-      <p>Pinakamalalim: {depthLabel(deepest.depth).tl}</p>
-      <ul>
+    <section className="history-sheet">
+      <h2 className="sheet-count">{reports.length} report sa lugar na ito</h2>
+
+      <p className="deepest">
+        <span
+          className="deepest-dot"
+          style={{ background: LEVEL_COLOR[deepest.depth] }}
+        />
+        <span className="deepest-label">
+          Pinakamalalim: {depthLabel(deepest.depth).tl}
+        </span>
+      </p>
+
+      <ul className="report-list">
         {reports.map((report) => (
-          <li key={report.id}>
-            {depthLabel(report.depth).tl} —{" "}
-            {new Date(report.reported_at).toLocaleDateString("en-PH")}
+          <li key={report.id} className="report-row">
+            <span
+              className="report-swatch"
+              style={{ background: LEVEL_COLOR[report.depth] }}
+            />
+            {depthLabel(report.depth).tl}
+            <span className="report-when">{relativeDay(report.reported_at)}</span>
           </li>
         ))}
       </ul>

@@ -107,5 +107,7 @@ export function FloodMap({ reports, onPick }: FloodMapProps) {
     return () => markers.forEach((marker) => marker.remove());
   }, [reports]);
 
-  return <div ref={container} style={{ height: "70vh", width: "100%" }} />;
+  // Fills whatever the parent gives it — the map page makes that the full
+  // viewport below the header, so the map is the product rather than a panel.
+  return <div ref={container} style={{ height: "100%", width: "100%" }} />;
 }

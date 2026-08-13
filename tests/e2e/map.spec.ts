@@ -2,7 +2,10 @@ import { test, expect } from "@playwright/test";
 
 test("public map loads without signing in", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Antas" })).toBeVisible();
+  // The brand lives in the header; the map page's h1 is screen-reader only, so
+  // assert on what a sighted visitor actually sees plus the map itself.
+  await expect(page.getByRole("link", { name: /Antas/ })).toBeVisible();
+  await expect(page.locator("canvas")).toBeVisible();
 });
 
 test("clicking the map shows street history", async ({ page }) => {

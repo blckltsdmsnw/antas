@@ -42,9 +42,14 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main>
-      <h1>Antas</h1>
-      <FloodMap reports={reports} onPick={(lat, lon) => setPoint({ lat, lon })} />
+    <main className="map-shell">
+      <h1 className="sr-only">Antas</h1>
+      <div className="map-canvas">
+        <FloodMap
+          reports={reports}
+          onPick={(lat, lon) => setPoint({ lat, lon })}
+        />
+      </div>
       <StreetHistory point={point} />
     </main>
   );
