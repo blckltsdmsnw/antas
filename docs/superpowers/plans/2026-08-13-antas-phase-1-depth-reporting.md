@@ -586,10 +586,34 @@ describe("depth_reports row-level security", () => {
 
   it("refuses an anonymous visitor reading profiles", async () => {
     const { data } = await anon.from("profiles").select("id, display_name");
-    expect(data).toEqual([]);
+    // Denied at the grant layer (data null) or filtered to nothing by RLS (data []).
+    // Either way, an anonymous visitor must never see a profile row.
+    expect(data ?? []).toEqual([]);
+  });
+
+  it("does not let a signed-in user read another user's profile", async () => {
+    const { data } = await authed.from("profiles").select("id");
+    expect(data).toHaveLength(1);
+    expect(data![0].id).toBe(reporterId);
+  });
+
+  it("does not let a signed-in user file a report in someone else's name", async () => {
+    const { error } = await authed.from("depth_reports").insert({
+      reporter_id: otherUserId,
+      location: "SRID=4326;POINT(121.1 14.65)",
+      depth: "waist",
+    });
+    expect(error).not.toBeNull();
   });
 });
 ```
+
+The last two tests need a second user and a signed-in client. In `beforeAll`, create a
+second user the same way, keep its id as `otherUserId`, and build `authed` with
+`createClient(url, anonKey)` followed by `signInWithPassword` using the first user's
+credentials. These two invariants — that one user cannot read another's profile, and cannot
+file a report in another's name — are the most important guarantees in the system, so they
+are asserted rather than assumed.
 
 Modify `vitest.config.ts` so tests see the environment variables and the integration folder. Add this import at the top:
 ```ts
@@ -615,6 +639,22 @@ Expected: FAIL — the anonymous insert succeeds and the anonymous profile read 
 
 Create `supabase/migrations/0002_rls.sql`:
 ```sql
+-- GRANT and RLS are two independent layers. GRANT decides whether a role may
+-- attempt an operation at all; RLS decides which rows it sees once allowed.
+-- Tables created by the migration role on this stack carry no select/insert/
+-- update/delete grants for anon, authenticated, or service_role, so without
+-- these the policies below are unreachable and every write fails.
+grant select                         on depth_reports to anon, authenticated;
+grant insert                         on depth_reports to authenticated;
+grant select, insert, update, delete on depth_reports to service_role;
+
+-- Deliberately NOT granted to anon. profiles will hold verified phone numbers,
+-- so anonymous access is denied at the grant layer as well as by RLS — two
+-- independent barriers, so a future permissive policy cannot expose it alone.
+grant select                         on profiles to authenticated;
+grant update                         on profiles to authenticated;
+grant select, insert, update, delete on profiles to service_role;
+
 alter table profiles      enable row level security;
 alter table depth_reports enable row level security;
 
@@ -648,7 +688,11 @@ create policy "users update their own profile"
 npx supabase migration up
 npx vitest run tests/integration/rls.test.ts
 ```
-Expected: PASS — 4 tests.
+Expected: PASS — 6 tests.
+
+If you have already applied `0002_rls.sql` and then edit it, `migration up` will not re-run
+it. Use `npx supabase db reset` to rebuild from scratch — there is no data worth keeping in
+Phase 1, and it also proves both migrations replay cleanly from zero.
 
 - [ ] **Step 5: Commit**
 
