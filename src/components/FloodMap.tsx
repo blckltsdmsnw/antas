@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "react";
 import { MapLibreMap, Marker, type MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { depthRank, type DepthLevel } from "@/lib/depth/scale";
+import { type DepthLevel } from "@/lib/depth/scale";
+import { DEPTH_HEX } from "@/lib/depth/presentation";
 
 export interface MapReport {
   id: string;
@@ -12,16 +13,13 @@ export interface MapReport {
   depth: DepthLevel;
 }
 
-/** Shallow to deep. Index matches depthRank(). */
-const DEPTH_COLORS = ["#7dd3fc", "#38bdf8", "#0284c7", "#1e40af", "#581c87"];
-
-/** Deepest colour in the scale — used as a fallback when a depth value
- * falls outside the known scale, so a bad row still renders a marker
- * (in the worst-case colour) instead of an undefined one. */
-const FALLBACK_COLOR = DEPTH_COLORS[DEPTH_COLORS.length - 1];
+/** Deepest colour in the scale - used as a fallback when a depth value falls
+ * outside the known scale, so a bad row still renders a marker (in the
+ * worst-case colour) rather than an undefined one. */
+const FALLBACK_COLOR = DEPTH_HEX.above_head;
 
 function colorForDepth(depth: DepthLevel): string {
-  return DEPTH_COLORS[depthRank(depth)] ?? FALLBACK_COLOR;
+  return DEPTH_HEX[depth] ?? FALLBACK_COLOR;
 }
 
 /**

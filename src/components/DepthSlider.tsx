@@ -7,33 +7,12 @@ import {
   depthRank,
   type DepthLevel,
 } from "@/lib/depth/scale";
+import { DEPTH_SHORT_LABEL, DEPTH_VAR } from "@/lib/depth/presentation";
 
 interface DepthSliderProps {
   value: DepthLevel;
   onChange: (level: DepthLevel) => void;
 }
-
-/** Matches the ramp in globals.css and FloodMap. */
-const LEVEL_COLOR: Record<DepthLevel, string> = {
-  ankle: "var(--depth-ankle)",
-  knee: "var(--depth-knee)",
-  waist: "var(--depth-waist)",
-  chest: "var(--depth-chest)",
-  above_head: "var(--depth-above-head)",
-};
-
-/**
- * Short forms for the legend. Deliberately not the full `depthLabel` strings —
- * the readout below already shows those, and repeating them would put the same
- * text on screen twice.
- */
-const LEGEND_LABEL: Record<DepthLevel, string> = {
-  ankle: "Bukong-bukong",
-  knee: "Tuhod",
-  waist: "Baywang",
-  chest: "Dibdib",
-  above_head: "Lampas sa ulo",
-};
 
 /** Percentage of the column each level occupies, shallowest at the bottom. */
 function fillPercent(level: DepthLevel): number {
@@ -52,7 +31,7 @@ export function DepthSlider({ value, onChange }: DepthSliderProps) {
           style={
             {
               "--fill": `${fillPercent(value)}%`,
-              "--water-top": LEVEL_COLOR[value],
+              "--water-top": DEPTH_VAR[value],
             } as React.CSSProperties
           }
         >
@@ -90,7 +69,7 @@ export function DepthSlider({ value, onChange }: DepthSliderProps) {
               style={{ bottom: `${fillPercent(level)}%` }}
             >
               <span className="gauge-legend-rule" />
-              {LEGEND_LABEL[level]}
+              {DEPTH_SHORT_LABEL[level]}
             </span>
           ))}
         </div>

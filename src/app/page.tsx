@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { FloodMap, type MapReport } from "@/components/FloodMap";
 import { StreetHistory } from "@/components/StreetHistory";
+import { MapLegend } from "@/components/MapLegend";
 import { createClient } from "@/lib/supabase/client";
 import type { DepthLevel } from "@/lib/depth/scale";
 
@@ -50,6 +51,7 @@ export default function HomePage() {
           onPick={(lat, lon) => setPoint({ lat, lon })}
         />
       </div>
+      <MapLegend />
       <StreetHistory point={point} />
     </main>
   );

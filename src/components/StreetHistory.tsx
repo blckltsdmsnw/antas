@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { depthLabel, depthRank, type DepthLevel } from "@/lib/depth/scale";
+import { DEPTH_VAR } from "@/lib/depth/presentation";
 
 interface NearbyReport {
   id: string;
@@ -18,15 +19,6 @@ interface StreetHistoryProps {
 }
 
 const STREET_RADIUS_M = 150;
-
-/** Matches the ramp in globals.css and FloodMap. */
-const LEVEL_COLOR: Record<DepthLevel, string> = {
-  ankle: "var(--depth-ankle)",
-  knee: "var(--depth-knee)",
-  waist: "var(--depth-waist)",
-  chest: "var(--depth-chest)",
-  above_head: "var(--depth-above-head)",
-};
 
 /** "kahapon" reads better than a date to someone deciding a route right now. */
 function relativeDay(iso: string): string {
@@ -89,7 +81,7 @@ export function StreetHistory({ point }: StreetHistoryProps) {
       <p className="deepest">
         <span
           className="deepest-dot"
-          style={{ background: LEVEL_COLOR[deepest.depth] }}
+          style={{ background: DEPTH_VAR[deepest.depth] }}
         />
         <span className="deepest-label">
           Pinakamalalim: {depthLabel(deepest.depth).tl}
@@ -101,7 +93,7 @@ export function StreetHistory({ point }: StreetHistoryProps) {
           <li key={report.id} className="report-row">
             <span
               className="report-swatch"
-              style={{ background: LEVEL_COLOR[report.depth] }}
+              style={{ background: DEPTH_VAR[report.depth] }}
             />
             {depthLabel(report.depth).tl}
             <span className="report-when">{relativeDay(report.reported_at)}</span>

@@ -98,6 +98,16 @@ export default function ReportPage() {
           {ERROR_MESSAGES[code]}
         </p>
       ))}
+
+      {/* Without this the primary flow dead-ends: the message tells you to sign
+          in but gives you no way to get there. */}
+      {errors.includes("not_signed_in") && (
+        <p style={{ marginTop: 16 }}>
+          <Link href="/login" className="btn">
+            Mag-sign in
+          </Link>
+        </p>
+      )}
     </main>
   );
 }
