@@ -1,5 +1,12 @@
-import type { ReportInput } from "@/lib/reports/validate";
 import type { DepthLevel } from "@/lib/depth/scale";
+
+/** Input that has already passed validateReport — depth is a known level, not a string. */
+export interface ValidatedReportInput {
+  depth: DepthLevel;
+  lat: number;
+  lon: number;
+  gpsAccuracyM: number | null;
+}
 
 export interface ReportRow {
   reporter_id: string;
@@ -11,12 +18,12 @@ export interface ReportRow {
 
 export function buildReportRow(
   reporterId: string,
-  input: ReportInput,
+  input: ValidatedReportInput,
 ): ReportRow {
   return {
     reporter_id: reporterId,
     location: `SRID=4326;POINT(${input.lon} ${input.lat})`,
-    depth: input.depth as DepthLevel,
+    depth: input.depth,
     gps_accuracy_m: input.gpsAccuracyM,
     source: "user",
   };

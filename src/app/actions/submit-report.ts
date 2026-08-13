@@ -34,9 +34,15 @@ export async function submitReport(input: ReportInput): Promise<SubmitResult> {
 
   const { error } = await supabase
     .from("depth_reports")
-    .insert(buildReportRow(userData.user.id, input));
+    .insert(buildReportRow(userData.user.id, { ...input, depth: validation.depth }));
 
   if (error) {
+    // TODO: replace with real telemetry once a logger exists.
+    console.error("depth_reports insert failed", {
+      code: error.code,
+      message: error.message,
+      hint: error.hint,
+    });
     return { ok: false, errors: ["insert_failed"] };
   }
 
