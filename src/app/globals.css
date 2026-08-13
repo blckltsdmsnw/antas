@@ -1207,70 +1207,71 @@ a.btn {
  * doubles so the pattern is sparse, and a vertical mask breaks each line into
  * segments so it reads as falling water rather than as a ruled overlay.
  */
+/* Streaks, not scanlines - and they have to actually appear to move.
+ *
+ * The previous version looked static and jumpy, "slow, like 1fps", while the
+ * page was comfortably holding 60fps. The cause was aliasing, not frame rate:
+ * the gradient repeated every 29px, the mask every 96px, and the animation
+ * translated 300px. None of those divide evenly, so almost all of the travel
+ * put the pattern back on top of itself and only the remainder was visible -
+ * then it snapped at the end of each loop.
+ *
+ * The pattern is now an explicit tile, and the animation translates exactly one
+ * tile in each axis. That makes the loop seamless by construction, so the full
+ * distance reads as continuous motion. The mask is gone too: masking a
+ * full-screen animated layer forces a repaint per frame instead of letting the
+ * compositor move a finished texture.
+ */
 .rain::before,
 .rain::after {
   content: "";
   position: absolute;
-  /* Oversized so the sheet can translate without exposing an edge. */
-  inset: -60% -20%;
+  /* Oversized so a full tile of travel never exposes an edge. */
+  inset: -40% -20%;
   background-image: repeating-linear-gradient(
-    100deg,
+    99deg,
     rgba(255, 255, 255, 0) 0px,
-    rgba(255, 255, 255, 0) 13px,
-    rgba(255, 255, 255, 0.28) 14px,
-    rgba(255, 255, 255, 0.5) 14.5px,
-    rgba(255, 255, 255, 0.28) 15px,
-    rgba(255, 255, 255, 0) 16px,
-    rgba(255, 255, 255, 0) 29px
+    rgba(255, 255, 255, 0) 15px,
+    rgba(255, 255, 255, 0.42) 16px,
+    rgba(255, 255, 255, 0) 17px,
+    rgba(255, 255, 255, 0) 32px
   );
-  /* Chops the continuous lines into drop-length segments. */
-  mask-image: repeating-linear-gradient(
-    100deg,
-    transparent 0 22px,
-    #000 34px 62px,
-    transparent 74px 96px
-  );
+  /* The tile height is what breaks the lines into drop-length segments; the
+     width matches the gradient period so the horizontal seam is invisible. */
+  background-size: 32px 116px;
   opacity: var(--rain-opacity, 0.12);
   will-change: transform;
 }
 
-/* A second, slower layer at a different scale reads as depth rather than as
-   one flat sheet sliding past. */
+/* A second layer at a different tile size and speed reads as depth rather than
+   as one flat sheet sliding past. */
 .rain::after {
-  transform: scale(1.7);
-  opacity: calc(var(--rain-opacity, 0.12) * 0.45);
+  background-size: 48px 168px;
+  opacity: calc(var(--rain-opacity, 0.12) * 0.5);
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .rain::before {
-    animation: rainfall var(--rain-duration, 0.9s) linear infinite;
+    animation: rainfall-near var(--rain-duration, 0.9s) linear infinite;
   }
 
   .rain::after {
-    animation: rainfall calc(var(--rain-duration, 0.9s) * 1.9) linear infinite;
+    animation: rainfall-far calc(var(--rain-duration, 0.9s) * 1.7) linear infinite;
   }
 }
 
-@keyframes rainfall {
+/* Each keyframe travels exactly one tile of its own layer. Any other distance
+   leaves the pattern misaligned at the loop point, which is visible as a snap
+   and makes the whole thing read as stuttering. */
+@keyframes rainfall-near {
   to {
-    transform: translate3d(-60px, 300px, 0);
-  }
-}
-
-/* The second layer keeps its scale while translating, or it would snap back to
-   1x the moment the animation takes over the transform. */
-@media (prefers-reduced-motion: no-preference) {
-  .rain::after {
-    animation-name: rainfall-far;
+    transform: translate3d(-32px, 116px, 0);
   }
 }
 
 @keyframes rainfall-far {
-  from {
-    transform: scale(1.7) translate3d(0, 0, 0);
-  }
   to {
-    transform: scale(1.7) translate3d(-40px, 200px, 0);
+    transform: translate3d(-48px, 168px, 0);
   }
 }
 

@@ -37,7 +37,10 @@ export function RainOverlay({ weather }: RainOverlayProps) {
           // Halved from the first attempt. Rain is context, not content - it
           // must never compete with the pins or the streets underneath it.
           "--rain-opacity": 0.08 + intensity * 0.12,
-          "--rain-duration": `${1.1 - intensity * 0.5}s`,
+          // One tile per cycle, so this is the fall speed. The first attempt
+          // took over a second per tile, which reads as drifting rather than
+          // falling even before the aliasing made it look frozen.
+          "--rain-duration": `${0.62 - intensity * 0.24}s`,
         } as React.CSSProperties
       }
     />
