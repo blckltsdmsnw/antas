@@ -1040,8 +1040,7 @@ git commit -m "feat: add depth report submission action"
 Create `src/components/DepthSlider.test.tsx`:
 ```tsx
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { DepthSlider } from "./DepthSlider";
 
 describe("DepthSlider", () => {
@@ -1055,13 +1054,15 @@ describe("DepthSlider", () => {
     expect(screen.getByText("Knee-deep")).toBeInTheDocument();
   });
 
-  it("reports the new level when the slider moves", async () => {
+  it("reports the new level when the slider moves", () => {
     const onChange = vi.fn();
     render(<DepthSlider value="ankle" onChange={onChange} />);
 
-    const slider = screen.getByRole("slider");
-    await userEvent.click(slider);
-    await userEvent.keyboard("{ArrowRight}");
+    // fireEvent, not userEvent: jsdom's <input type="range"> does not fire a change
+    // event on arrow keys, so userEvent.keyboard("{ArrowRight}") calls onChange zero
+    // times even when the component is correct. The assertion is what matters —
+    // one step deeper than ankle must report knee.
+    fireEvent.change(screen.getByRole("slider"), { target: { value: "1" } });
 
     expect(onChange).toHaveBeenCalledWith("knee");
   });
