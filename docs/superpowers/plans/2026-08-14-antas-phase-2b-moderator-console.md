@@ -648,7 +648,7 @@ alter publication supabase_realtime add table sos_signals;
 npx supabase migration up
 npx vitest run tests/integration/moderation.test.ts
 ```
-Expected: PASS — 10 tests.
+Expected: PASS — 11 tests.
 
 **Do not weaken a check to make a test pass.** If the barangay guard or the suspension threshold disagrees with a test, work out which is wrong and report it.
 

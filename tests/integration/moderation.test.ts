@@ -234,6 +234,15 @@ describe("decide_sos", () => {
   });
 
   it("still lets a suspended reporter send a new signal", async () => {
+    // Clear whatever earlier tests left active. The one-active-signal index is
+    // doing its job; this test is about suspension, not that rule, and letting
+    // the two collide would make a real guarantee fail for an unrelated reason.
+    await admin
+      .from("sos_signals")
+      .update({ status: "dismissed" })
+      .eq("reporter_id", reporterId)
+      .in("status", ["pending", "under_review", "confirmed"]);
+
     // Suspension lowers priority and forces review. It never silences.
     const { error } = await admin.from("sos_signals").insert({
       reporter_id: reporterId,
