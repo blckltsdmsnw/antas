@@ -7,9 +7,19 @@ import { MapLegend } from "@/components/MapLegend";
 import { createClient } from "@/lib/supabase/client";
 import type { DepthLevel } from "@/lib/depth/scale";
 
-/** Wide enough to cover the whole pilot area from its centre. */
-const CITY_CENTRE = { lat: 14.65, lon: 121.1 };
-const CITY_RADIUS_M = 10_000;
+/**
+ * Wide enough to cover the whole pilot area from its centre.
+ *
+ * Both values are Metro Manila's, not Marikina's. When the pilot area widened
+ * these did not - so a report from Taguig sat 28km outside the fetch radius and
+ * was never requested at all. The map looked empty while the data was fine,
+ * which is the worst kind of wrong: nothing to debug, because nothing failed.
+ *
+ * NCR runs roughly 45km north to south, so 40km from a central point reaches
+ * every corner of it.
+ */
+const CITY_CENTRE = { lat: 14.58, lon: 121.02 };
+const CITY_RADIUS_M = 40_000;
 
 interface NearbyRow {
   id: string;

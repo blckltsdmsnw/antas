@@ -75,8 +75,11 @@ export function FloodMap({ reports, onPick }: FloodMapProps) {
         },
         layers: [{ id: "basemap", type: "raster", source: "basemap" }],
       },
-      center: [121.1, 14.65],
-      zoom: 13,
+      // Metro Manila, not Marikina. Opening at street zoom over one city meant
+      // anyone elsewhere in the region opened the app looking at somebody
+      // else's neighbourhood, with their own reports off-screen.
+      center: [121.02, 14.58],
+      zoom: 10.5,
     });
 
     // MapLibre reports style, tile and glyph failures through this event. Without
