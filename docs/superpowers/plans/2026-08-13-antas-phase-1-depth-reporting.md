@@ -859,8 +859,16 @@ export async function GET(request: NextRequest) {
 ```bash
 npm run dev
 ```
-Open `http://localhost:3000/login`, submit any email address, then open the local mail catcher at `http://127.0.0.1:54324` and click the link in the captured message.
-Expected: redirected to `/report`. Then run `npx supabase db shell` and `select id, display_name from profiles;` — one new row confirms the `handle_new_user` trigger fired.
+Open `http://127.0.0.1:3000/login` — **not** `localhost`, see the note in Task 9 — submit any
+email address, then open the local mail catcher at `http://127.0.0.1:54324` and click the link
+in the captured message. That catcher is Mailpit despite its container being named
+`supabase_inbucket_app`; its API lives at `/api/v1/messages`.
+
+Expected: the link goes to Supabase's own `/auth/v1/verify`, which redirects back to
+`/auth/confirm?code=<uuid>` — the PKCE flow, since `@supabase/ssr`'s `createBrowserClient`
+hardcodes `flowType: "pkce"` — and the route then redirects to `/report`. Then run
+`npx supabase db shell` and `select id, display_name from profiles;` — one new row confirms
+the `handle_new_user` trigger fired.
 
 - [ ] **Step 6: Commit**
 
@@ -1216,7 +1224,10 @@ export default function ReportPage() {
 
 - [ ] **Step 2: Verify manually**
 
-Run `npm run dev`, sign in, open `http://localhost:3000/report`, allow location, and submit.
+Run `npm run dev`, sign in, open `http://127.0.0.1:3000/report`, allow location, and submit.
+Use `127.0.0.1`, never `localhost` — the local Supabase `site_url` is `http://127.0.0.1:3000`,
+and a browser treats the two hostnames as different origins, so signing in on `localhost`
+redirects to the site root instead of `/auth/confirm`.
 Expected: "Salamat. Naitala na ang report mo." If your real location is outside Marikina you will correctly see the `outside_pilot_area` message — use the browser devtools Sensors panel to override location to lat `14.65`, lon `121.10`.
 
 - [ ] **Step 3: Commit**
@@ -1703,10 +1714,13 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  use: { baseURL: "http://localhost:3000" },
+  // 127.0.0.1, not localhost: browsers treat them as different origins, and the local
+  // Supabase site_url is http://127.0.0.1:3000. On localhost the OTP redirect silently
+  // lands on the site root instead of /auth/confirm.
+  use: { baseURL: "http://127.0.0.1:3000" },
   webServer: {
     command: "npm run dev",
-    url: "http://localhost:3000",
+    url: "http://127.0.0.1:3000",
     reuseExistingServer: true,
   },
 });
