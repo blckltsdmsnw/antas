@@ -10,12 +10,14 @@ import { createServerClient } from "@supabase/ssr";
  * instead of reaching the browser, so the next request replays an
  * already-invalidated refresh token and the user is silently logged out.
  *
- * This middleware is the other half of the pattern: it runs before
- * rendering, calls `getUser()` to trigger a refresh if needed, and writes
- * any rotated cookies onto the response so the browser actually receives
- * them.
+ * This proxy is the other half of the pattern: it runs before rendering,
+ * calls `getUser()` to trigger a refresh if needed, and writes any rotated
+ * cookies onto the response so the browser actually receives them.
+ *
+ * Named `proxy`, not `middleware`: Next.js 16 deprecated the `middleware`
+ * file convention and renamed it to `proxy`.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
