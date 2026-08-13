@@ -127,7 +127,7 @@ describe("ReportPage", () => {
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(
-      "Sa ngayon, Marikina lang ang saklaw ng Antas.",
+      "Sa ngayon, Metro Manila lang ang saklaw ng Antas.",
     );
     expect(
       screen.getByRole("button", { name: "I-report" }),

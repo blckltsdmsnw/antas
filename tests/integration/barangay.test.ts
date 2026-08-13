@@ -62,6 +62,18 @@ describe("barangay assignment", () => {
     expect(await makeSignal(121.108, 14.68)).toBe("Nangka");
   });
 
+  it("assigns a Taguig point to a Taguig barangay, not a Marikina one", async () => {
+    // Ususan. Before the Metro Manila widening this would have been labelled
+    // with whichever Marikina barangay happened to be nearest.
+    expect(await makeSignal(121.068, 14.529)).toBe("Ususan");
+  });
+
+  it("falls back to a city name outside the barangay-level areas", async () => {
+    // Only Marikina and Taguig are seeded per-barangay; the rest of NCR is
+    // seeded at city level, so a Manila point resolves to "Manila".
+    expect(await makeSignal(120.9842, 14.5995)).toBe("Manila");
+  });
+
   it("leaves an explicitly supplied barangay alone", async () => {
     const { data, error } = await admin
       .from("sos_signals")
@@ -87,9 +99,14 @@ describe("barangay assignment", () => {
 
   it("exposes barangay names as public reference data", async () => {
     const { data, error } = await anon.from("barangays").select("name");
+    const all = await admin.from("barangays").select("name");
 
     expect(error).toBeNull();
-    expect((data ?? []).length).toBe(16);
+    // The property that matters is that nothing is hidden from the public -
+    // place names carry no privacy risk. Asserting a fixed count instead would
+    // break every time an area is added, which is not a defect.
+    expect((data ?? []).length).toBe((all.data ?? []).length);
+    expect((data ?? []).length).toBeGreaterThanOrEqual(16);
   });
 
   it("never leaves a signal without a barangay", async () => {

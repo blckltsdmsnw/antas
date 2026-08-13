@@ -14,7 +14,7 @@ type PageErrorCode = SosErrorCode | "no_location" | "upload_failed";
 const ERROR_MESSAGES: Record<PageErrorCode, string> = {
   invalid_depth: "Pumili ng lalim ng tubig.",
   invalid_coordinates: "Hindi mabasa ang lokasyon mo.",
-  outside_pilot_area: "Sa ngayon, Marikina lang ang saklaw ng Antas.",
+  outside_pilot_area: "Sa ngayon, Metro Manila lang ang saklaw ng Antas.",
   not_signed_in: "Mag-sign in muna bago humingi ng tulong.",
   already_active: "May aktibo ka nang SOS. Hinihintay pa itong suriin.",
   insert_failed: "May problema sa pagpapadala. Subukan ulit.",
