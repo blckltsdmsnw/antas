@@ -57,6 +57,28 @@ const TILES: Record<MapTheme, string[]> = {
 };
 
 /**
+ * Lifts the night basemap out of near-black.
+ *
+ * CARTO's dark tiles are drawn for decorative dashboards, where a near-black
+ * ground with faint grey streets looks good. On a phone at arm's length it
+ * means the street you are trying to find is barely there. Raising the black
+ * point turns it into a charcoal with legible roads, and dropping the contrast
+ * slightly keeps the labels from glaring.
+ *
+ * Applied to the raster layer rather than as a CSS filter on the canvas so the
+ * markers, which are DOM overlays, keep their full colour.
+ */
+interface RasterPaint {
+  "raster-brightness-min": number;
+  "raster-contrast": number;
+}
+
+const RASTER_PAINT: Record<MapTheme, RasterPaint> = {
+  light: { "raster-brightness-min": 0, "raster-contrast": 0 },
+  dark: { "raster-brightness-min": 0.22, "raster-contrast": -0.08 },
+};
+
+/**
  * Read on demand rather than held in state so the map can be *built* with the
  * right tiles. Deciding after mount meant the first paint was always light and
  * then swapped, which at night is a white flash in a dark room.
@@ -192,7 +214,14 @@ export function FloodMap({
             attribution: BASEMAP_ATTRIBUTION,
           },
         },
-        layers: [{ id: "basemap", type: "raster", source: "basemap" }],
+        layers: [
+          {
+            id: "basemap",
+            type: "raster",
+            source: "basemap",
+            paint: RASTER_PAINT[currentTheme()],
+          },
+        ],
       },
       // Metro Manila, not Marikina. Opening at street zoom over one city meant
       // anyone elsewhere in the region opened the app looking at somebody
@@ -219,9 +248,19 @@ export function FloodMap({
   // drop every marker and reset the camera, so the map would visibly flash and
   // jump back to Metro Manila at dusk.
   useEffect(() => {
-    const source = map.current?.getSource("basemap");
+    const instance = map.current;
+    const source = instance?.getSource("basemap");
     if (source && "setTiles" in source) {
       (source as { setTiles: (tiles: string[]) => void }).setTiles(TILES[theme]);
+    }
+    if (instance?.getLayer("basemap")) {
+      const paint = RASTER_PAINT[theme];
+      instance.setPaintProperty(
+        "basemap",
+        "raster-brightness-min",
+        paint["raster-brightness-min"],
+      );
+      instance.setPaintProperty("basemap", "raster-contrast", paint["raster-contrast"]);
     }
     onTheme?.(theme);
   }, [theme, onTheme]);

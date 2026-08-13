@@ -34,7 +34,9 @@ export function RainOverlay({ weather }: RainOverlayProps) {
       aria-hidden="true"
       style={
         {
-          "--rain-opacity": 0.14 + intensity * 0.24,
+          // Halved from the first attempt. Rain is context, not content - it
+          // must never compete with the pins or the streets underneath it.
+          "--rain-opacity": 0.08 + intensity * 0.12,
           "--rain-duration": `${1.1 - intensity * 0.5}s`,
         } as React.CSSProperties
       }

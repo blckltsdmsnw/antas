@@ -1079,15 +1079,19 @@ a.btn {
    holding for a full-screen white map in a dark street at 2am.
    -------------------------------------------------------------------------- */
 
+/* Slate, not black. The first attempt used near-black panels against a
+   near-black basemap and the whole screen disappeared - "too dark and not
+   friendly, it cannot be seen". Night mode is meant to stop the map glaring in
+   a dark street, not to hide it. */
 [data-map-theme="dark"] {
-  --panel: #131a26;
-  --panel-line: #2a3646;
-  --panel-ink: #e8eef6;
-  --panel-ink-muted: #9aa8ba;
+  --panel: #253044;
+  --panel-line: #3b4a63;
+  --panel-ink: #f1f5fa;
+  --panel-ink-muted: #b6c2d4;
 }
 
 [data-map-theme="dark"] body {
-  background: #0d131d;
+  background: #1b2434;
 }
 
 /* The header sits above the map, so leaving it white puts a bright band across
@@ -1194,6 +1198,15 @@ a.btn {
   pointer-events: none;
 }
 
+/* Streaks, not scanlines.
+ *
+ * The first version drew hard 1px lines at 90% alpha every 15px, which at
+ * phone density resolves into a static grille across the screen - "it feels
+ * like there's a line in the screen making it hard to see". Three changes fix
+ * the character of it: the stops ramp instead of switching, the spacing roughly
+ * doubles so the pattern is sparse, and a vertical mask breaks each line into
+ * segments so it reads as falling water rather than as a ruled overlay.
+ */
 .rain::before,
 .rain::after {
   content: "";
@@ -1201,12 +1214,23 @@ a.btn {
   /* Oversized so the sheet can translate without exposing an edge. */
   inset: -60% -20%;
   background-image: repeating-linear-gradient(
-    102deg,
-    transparent 0 7px,
-    rgba(255, 255, 255, 0.9) 7px 8px,
-    transparent 8px 15px
+    100deg,
+    rgba(255, 255, 255, 0) 0px,
+    rgba(255, 255, 255, 0) 13px,
+    rgba(255, 255, 255, 0.28) 14px,
+    rgba(255, 255, 255, 0.5) 14.5px,
+    rgba(255, 255, 255, 0.28) 15px,
+    rgba(255, 255, 255, 0) 16px,
+    rgba(255, 255, 255, 0) 29px
   );
-  opacity: var(--rain-opacity, 0.2);
+  /* Chops the continuous lines into drop-length segments. */
+  mask-image: repeating-linear-gradient(
+    100deg,
+    transparent 0 22px,
+    #000 34px 62px,
+    transparent 74px 96px
+  );
+  opacity: var(--rain-opacity, 0.12);
   will-change: transform;
 }
 
@@ -1214,7 +1238,7 @@ a.btn {
    one flat sheet sliding past. */
 .rain::after {
   transform: scale(1.7);
-  opacity: calc(var(--rain-opacity, 0.2) * 0.55);
+  opacity: calc(var(--rain-opacity, 0.12) * 0.45);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -1250,11 +1274,10 @@ a.btn {
   }
 }
 
-/* On the night map the drops sit against a dark ground, so they need less
-   opacity to read, not more. */
-[data-map-theme="dark"] .rain::before,
-[data-map-theme="dark"] .rain::after {
-  filter: brightness(1.25);
+/* White drops already stand out against a dark ground; the previous brightness
+   lift here is what pushed them from "rain" to "grille" at night. */
+[data-map-theme="dark"] .rain {
+  opacity: 0.7;
 }
 
 /* --------------------------------------------------------------------------
@@ -1266,14 +1289,18 @@ a.btn {
   position: absolute;
   top: 12px;
   left: 12px;
-  /* Stops short of the legend, which is pinned top-right. Without this the
-     rain figure - the one number on the strip that matters - slid underneath
-     it as soon as the strip grew. */
-  max-width: calc(100% - 24px - 190px);
+  /* Stops short of the legend, which is pinned top-right and measures ~142px.
+     Without this the rain figure - the one number on the strip that matters -
+     slid underneath it as soon as the strip grew. */
+  max-width: calc(100% - 24px - 152px);
   z-index: 10;
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  /* Wraps to a second line rather than truncating. On a 360px phone the
+     condition and the rain figure cannot share one line, and "Am..." is a
+     worse answer than two lines. */
+  flex-wrap: wrap;
+  gap: 4px 10px;
   margin: 0;
   padding: 8px 14px;
   border: 1px solid var(--line);
@@ -1318,8 +1345,6 @@ a.btn {
 
 .weather-now {
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* Rain is the number that matters on a flood map, so it is the one that gets
@@ -1332,6 +1357,9 @@ a.btn {
   font-weight: 600;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
+  /* Never wraps. Broken across two lines it stops reading as one figure. */
+  white-space: nowrap;
+  flex: none;
 }
 
 /* --------------------------------------------------------------------------
