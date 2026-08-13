@@ -607,3 +607,48 @@ a.btn {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* Hold-to-confirm: the fill is the affordance, so it must be unmistakable. */
+.hold {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 72px;
+  border: 2px solid var(--danger);
+  border-radius: var(--radius-control);
+  background: var(--ground);
+  color: var(--danger);
+  font-family: var(--font-body), sans-serif;
+  font-size: 19px;
+  font-weight: 600;
+  overflow: hidden;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+
+.hold-fill {
+  position: absolute;
+  inset: 0;
+  width: var(--hold-progress, 0%);
+  background: var(--danger);
+  transition: width 60ms linear;
+}
+
+.hold-label {
+  position: relative;
+  z-index: 1;
+  mix-blend-mode: difference;
+  color: #fff;
+}
+
+.camera-view {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  background: var(--ink);
+  border-radius: var(--radius-card);
+}
