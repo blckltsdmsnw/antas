@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "seed": "tsx --env-file=.env.local scripts/seed.ts"
+    "seed": "tsx --env-file=.env.local scripts/seed.ts",
+    "make-moderator": "tsx --env-file=.env.local scripts/make-moderator.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
