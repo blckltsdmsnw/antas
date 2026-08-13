@@ -24,6 +24,18 @@ function colorForDepth(depth: DepthLevel): string {
   return DEPTH_COLORS[depthRank(depth)] ?? FALLBACK_COLOR;
 }
 
+/**
+ * CARTO Positron: a real street basemap, free and keyless, deliberately muted so
+ * the depth markers stay readable on top of it.
+ *
+ * NOT maplibre's demotiles style — that contains only country outlines at world
+ * zoom, so at street zoom over Marikina it renders an empty blue rectangle with
+ * markers floating in a void. This app's whole premise is "has THIS street
+ * flooded", which needs streets.
+ */
+const BASEMAP_STYLE =
+  "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+
 interface FloodMapProps {
   reports: MapReport[];
   onPick: (lat: number, lon: number) => void;
@@ -38,7 +50,7 @@ export function FloodMap({ reports, onPick }: FloodMapProps) {
 
     map.current = new MapLibreMap({
       container: container.current,
-      style: "https://demotiles.maplibre.org/style.json",
+      style: BASEMAP_STYLE,
       center: [121.1, 14.65],
       zoom: 13,
     });
