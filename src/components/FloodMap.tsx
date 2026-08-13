@@ -25,16 +25,31 @@ function colorForDepth(depth: DepthLevel): string {
 }
 
 /**
- * CARTO Positron: a real street basemap, free and keyless, deliberately muted so
- * the depth markers stay readable on top of it.
+ * CARTO Positron basemap — free, keyless, and deliberately muted so the depth
+ * markers stay readable on top of it.
  *
- * NOT maplibre's demotiles style — that contains only country outlines at world
- * zoom, so at street zoom over Marikina it renders an empty blue rectangle with
- * markers floating in a void. This app's whole premise is "has THIS street
- * flooded", which needs streets.
+ * Two deliberate choices here, both learned the hard way:
+ *
+ * 1. NOT maplibre's demotiles style. That contains only country outlines at
+ *    world zoom, so at street zoom over Marikina it draws an empty rectangle
+ *    with markers floating in a void. This app's premise is "has THIS street
+ *    flooded", which requires streets.
+ *
+ * 2. RASTER tiles, not the vector style. The vector style loaded, applied its
+ *    attribution, and then never requested a single tile — vector tiles are
+ *    decoded in a web worker, and the background, sprite and markers all render
+ *    without one, so the failure presented as a blank map rather than an error.
+ *    Raster tiles decode on the main thread and avoid the worker entirely.
  */
-const BASEMAP_STYLE =
-  "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+const CARTO_RASTER_TILES = [
+  "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+  "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+  "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+];
+
+const BASEMAP_ATTRIBUTION =
+  '© <a href="https://carto.com/attributions">CARTO</a>, ' +
+  '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 interface FloodMapProps {
   reports: MapReport[];
@@ -50,9 +65,31 @@ export function FloodMap({ reports, onPick }: FloodMapProps) {
 
     map.current = new MapLibreMap({
       container: container.current,
-      style: BASEMAP_STYLE,
+      style: {
+        version: 8,
+        sources: {
+          basemap: {
+            type: "raster",
+            tiles: CARTO_RASTER_TILES,
+            tileSize: 256,
+            attribution: BASEMAP_ATTRIBUTION,
+          },
+        },
+        layers: [{ id: "basemap", type: "raster", source: "basemap" }],
+      },
       center: [121.1, 14.65],
       zoom: 13,
+    });
+
+    // MapLibre reports style, tile and glyph failures through this event. Without
+    // a listener they vanish silently and the map just renders blank, which is
+    // indistinguishable from "there is no data here".
+    // TODO: replace with real telemetry once a logger exists.
+    map.current.on("error", (e) => {
+      console.error("maplibre error", {
+        message: e.error?.message,
+        source: (e as { sourceId?: string }).sourceId,
+      });
     });
 
     map.current.on("click", (e: MapMouseEvent) => onPick(e.lngLat.lat, e.lngLat.lng));
