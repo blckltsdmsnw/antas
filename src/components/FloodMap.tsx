@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MapLibreMap, Marker, type MapMouseEvent } from "maplibre-gl";
+import {
+  LngLatBounds,
+  MapLibreMap,
+  Marker,
+  type MapMouseEvent,
+} from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { depthLabel, type DepthLevel } from "@/lib/depth/scale";
 import { DEPTH_HEX } from "@/lib/depth/presentation";
@@ -304,13 +309,48 @@ export function FloodMap({
             onSelect(single);
             return;
           }
-          // Zooming in is the only honest response to "there are 12 reports
-          // here" - picking one of them for the user would be a guess.
-          instance!.easeTo({
-            center: instance!.unproject([cluster.x, cluster.y]),
-            zoom: Math.min(instance!.getZoom() + 2, 17),
-            duration: 400,
-          });
+          // Zoom to fit the members, not by a fixed step.
+          //
+          // A flat "+2 zoom" is a nudge: for a tight group two levels is not
+          // enough to separate them, so the cluster re-forms at the new zoom
+          // and the tap appears to have done nothing. Fitting the members'
+          // own bounds breaks the group apart in one tap, whatever its spread.
+          const bounds = cluster.members.reduce(
+            (box, member) => box.extend([member.report.lon, member.report.lat]),
+            new LngLatBounds(
+              [cluster.members[0].report.lon, cluster.members[0].report.lat],
+              [cluster.members[0].report.lon, cluster.members[0].report.lat],
+            ),
+          );
+
+          const fit = {
+            // Enough margin that the outermost pins are not against the edge,
+            // and clear of the sheet at the bottom.
+            padding: { top: 80, bottom: 220, left: 60, right: 60 },
+            // Members can sit almost on top of each other, in which case the
+            // bounds collapse to a point and fitBounds would go to maximum
+            // zoom. Street level is as far as this ever needs to go.
+            maxZoom: 17.5,
+          };
+
+          // Some clusters cannot be separated by zooming at all: two reports a
+          // few metres apart stay within one touch target even at maximum zoom.
+          // Zooming there produces a tap that visibly does nothing, which is
+          // what made the whole interaction feel broken. Where zooming will not
+          // help, open the list for that spot instead - every member is in it,
+          // with a thumbnail, and each row opens its own report.
+          const target = instance!.cameraForBounds(bounds, fit);
+          const worthZooming =
+            target !== undefined && target.zoom !== undefined
+              ? target.zoom > instance!.getZoom() + 0.2
+              : false;
+
+          if (worthZooming) {
+            instance!.fitBounds(bounds, { ...fit, duration: 450 });
+          } else {
+            const centre = instance!.unproject([cluster.x, cluster.y]);
+            onPick(centre.lat, centre.lng);
+          }
         });
 
         return new Marker({ element })
@@ -326,7 +366,7 @@ export function FloodMap({
       instance.off("moveend", draw);
       markers.forEach((marker) => marker.remove());
     };
-  }, [reports, onSelect, selectedId]);
+  }, [reports, onSelect, onPick, selectedId]);
 
   // Fills whatever the parent gives it — the map page makes that the full
   // viewport below the header, so the map is the product rather than a panel.
