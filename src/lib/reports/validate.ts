@@ -1,11 +1,21 @@
 import { isDepthLevel, type DepthLevel } from "@/lib/depth/scale";
 
-export const MARIKINA_BOUNDS = Object.freeze({
-  minLat: 14.6,
-  maxLat: 14.72,
-  minLon: 121.05,
+/**
+ * Metro Manila (the National Capital Region), as a bounding box.
+ *
+ * Deliberately a rectangle rather than the region's real outline: it is simple,
+ * cheap to check, and errs toward accepting a report from just outside the
+ * boundary rather than refusing one from just inside it. For a flood-reporting
+ * app that is the right direction to be wrong in - a refused report is lost
+ * information, an over-accepted one is merely slightly out of area.
+ */
+export const PILOT_BOUNDS = Object.freeze({
+  minLat: 14.34,
+  maxLat: 14.8,
+  minLon: 120.9,
   maxLon: 121.15,
 } as const);
+
 
 /** GPS readings worse than this are accepted but flagged. */
 export const LOW_GPS_ACCURACY_M = 100;
@@ -39,10 +49,10 @@ export function validateReport(input: ReportInput): ValidationResult {
   if (!Number.isFinite(input.lat) || !Number.isFinite(input.lon)) {
     errors.push("invalid_coordinates");
   } else if (
-    input.lat < MARIKINA_BOUNDS.minLat ||
-    input.lat > MARIKINA_BOUNDS.maxLat ||
-    input.lon < MARIKINA_BOUNDS.minLon ||
-    input.lon > MARIKINA_BOUNDS.maxLon
+    input.lat < PILOT_BOUNDS.minLat ||
+    input.lat > PILOT_BOUNDS.maxLat ||
+    input.lon < PILOT_BOUNDS.minLon ||
+    input.lon > PILOT_BOUNDS.maxLon
   ) {
     errors.push("outside_pilot_area");
   }

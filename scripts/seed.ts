@@ -6,13 +6,45 @@ const admin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-/** Low-lying areas flood deeper; these anchor points shape the scenario. */
-const HOTSPOTS = [
-  { lat: 14.6507, lon: 121.1029, severity: 4 },
-  { lat: 14.6412, lon: 121.0968, severity: 3 },
-  { lat: 14.6688, lon: 121.1104, severity: 2 },
-  { lat: 14.6301, lon: 121.0885, severity: 1 },
-];
+/**
+ * Low-lying areas flood deeper; these anchor points shape the scenario.
+ *
+ * Riverside and lakeside barangays carry the higher severities, because that is
+ * where these cities actually flood - Marikina along its river, Taguig toward
+ * the Napindan channel and the Laguna de Bay side.
+ *
+ *   npm run seed              -> marikina (default)
+ *   npm run seed -- taguig    -> taguig
+ *   npm run seed -- all       -> both
+ */
+const AREAS: Record<string, { lat: number; lon: number; severity: number }[]> = {
+  marikina: [
+    { lat: 14.6507, lon: 121.1029, severity: 4 },
+    { lat: 14.6412, lon: 121.0968, severity: 3 },
+    { lat: 14.6688, lon: 121.1104, severity: 2 },
+    { lat: 14.6301, lon: 121.0885, severity: 1 },
+  ],
+  taguig: [
+    { lat: 14.545, lon: 121.09, severity: 4 },
+    { lat: 14.529, lon: 121.068, severity: 3 },
+    { lat: 14.522, lon: 121.076, severity: 3 },
+    { lat: 14.503, lon: 121.064, severity: 1 },
+  ],
+};
+
+const requested = (process.argv[2] ?? "marikina").toLowerCase();
+const areaNames = requested === "all" ? Object.keys(AREAS) : [requested];
+
+for (const name of areaNames) {
+  if (!AREAS[name]) {
+    console.error(
+      `unknown area "${name}". Known: ${Object.keys(AREAS).join(", ")}, all`,
+    );
+    process.exit(1);
+  }
+}
+
+const HOTSPOTS = areaNames.flatMap((name) => AREAS[name]);
 
 const REPORTS_PER_HOTSPOT = 25;
 const SCATTER_DEGREES = 0.004;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateReport, MARIKINA_BOUNDS } from "./validate";
+import { validateReport, PILOT_BOUNDS } from "./validate";
 
 const valid = {
   depth: "knee",
@@ -21,7 +21,7 @@ describe("validateReport", () => {
   });
 
   it("rejects coordinates outside the pilot area", () => {
-    const result = validateReport({ ...valid, lat: 10.3, lon: 123.9 });
+    const result = validateReport({ ...valid, lat: 8.2, lon: 124.5 });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.errors).toContain("outside_pilot_area");
   });
@@ -46,24 +46,40 @@ describe("validateReport", () => {
   it("reports every problem at once rather than the first", () => {
     const result = validateReport({
       depth: "shoulder",
-      lat: 10.3,
-      lon: 123.9,
+      lat: 8.2,
+      lon: 124.5,
       gpsAccuracyM: 12,
     });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.errors).toHaveLength(2);
   });
 
+  it("accepts a report from Taguig", () => {
+    // Ususan. The pilot area is Metro Manila, not Marikina alone.
+    expect(validateReport({ ...valid, lat: 14.529, lon: 121.068 }).ok).toBe(true);
+  });
+
+  it("accepts a report from the City of Manila", () => {
+    expect(validateReport({ ...valid, lat: 14.5995, lon: 120.9842 }).ok).toBe(true);
+  });
+
+  it("still refuses a report from outside Metro Manila", () => {
+    // Cebu City - well outside the region.
+    const result = validateReport({ ...valid, lat: 10.3157, lon: 123.8854 });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors).toContain("outside_pilot_area");
+  });
+
   it("exposes the pilot area bounds", () => {
-    expect(MARIKINA_BOUNDS.minLat).toBeLessThan(MARIKINA_BOUNDS.maxLat);
-    expect(MARIKINA_BOUNDS.minLon).toBeLessThan(MARIKINA_BOUNDS.maxLon);
+    expect(PILOT_BOUNDS.minLat).toBeLessThan(PILOT_BOUNDS.maxLat);
+    expect(PILOT_BOUNDS.minLon).toBeLessThan(PILOT_BOUNDS.maxLon);
   });
 
   it("accepts a point exactly on the pilot area boundary", () => {
     const result = validateReport({
       ...valid,
-      lat: MARIKINA_BOUNDS.minLat,
-      lon: MARIKINA_BOUNDS.minLon,
+      lat: PILOT_BOUNDS.minLat,
+      lon: PILOT_BOUNDS.minLon,
     });
     expect(result.ok).toBe(true);
   });
