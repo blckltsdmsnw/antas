@@ -1,0 +1,62 @@
+import { createClient } from "@supabase/supabase-js";
+import { DEPTH_LEVELS } from "../src/lib/depth/scale";
+
+const admin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
+
+/** Low-lying areas flood deeper; these anchor points shape the scenario. */
+const HOTSPOTS = [
+  { lat: 14.6507, lon: 121.1029, severity: 4 },
+  { lat: 14.6412, lon: 121.0968, severity: 3 },
+  { lat: 14.6688, lon: 121.1104, severity: 2 },
+  { lat: 14.6301, lon: 121.0885, severity: 1 },
+];
+
+const REPORTS_PER_HOTSPOT = 25;
+const SCATTER_DEGREES = 0.004;
+const MAX_HOURS_AGO = 72;
+
+async function main() {
+  const { data, error } = await admin.auth.admin.createUser({
+    email: `seed-${Date.now()}@example.test`,
+    password: "seed-password-123",
+    email_confirm: true,
+  });
+  if (error) throw error;
+  const reporterId = data.user!.id;
+
+  const rows = HOTSPOTS.flatMap((hotspot) =>
+    Array.from({ length: REPORTS_PER_HOTSPOT }, () => {
+      const jitter = () => (Math.random() - 0.5) * SCATTER_DEGREES;
+      const level = Math.max(
+        0,
+        Math.min(
+          DEPTH_LEVELS.length - 1,
+          hotspot.severity + Math.round((Math.random() - 0.5) * 2),
+        ),
+      );
+      const hoursAgo = Math.floor(Math.random() * MAX_HOURS_AGO);
+
+      return {
+        reporter_id: reporterId,
+        location: `SRID=4326;POINT(${hotspot.lon + jitter()} ${hotspot.lat + jitter()})`,
+        depth: DEPTH_LEVELS[level],
+        source: "seed" as const,
+        reported_at: new Date(Date.now() - hoursAgo * 3_600_000).toISOString(),
+      };
+    }),
+  );
+
+  const { error: insertError } = await admin.from("depth_reports").insert(rows);
+  if (insertError) throw insertError;
+
+  console.log(`Seeded ${rows.length} depth reports.`);
+}
+
+main().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(`Seed script failed: ${message}`);
+  process.exit(1);
+});
