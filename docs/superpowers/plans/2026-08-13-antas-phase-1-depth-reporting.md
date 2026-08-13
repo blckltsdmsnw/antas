@@ -23,6 +23,7 @@
 | `src/lib/reports/row.ts` | Converts validated input into a PostGIS-shaped database row. Pure, zero I/O |
 | `src/lib/supabase/client.ts` | Browser Supabase client |
 | `src/lib/supabase/server.ts` | Server-side Supabase client (cookie-aware) |
+| `src/proxy.ts` | Refreshes the Supabase session on every request |
 | `supabase/migrations/0001_init.sql` | Extensions, enum, `profiles`, `depth_reports`, indexes |
 | `supabase/migrations/0002_rls.sql` | Row-level security policies |
 | `supabase/migrations/0003_reports_near.sql` | `reports_near()` PostGIS lookup function |
@@ -870,10 +871,31 @@ hardcodes `flowType: "pkce"` — and the route then redirects to `/report`. Then
 `npx supabase db shell` and `select id, display_name from profiles;` — one new row confirms
 the `handle_new_user` trigger fired.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Add `src/proxy.ts` — the other half of the cookie pattern**
+
+The `setAll` catch above is only safe when something else refreshes the session. Supabase
+refresh tokens rotate and are single-use, so if a Server Component refreshes an expired token
+and the rotated cookie write is discarded, the next request replays an invalidated token and
+the user is **silently logged out** with no error — just an unexplained bounce to `/login`.
+
+Add a `src/proxy.ts` that builds a `createServerClient` bound to the request and response
+cookies, calls `getUser()` to trigger the refresh, and writes rotated cookies onto the
+response. Two details that matter:
+
+- `@supabase/ssr` passes cache-control headers as `setAll`'s second argument. Apply them to
+  the response, or a CDN in front of the app may cache one user's session cookies and serve
+  them to another.
+- The export must be named `proxy`, not `middleware`. Next.js 16 deprecated the `middleware`
+  file convention and renamed it; the old name still resolves but warns on build.
+
+Add a `matcher` config excluding `_next/static`, `_next/image`, and static asset extensions.
+Do **not** add route protection — Phase 1 has no protected routes, and this exists only to
+refresh sessions.
+
+- [ ] **Step 7: Commit**
 
 ```bash
-git add src/lib/supabase src/app/login src/app/auth
+git add src/lib/supabase src/app/login src/app/auth src/proxy.ts
 git commit -m "feat: add Supabase clients and email OTP sign-in"
 ```
 
