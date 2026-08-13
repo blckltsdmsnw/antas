@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { DepthSlider } from "@/components/DepthSlider";
 import { submitReport, type SubmitErrorCode } from "@/app/actions/submit-report";
 import type { DepthLevel } from "@/lib/depth/scale";
@@ -56,18 +57,44 @@ export default function ReportPage() {
   }
 
   if (status === "sent") {
-    return <p>Salamat. Naitala na ang report mo.</p>;
+    return (
+      <main className="task-page">
+        <div className="done">
+          <h1 className="done-title">Salamat. Naitala na ang report mo.</h1>
+          <p className="done-body">
+            Makikita na ito ng iba sa mapa. Mag-ingat.
+          </p>
+        </div>
+        <p style={{ marginTop: 24 }}>
+          <Link href="/" className="quiet-link">
+            Bumalik sa mapa
+          </Link>
+        </p>
+      </main>
+    );
   }
 
   return (
-    <main>
-      <h1>Gaano kalalim ang tubig?</h1>
+    <main className="task-page">
+      <h1 className="task-title">Gaano kalalim ang tubig?</h1>
+      <p className="task-lede">
+        Hilahin pataas ang tubig hanggang sa lalim na nakikita mo ngayon.
+      </p>
+
       <DepthSlider value={depth} onChange={setDepth} />
-      <button onClick={handleSubmit} disabled={status === "sending"}>
-        {status === "sending" ? "Ipinapadala..." : "I-report"}
-      </button>
+
+      <div style={{ marginTop: 28 }}>
+        <button
+          className="btn"
+          onClick={handleSubmit}
+          disabled={status === "sending"}
+        >
+          {status === "sending" ? "Ipinapadala..." : "I-report"}
+        </button>
+      </div>
+
       {errors.map((code) => (
-        <p key={code} role="alert">
+        <p key={code} className="alert" role="alert">
           {ERROR_MESSAGES[code]}
         </p>
       ))}

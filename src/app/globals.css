@@ -1,49 +1,552 @@
+/* ==========================================================================
+   Antas - public service clarity
+   See docs/design/foundations.md. Every value here answers one scenario:
+   someone outdoors, in the rain, at night, on a cracked phone, one-handed.
+   ========================================================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Depth ramp - the only saturated colour in the product. Derived from the
+     domain: these five encode increasing danger and already exist in code. */
+  --depth-ankle: #7dd3fc;
+  --depth-knee: #38bdf8;
+  --depth-waist: #0284c7;
+  --depth-chest: #1e40af;
+  --depth-above-head: #581c87;
+
+  /* waist doubles as the interface accent - ties the brand to the subject
+     without implying danger in ordinary chrome. */
+  --accent: var(--depth-waist);
+  --accent-hover: #0369a1;
+
+  --ground: #ffffff;
+  --raised: #f6f8fa;
+  --line: #e2e8f0;
+  --ink: #0f172a;
+  --ink-muted: #475569;
+
+  --danger: #b91c1c;
+  --danger-tint: #fef2f2;
+  --success: #15803d;
+  --success-tint: #f0fdf4;
+
+  --radius-card: 12px;
+  --radius-control: 8px;
+
+  /* One shadow level. Cards floating over the map need separation from it;
+     nothing else in the interface does. */
+  --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.06);
+  --shadow-lifted: 0 2px 6px rgba(15, 23, 42, 0.1), 0 12px 28px rgba(15, 23, 42, 0.12);
+
+  --header-h: 56px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-html {
-  height: 100%;
+/* The map page's h1 exists for screen readers and document outline; the visible
+   brand lives in the header. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 html,
 body {
-  max-width: 100vw;
-  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  height: 100%;
 }
 
 body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
+h1,
+h2,
+h3 {
+  font-family: var(--font-display), var(--font-body), sans-serif;
+  letter-spacing: -0.015em;
   margin: 0;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+/* Focus is never removed, only restyled. A stressed user tabbing through
+   needs to see where they are. */
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+/* --------------------------------------------------------------------------
+   Header
+   -------------------------------------------------------------------------- */
+
+.site-header {
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 16px;
+  background: var(--ground);
+  border-bottom: 1px solid var(--line);
+  position: relative;
+  z-index: 20;
+}
+
+.wordmark {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ink);
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.02em;
+}
+
+/* The tagline earns its place: "Antas" alone means nothing to a
+   non-Filipino speaker, and everything to one. */
+.wordmark-gloss {
+  font-family: var(--font-body), sans-serif;
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--ink-muted);
+  letter-spacing: 0;
+}
+
+@media (max-width: 380px) {
+  .wordmark-gloss {
+    display: none;
+  }
+}
+
+.site-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: var(--radius-control);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--accent);
+}
+
+.nav-link:hover {
+  background: var(--raised);
+}
+
+/* --------------------------------------------------------------------------
+   Map screen - the map is the product, chrome recedes
+   -------------------------------------------------------------------------- */
+
+.map-shell {
+  position: relative;
+  height: calc(100dvh - var(--header-h));
+  width: 100%;
+  overflow: hidden;
+}
+
+.map-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/* The history sheet sits over the map rather than pushing it into a strip.
+   On mobile it rises from the bottom; on desktop it docks left. */
+.history-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  background: var(--ground);
+  border-top: 1px solid var(--line);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  box-shadow: var(--shadow-lifted);
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  max-height: 52%;
+  overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+  .history-sheet {
+    left: 16px;
+    bottom: 16px;
+    right: auto;
+    width: 380px;
+    max-height: calc(100% - 32px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+  }
+}
+
+.sheet-hint {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 15px;
+}
+
+.sheet-count {
+  font-size: 18px;
+  line-height: 1.4;
+  margin: 0 0 12px;
+}
+
+.deepest {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.deepest-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex: none;
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.06);
+}
+
+.deepest-label {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 19px;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+
+.report-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.report-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 15px;
+}
+
+.report-row:last-child {
+  border-bottom: none;
+}
+
+.report-swatch {
+  width: 8px;
+  height: 24px;
+  border-radius: 4px;
+  flex: none;
+}
+
+.report-when {
+  margin-left: auto;
+  color: var(--ink-muted);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   Focused task pages - report, login
+   -------------------------------------------------------------------------- */
+
+.task-page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.task-title {
+  font-size: 26px;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.task-lede {
+  color: var(--ink-muted);
+  margin: 0 0 28px;
+  font-size: 15px;
+}
+
+/* --------------------------------------------------------------------------
+   Depth gauge - the signature control.
+   The track fills with water to the selected level. The control becomes the
+   thing it measures, which is the one detail worth remembering.
+   -------------------------------------------------------------------------- */
+
+.gauge {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.gauge-column {
+  position: relative;
+  height: 300px;
+  border-radius: 14px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+/* The water. Height is driven by --fill, set inline from the selected level. */
+.gauge-water {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--fill, 20%);
+  /* Deeper water reads darker, so the gradient darkens the level's own colour
+     rather than jumping to an unrelated one. */
+  background: linear-gradient(
+    180deg,
+    var(--water-top, var(--depth-waist)) 0%,
+    color-mix(in oklab, var(--water-top, var(--depth-waist)) 62%, #0f172a) 100%
+  );
+  transition: height 140ms ease-out, background 140ms linear;
+}
+
+/* A waterline that reads as a surface rather than a hard edge. */
+.gauge-water::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.gauge-ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.gauge-tick {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(15, 23, 42, 0.12);
+}
+
+/* A genuinely vertical range: shallowest at the bottom, so dragging upward
+   makes the water rise. Kept invisible over the column, which is the real
+   control surface. */
+.gauge-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: ns-resize;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  appearance: slider-vertical;
+}
+
+/* Labels beside the column, aligned to their tick. */
+.gauge-legend {
+  position: relative;
+  height: 300px;
+}
+
+.gauge-legend-item {
+  position: absolute;
+  left: 0;
+  transform: translateY(50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--ink-muted);
+  transition: color 140ms linear;
+}
+
+.gauge-legend-item[data-active="true"] {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.gauge-legend-rule {
+  width: 14px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--line);
+}
+
+.gauge-legend-item[data-active="true"] .gauge-legend-rule {
+  background: var(--accent);
+  width: 22px;
+}
+
+.gauge-readout {
+  margin-top: 24px;
+}
+
+.gauge-readout-label {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  display: block;
+}
+
+.gauge-readout-en {
+  display: block;
+  color: var(--ink-muted);
+  font-size: 15px;
+  margin-top: 4px;
+}
+
+.gauge-readout-cm {
+  display: block;
+  color: var(--ink-muted);
+  font-size: 13px;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   Controls
+   -------------------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-body), sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms linear;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+/* Disabled must look different, not merely faded - a stressed user needs to
+   see that the tap registered. */
+.btn:disabled {
+  background: var(--raised);
+  color: var(--ink-muted);
+  border-color: var(--line);
+  cursor: progress;
+}
+
+.field {
+  display: block;
+  margin-bottom: 20px;
+}
+
+.field-label {
+  display: block;
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+
+.field-input {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 14px;
+  font-size: 17px;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+}
+
+.field-input:focus {
+  border-color: var(--accent);
+}
+
+.alert {
+  border-left: 4px solid var(--danger);
+  background: var(--danger-tint);
+  color: var(--ink);
+  padding: 12px 14px;
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+  margin: 12px 0 0;
+  font-size: 15px;
+}
+
+.notice {
+  border-left: 4px solid var(--accent);
+  background: var(--raised);
+  padding: 12px 14px;
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+  margin: 0 0 20px;
+  font-size: 15px;
+}
+
+.done {
+  border-left: 4px solid var(--success);
+  background: var(--success-tint);
+  padding: 20px;
+  border-radius: 0 var(--radius-card) var(--radius-card) 0;
+}
+
+.done-title {
+  font-size: 22px;
+  margin-bottom: 6px;
+}
+
+.done-body {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 15px;
+}
+
+.quiet-link {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }

@@ -16,7 +16,11 @@ function LinkErrorAlert() {
   const message = LINK_ERROR_MESSAGES[searchParams.get("error") ?? ""];
 
   if (!message) return null;
-  return <p role="alert">{message}</p>;
+  return (
+    <p className="alert" role="alert" style={{ marginBottom: 20, marginTop: 0 }}>
+      {message}
+    </p>
+  );
 }
 
 export default function LoginPage() {
@@ -49,26 +53,54 @@ export default function LoginPage() {
   }
 
   if (status === "sent") {
-    return <p>Check your email for the sign-in link.</p>;
+    return (
+      <main className="task-page">
+        <div className="done">
+          <h1 className="done-title">Tingnan ang email mo</h1>
+          <p className="done-body">Check your email for the sign-in link.</p>
+        </div>
+      </main>
+    );
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Suspense fallback={null}>
-        <LinkErrorAlert />
-      </Suspense>
-      <label htmlFor="email">Email</label>
-      <input
-        id="email"
-        type="email"
-        required
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <button type="submit" disabled={status === "sending"}>
-        Send sign-in link
-      </button>
-      {error && <p role="alert">{error}</p>}
-    </form>
+    <main className="task-page">
+      <h1 className="task-title">Mag-sign in</h1>
+      <p className="task-lede">
+        Kailangan lang ito bago mag-report. Hindi kailangan para tingnan ang mapa.
+      </p>
+
+      <form onSubmit={handleSubmit}>
+        <Suspense fallback={null}>
+          <LinkErrorAlert />
+        </Suspense>
+
+        <label className="field">
+          <span className="field-label" id="email-label">
+            Email
+          </span>
+          <input
+            id="email"
+            className="field-input"
+            type="email"
+            required
+            autoComplete="email"
+            inputMode="email"
+            placeholder="ikaw@halimbawa.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </label>
+
+        <button className="btn" type="submit" disabled={status === "sending"}>
+          {status === "sending" ? "Ipinapadala..." : "Send sign-in link"}
+        </button>
+        {error && (
+          <p className="alert" role="alert">
+            {error}
+          </p>
+        )}
+      </form>
+    </main>
   );
 }
