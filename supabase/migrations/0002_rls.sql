@@ -10,7 +10,13 @@ grant select                         on depth_reports to anon, authenticated;
 grant insert                         on depth_reports to authenticated;
 grant select, insert, update, delete on depth_reports to service_role;
 
-grant select                         on profiles to anon, authenticated;
+-- profiles will hold verified phone numbers from Phase 2 onward. Deny anon at
+-- the grant layer, not just via RLS: today anon matches no select policy so it
+-- would see nothing anyway, but that safety is one layer (RLS). Withholding the
+-- grant is a second, independent layer, so a future permissive policy or an
+-- accidental "disable row level security" cannot expose this table to the
+-- public. Do not restore this grant to anon.
+grant select                         on profiles to authenticated;
 grant update                         on profiles to authenticated;
 grant select, insert, update, delete on profiles to service_role;
 
