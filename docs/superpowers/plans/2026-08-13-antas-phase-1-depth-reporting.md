@@ -532,8 +532,14 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-const admin = createClient(url, serviceKey);
-const anon = createClient(url, anonKey);
+// Essential: supabase-js derives its session storage key from the project URL, so in
+// jsdom all three clients would otherwise share one localStorage slot. Signing in as
+// one would silently authenticate the others, and the "anonymous" tests would pass or
+// fail while acting as a logged-in user. Isolate each client's session in memory.
+const clientOptions = { auth: { persistSession: false, autoRefreshToken: false } };
+
+const admin = createClient(url, serviceKey, clientOptions);
+const anon = createClient(url, anonKey, clientOptions);
 
 let reporterId: string;
 
@@ -639,6 +645,12 @@ Expected: FAIL — the anonymous insert succeeds and the anonymous profile read 
 
 Create `supabase/migrations/0002_rls.sql`:
 ```sql
+-- Start from zero rather than inheriting the stack's default ACL, which hands out
+-- TRUNCATE and TRIGGER. RLS does not apply to TRUNCATE, so an inherited TRUNCATE
+-- would let a role empty the table with no policy able to stop it.
+revoke all on depth_reports from anon, authenticated;
+revoke all on profiles      from anon, authenticated;
+
 -- GRANT and RLS are two independent layers. GRANT decides whether a role may
 -- attempt an operation at all; RLS decides which rows it sees once allowed.
 -- Tables created by the migration role on this stack carry no select/insert/
