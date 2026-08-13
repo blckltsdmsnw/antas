@@ -68,6 +68,14 @@ describe("barangay assignment", () => {
     expect(await makeSignal(121.068, 14.529)).toBe("Ususan");
   });
 
+  it("distinguishes adjacent barangays with similar names", async () => {
+    // New Lower Bicutan and Lower Bicutan are separate barangays roughly a
+    // kilometre apart. Resolving one to the other would route a signal to the
+    // wrong desk while looking entirely correct.
+    expect(await makeSignal(121.053, 14.497)).toBe("New Lower Bicutan");
+    expect(await makeSignal(121.064, 14.503)).toBe("Lower Bicutan");
+  });
+
   it("falls back to a city name outside the barangay-level areas", async () => {
     // Only Marikina and Taguig are seeded per-barangay; the rest of NCR is
     // seeded at city level, so a Manila point resolves to "Manila".

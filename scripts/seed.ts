@@ -25,10 +25,10 @@ const AREAS: Record<string, { lat: number; lon: number; severity: number }[]> = 
     { lat: 14.6301, lon: 121.0885, severity: 1 },
   ],
   taguig: [
-    { lat: 14.545, lon: 121.09, severity: 4 },
-    { lat: 14.529, lon: 121.068, severity: 3 },
-    { lat: 14.522, lon: 121.076, severity: 3 },
-    { lat: 14.503, lon: 121.064, severity: 1 },
+    { lat: 14.545, lon: 121.09, severity: 4 }, // Napindan, at the river junction
+    { lat: 14.529, lon: 121.068, severity: 3 }, // Ususan
+    { lat: 14.497, lon: 121.053, severity: 3 }, // New Lower Bicutan
+    { lat: 14.503, lon: 121.064, severity: 2 }, // Lower Bicutan
   ],
 };
 
