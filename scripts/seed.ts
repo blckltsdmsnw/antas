@@ -13,9 +13,15 @@ const admin = createClient(
  * where these cities actually flood - Marikina along its river, Taguig toward
  * the Napindan channel and the Laguna de Bay side.
  *
- *   npm run seed              -> marikina (default)
- *   npm run seed -- taguig    -> taguig
- *   npm run seed -- all       -> both
+ *   npm run seed                 -> marikina (default), 25 per hotspot
+ *   npm run seed -- taguig       -> taguig
+ *   npm run seed -- all          -> both
+ *   npm run seed -- taguig 10    -> taguig, 10 reports TOTAL
+ *
+ * The optional count is a total, not a per-hotspot figure. Seeding a live map
+ * is not the same as filling a test database: a handful of pins reads as a
+ * neighbourhood reporting, while a hundred reads as noise and buries the real
+ * reports underneath it.
  */
 const AREAS: Record<string, { lat: number; lon: number; severity: number }[]> = {
   marikina: [
@@ -46,9 +52,24 @@ for (const name of areaNames) {
 
 const HOTSPOTS = areaNames.flatMap((name) => AREAS[name]);
 
-const REPORTS_PER_HOTSPOT = 25;
+const DEFAULT_PER_HOTSPOT = 25;
 const SCATTER_DEGREES = 0.004;
 const MAX_HOURS_AGO = 72;
+
+/**
+ * Total rows to write. Without an explicit count this keeps the old
+ * per-hotspot default, so existing invocations behave as they always did.
+ */
+const totalArg = process.argv[3];
+const TOTAL =
+  totalArg === undefined
+    ? HOTSPOTS.length * DEFAULT_PER_HOTSPOT
+    : Number(totalArg);
+
+if (!Number.isInteger(TOTAL) || TOTAL < 1) {
+  console.error(`count must be a positive whole number, got "${totalArg}"`);
+  process.exit(1);
+}
 
 async function main() {
   const { data, error } = await admin.auth.admin.createUser({
@@ -59,27 +80,28 @@ async function main() {
   if (error) throw error;
   const reporterId = data.user!.id;
 
-  const rows = HOTSPOTS.flatMap((hotspot) =>
-    Array.from({ length: REPORTS_PER_HOTSPOT }, () => {
-      const jitter = () => (Math.random() - 0.5) * SCATTER_DEGREES;
-      const level = Math.max(
-        0,
-        Math.min(
-          DEPTH_LEVELS.length - 1,
-          hotspot.severity + Math.round((Math.random() - 0.5) * 2),
-        ),
-      );
-      const hoursAgo = Math.floor(Math.random() * MAX_HOURS_AGO);
+  // Round-robin across hotspots so a small count still spreads over every area
+  // rather than piling all of it onto the first one.
+  const rows = Array.from({ length: TOTAL }, (_, index) => {
+    const hotspot = HOTSPOTS[index % HOTSPOTS.length];
+    const jitter = () => (Math.random() - 0.5) * SCATTER_DEGREES;
+    const level = Math.max(
+      0,
+      Math.min(
+        DEPTH_LEVELS.length - 1,
+        hotspot.severity + Math.round((Math.random() - 0.5) * 2),
+      ),
+    );
+    const hoursAgo = Math.floor(Math.random() * MAX_HOURS_AGO);
 
-      return {
-        reporter_id: reporterId,
-        location: `SRID=4326;POINT(${hotspot.lon + jitter()} ${hotspot.lat + jitter()})`,
-        depth: DEPTH_LEVELS[level],
-        source: "seed" as const,
-        reported_at: new Date(Date.now() - hoursAgo * 3_600_000).toISOString(),
-      };
-    }),
-  );
+    return {
+      reporter_id: reporterId,
+      location: `SRID=4326;POINT(${hotspot.lon + jitter()} ${hotspot.lat + jitter()})`,
+      depth: DEPTH_LEVELS[level],
+      source: "seed" as const,
+      reported_at: new Date(Date.now() - hoursAgo * 3_600_000).toISOString(),
+    };
+  });
 
   const { error: insertError } = await admin.from("depth_reports").insert(rows);
   if (insertError) throw insertError;
