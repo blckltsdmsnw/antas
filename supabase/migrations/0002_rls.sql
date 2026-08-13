@@ -6,6 +6,13 @@
 -- Row-level security restricts *which rows* a role can see or touch; it has no
 -- effect until the role can attempt the operation at all. Both grants below are
 -- required before the policies further down can do anything.
+
+-- Start from zero rather than inheriting the stack's default ACL, which hands
+-- out TRUNCATE and TRIGGER. RLS does not apply to TRUNCATE, so an inherited
+-- TRUNCATE would let a role empty the table with no policy able to stop it.
+revoke all on depth_reports from anon, authenticated;
+revoke all on profiles      from anon, authenticated;
+
 grant select                         on depth_reports to anon, authenticated;
 grant insert                         on depth_reports to authenticated;
 grant select, insert, update, delete on depth_reports to service_role;
