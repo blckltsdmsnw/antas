@@ -643,3 +643,12 @@ a.btn {
   mix-blend-mode: difference;
   color: #fff;
 }
+
+.camera-view {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  background: var(--ink);
+  border-radius: var(--radius-card);
+}
