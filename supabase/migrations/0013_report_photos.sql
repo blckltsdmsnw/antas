@@ -66,5 +66,11 @@ as $fn$
 $fn$;
 
 -- Dropping the function dropped its grants with it.
+--
+-- service_role is named explicitly. 0003 never revoked anything, so it relied
+-- on the default PUBLIC execute grant to reach this function; revoking PUBLIC
+-- here without naming service_role silently took it away, and the integration
+-- tests - which query through the admin client - started failing with
+-- "permission denied for function reports_near".
 revoke all on function reports_near(double precision, double precision, double precision) from public;
-grant execute on function reports_near(double precision, double precision, double precision) to anon, authenticated;
+grant execute on function reports_near(double precision, double precision, double precision) to anon, authenticated, service_role;
