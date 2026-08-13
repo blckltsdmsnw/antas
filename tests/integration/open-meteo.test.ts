@@ -8,7 +8,7 @@ const LAT = 14.65;
 const LON = 121.1;
 
 describe("openMeteoProvider", () => {
-  it("returns a reading for a real point", async () => {
+  it("returns a reading for a real point", { timeout: 30_000, retry: 2 }, async () => {
     const reading = await openMeteoProvider.read(LAT, LON);
 
     expect(reading.elevationM).toBeTypeOf("number");
@@ -16,17 +16,17 @@ describe("openMeteoProvider", () => {
     // Marikina sits in a river valley a few metres above sea level.
     expect(reading.elevationM!).toBeGreaterThan(0);
     expect(reading.elevationM!).toBeLessThan(200);
-  }, 30_000);
+  });
 
-  it("returns rainfall as a non-negative number or null", async () => {
+  it("returns rainfall as a non-negative number or null", { timeout: 30_000, retry: 2 }, async () => {
     const reading = await openMeteoProvider.read(LAT, LON);
 
     if (reading.rainfall24hMm !== null) {
       expect(reading.rainfall24hMm).toBeGreaterThanOrEqual(0);
     }
-  }, 30_000);
+  });
 
-  it("never throws on an unreachable host - it degrades to nulls", async () => {
+  it("never throws on an unreachable host - it degrades to nulls", { timeout: 30_000, retry: 2 }, async () => {
     const broken = openMeteoProvider.withBaseUrl(
       "https://open-meteo.invalid.example",
     );
@@ -36,5 +36,5 @@ describe("openMeteoProvider", () => {
       elevationM: null,
       surroundingElevationM: null,
     });
-  }, 30_000);
+  });
 });
