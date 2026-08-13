@@ -23,6 +23,7 @@
 | `src/lib/reports/row.ts` | Converts validated input into a PostGIS-shaped database row. Pure, zero I/O |
 | `src/lib/supabase/client.ts` | Browser Supabase client |
 | `src/lib/supabase/server.ts` | Server-side Supabase client (cookie-aware) |
+| `src/proxy.ts` | Refreshes the Supabase session on every request |
 | `supabase/migrations/0001_init.sql` | Extensions, enum, `profiles`, `depth_reports`, indexes |
 | `supabase/migrations/0002_rls.sql` | Row-level security policies |
 | `supabase/migrations/0003_reports_near.sql` | `reports_near()` PostGIS lookup function |
@@ -346,15 +347,23 @@ Create `src/lib/reports/validate.ts`:
 ```ts
 import { isDepthLevel, type DepthLevel } from "@/lib/depth/scale";
 
-export const MARIKINA_BOUNDS = {
+export const MARIKINA_BOUNDS = Object.freeze({
   minLat: 14.6,
   maxLat: 14.72,
   minLon: 121.05,
   maxLon: 121.15,
-} as const;
+} as const);
 
 /** GPS readings worse than this are accepted but flagged. */
 export const LOW_GPS_ACCURACY_M = 100;
+
+/** These codes are a contract: the server action and the report page both map them. */
+export type ReportErrorCode =
+  | "invalid_depth"
+  | "invalid_coordinates"
+  | "outside_pilot_area";
+
+export type ReportWarningCode = "low_gps_accuracy";
 
 export interface ReportInput {
   depth: string;
@@ -364,12 +373,12 @@ export interface ReportInput {
 }
 
 export type ValidationResult =
-  | { ok: true; depth: DepthLevel; warnings: string[] }
-  | { ok: false; errors: string[] };
+  | { ok: true; depth: DepthLevel; warnings: ReportWarningCode[] }
+  | { ok: false; errors: ReportErrorCode[] };
 
 export function validateReport(input: ReportInput): ValidationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
+  const errors: ReportErrorCode[] = [];
+  const warnings: ReportWarningCode[] = [];
 
   if (!isDepthLevel(input.depth)) {
     errors.push("invalid_depth");
@@ -440,7 +449,15 @@ Confirm `.env.local` is listed in `.gitignore` — `create-next-app` adds `.env*
 
 Create `supabase/migrations/0001_init.sql`:
 ```sql
-create extension if not exists postgis;
+-- Install into `extensions`, NOT `public`. PostGIS ships a writable catalog table,
+-- spatial_ref_sys, and PostgREST serves every table in `public` — so installing here
+-- would expose it at the REST API with anon holding DELETE and TRUNCATE and no RLS,
+-- letting anyone drop the SRID 4326 definition every geography column depends on.
+-- The `extensions` schema is not in PostgREST's exposed list, and this matches what
+-- hosted Supabase does by default. postgis is not relocatable, so it must be created
+-- in the right schema up front rather than moved later.
+create schema if not exists extensions;
+create extension if not exists postgis with schema extensions;
 
 create type depth_level as enum ('ankle', 'knee', 'waist', 'chest', 'above_head');
 
@@ -524,8 +541,14 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-const admin = createClient(url, serviceKey);
-const anon = createClient(url, anonKey);
+// Essential: supabase-js derives its session storage key from the project URL, so in
+// jsdom all three clients would otherwise share one localStorage slot. Signing in as
+// one would silently authenticate the others, and the "anonymous" tests would pass or
+// fail while acting as a logged-in user. Isolate each client's session in memory.
+const clientOptions = { auth: { persistSession: false, autoRefreshToken: false } };
+
+const admin = createClient(url, serviceKey, clientOptions);
+const anon = createClient(url, anonKey, clientOptions);
 
 let reporterId: string;
 
@@ -578,10 +601,34 @@ describe("depth_reports row-level security", () => {
 
   it("refuses an anonymous visitor reading profiles", async () => {
     const { data } = await anon.from("profiles").select("id, display_name");
-    expect(data).toEqual([]);
+    // Denied at the grant layer (data null) or filtered to nothing by RLS (data []).
+    // Either way, an anonymous visitor must never see a profile row.
+    expect(data ?? []).toEqual([]);
+  });
+
+  it("does not let a signed-in user read another user's profile", async () => {
+    const { data } = await authed.from("profiles").select("id");
+    expect(data).toHaveLength(1);
+    expect(data![0].id).toBe(reporterId);
+  });
+
+  it("does not let a signed-in user file a report in someone else's name", async () => {
+    const { error } = await authed.from("depth_reports").insert({
+      reporter_id: otherUserId,
+      location: "SRID=4326;POINT(121.1 14.65)",
+      depth: "waist",
+    });
+    expect(error).not.toBeNull();
   });
 });
 ```
+
+The last two tests need a second user and a signed-in client. In `beforeAll`, create a
+second user the same way, keep its id as `otherUserId`, and build `authed` with
+`createClient(url, anonKey)` followed by `signInWithPassword` using the first user's
+credentials. These two invariants — that one user cannot read another's profile, and cannot
+file a report in another's name — are the most important guarantees in the system, so they
+are asserted rather than assumed.
 
 Modify `vitest.config.ts` so tests see the environment variables and the integration folder. Add this import at the top:
 ```ts
@@ -607,6 +654,28 @@ Expected: FAIL — the anonymous insert succeeds and the anonymous profile read 
 
 Create `supabase/migrations/0002_rls.sql`:
 ```sql
+-- Start from zero rather than inheriting the stack's default ACL, which hands out
+-- TRUNCATE and TRIGGER. RLS does not apply to TRUNCATE, so an inherited TRUNCATE
+-- would let a role empty the table with no policy able to stop it.
+revoke all on depth_reports from anon, authenticated;
+revoke all on profiles      from anon, authenticated;
+
+-- GRANT and RLS are two independent layers. GRANT decides whether a role may
+-- attempt an operation at all; RLS decides which rows it sees once allowed.
+-- Tables created by the migration role on this stack carry no select/insert/
+-- update/delete grants for anon, authenticated, or service_role, so without
+-- these the policies below are unreachable and every write fails.
+grant select                         on depth_reports to anon, authenticated;
+grant insert                         on depth_reports to authenticated;
+grant select, insert, update, delete on depth_reports to service_role;
+
+-- Deliberately NOT granted to anon. profiles will hold verified phone numbers,
+-- so anonymous access is denied at the grant layer as well as by RLS — two
+-- independent barriers, so a future permissive policy cannot expose it alone.
+grant select                         on profiles to authenticated;
+grant update                         on profiles to authenticated;
+grant select, insert, update, delete on profiles to service_role;
+
 alter table profiles      enable row level security;
 alter table depth_reports enable row level security;
 
@@ -640,7 +709,11 @@ create policy "users update their own profile"
 npx supabase migration up
 npx vitest run tests/integration/rls.test.ts
 ```
-Expected: PASS — 4 tests.
+Expected: PASS — 6 tests.
+
+If you have already applied `0002_rls.sql` and then edit it, `migration up` will not re-run
+it. Use `npx supabase db reset` to rebuild from scratch — there is no data worth keeping in
+Phase 1, and it also proves both migrations replay cleanly from zero.
 
 - [ ] **Step 5: Commit**
 
@@ -787,13 +860,42 @@ export async function GET(request: NextRequest) {
 ```bash
 npm run dev
 ```
-Open `http://localhost:3000/login`, submit any email address, then open the local mail catcher at `http://127.0.0.1:54324` and click the link in the captured message.
-Expected: redirected to `/report`. Then run `npx supabase db shell` and `select id, display_name from profiles;` — one new row confirms the `handle_new_user` trigger fired.
+Open `http://127.0.0.1:3000/login` — **not** `localhost`, see the note in Task 9 — submit any
+email address, then open the local mail catcher at `http://127.0.0.1:54324` and click the link
+in the captured message. That catcher is Mailpit despite its container being named
+`supabase_inbucket_app`; its API lives at `/api/v1/messages`.
 
-- [ ] **Step 6: Commit**
+Expected: the link goes to Supabase's own `/auth/v1/verify`, which redirects back to
+`/auth/confirm?code=<uuid>` — the PKCE flow, since `@supabase/ssr`'s `createBrowserClient`
+hardcodes `flowType: "pkce"` — and the route then redirects to `/report`. Then run
+`npx supabase db shell` and `select id, display_name from profiles;` — one new row confirms
+the `handle_new_user` trigger fired.
+
+- [ ] **Step 6: Add `src/proxy.ts` — the other half of the cookie pattern**
+
+The `setAll` catch above is only safe when something else refreshes the session. Supabase
+refresh tokens rotate and are single-use, so if a Server Component refreshes an expired token
+and the rotated cookie write is discarded, the next request replays an invalidated token and
+the user is **silently logged out** with no error — just an unexplained bounce to `/login`.
+
+Add a `src/proxy.ts` that builds a `createServerClient` bound to the request and response
+cookies, calls `getUser()` to trigger the refresh, and writes rotated cookies onto the
+response. Two details that matter:
+
+- `@supabase/ssr` passes cache-control headers as `setAll`'s second argument. Apply them to
+  the response, or a CDN in front of the app may cache one user's session cookies and serve
+  them to another.
+- The export must be named `proxy`, not `middleware`. Next.js 16 deprecated the `middleware`
+  file convention and renamed it; the old name still resolves but warns on build.
+
+Add a `matcher` config excluding `_next/static`, `_next/image`, and static asset extensions.
+Do **not** add route protection — Phase 1 has no protected routes, and this exists only to
+refresh sessions.
+
+- [ ] **Step 7: Commit**
 
 ```bash
-git add src/lib/supabase src/app/login src/app/auth
+git add src/lib/supabase src/app/login src/app/auth src/proxy.ts
 git commit -m "feat: add Supabase clients and email OTP sign-in"
 ```
 
@@ -892,12 +994,23 @@ Create `src/app/actions/submit-report.ts`:
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { validateReport, type ReportInput } from "@/lib/reports/validate";
+import {
+  validateReport,
+  type ReportInput,
+  type ReportErrorCode,
+  type ReportWarningCode,
+} from "@/lib/reports/validate";
 import { buildReportRow } from "@/lib/reports/row";
 
+/** Validation codes plus the two failures only the action can detect. */
+export type SubmitErrorCode =
+  | ReportErrorCode
+  | "not_signed_in"
+  | "insert_failed";
+
 export type SubmitResult =
-  | { ok: true; warnings: string[] }
-  | { ok: false; errors: string[] };
+  | { ok: true; warnings: ReportWarningCode[] }
+  | { ok: false; errors: SubmitErrorCode[] };
 
 export async function submitReport(input: ReportInput): Promise<SubmitResult> {
   const validation = validateReport(input);
@@ -949,8 +1062,7 @@ git commit -m "feat: add depth report submission action"
 Create `src/components/DepthSlider.test.tsx`:
 ```tsx
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { DepthSlider } from "./DepthSlider";
 
 describe("DepthSlider", () => {
@@ -964,13 +1076,15 @@ describe("DepthSlider", () => {
     expect(screen.getByText("Knee-deep")).toBeInTheDocument();
   });
 
-  it("reports the new level when the slider moves", async () => {
+  it("reports the new level when the slider moves", () => {
     const onChange = vi.fn();
     render(<DepthSlider value="ankle" onChange={onChange} />);
 
-    const slider = screen.getByRole("slider");
-    await userEvent.click(slider);
-    await userEvent.keyboard("{ArrowRight}");
+    // fireEvent, not userEvent: jsdom's <input type="range"> does not fire a change
+    // event on arrow keys, so userEvent.keyboard("{ArrowRight}") calls onChange zero
+    // times even when the component is correct. The assertion is what matters —
+    // one step deeper than ankle must report knee.
+    fireEvent.change(screen.getByRole("slider"), { target: { value: "1" } });
 
     expect(onChange).toHaveBeenCalledWith("knee");
   });
@@ -1057,10 +1171,13 @@ Create `src/app/report/page.tsx`:
 
 import { useState } from "react";
 import { DepthSlider } from "@/components/DepthSlider";
-import { submitReport } from "@/app/actions/submit-report";
+import { submitReport, type SubmitErrorCode } from "@/app/actions/submit-report";
 import type { DepthLevel } from "@/lib/depth/scale";
 
-const ERROR_MESSAGES: Record<string, string> = {
+/** Everything the page can display, including the one failure it detects itself. */
+type PageErrorCode = SubmitErrorCode | "no_location";
+
+const ERROR_MESSAGES: Record<PageErrorCode, string> = {
   invalid_depth: "Pumili ng lalim ng tubig.",
   invalid_coordinates: "Hindi mabasa ang lokasyon mo.",
   outside_pilot_area: "Sa ngayon, Marikina lang ang saklaw ng Antas.",
@@ -1072,7 +1189,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 export default function ReportPage() {
   const [depth, setDepth] = useState<DepthLevel>("knee");
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
-  const [errors, setErrors] = useState<string[]>([]);
+  const [errors, setErrors] = useState<PageErrorCode[]>([]);
 
   async function handleSubmit() {
     setStatus("sending");
@@ -1120,7 +1237,7 @@ export default function ReportPage() {
       </button>
       {errors.map((code) => (
         <p key={code} role="alert">
-          {ERROR_MESSAGES[code] ?? "May hindi inaasahang problema."}
+          {ERROR_MESSAGES[code]}
         </p>
       ))}
     </main>
@@ -1130,7 +1247,10 @@ export default function ReportPage() {
 
 - [ ] **Step 2: Verify manually**
 
-Run `npm run dev`, sign in, open `http://localhost:3000/report`, allow location, and submit.
+Run `npm run dev`, sign in, open `http://127.0.0.1:3000/report`, allow location, and submit.
+Use `127.0.0.1`, never `localhost` — the local Supabase `site_url` is `http://127.0.0.1:3000`,
+and a browser treats the two hostnames as different origins, so signing in on `localhost`
+redirects to the site root instead of `/auth/confirm`.
 Expected: "Salamat. Naitala na ang report mo." If your real location is outside Marikina you will correctly see the `outside_pilot_area` message — use the browser devtools Sensors panel to override location to lat `14.65`, lon `121.10`.
 
 - [ ] **Step 3: Commit**
@@ -1257,7 +1377,9 @@ returns table (
 language sql
 stable
 security invoker
-set search_path = public
+-- `extensions` must be on the path: PostGIS lives there, not in public, so pinning
+-- to public alone would make st_dwithin and st_distance unresolvable inside here.
+set search_path = public, extensions
 as $$
   select
     r.id,
@@ -1312,7 +1434,10 @@ Create `src/components/FloodMap.tsx`:
 "use client";
 
 import { useEffect, useRef } from "react";
-import maplibregl from "maplibre-gl";
+// maplibre-gl v6 is pure ESM with NO default export — `import maplibregl from …`
+// (the v2 idiom most tutorials still show) fails with TS1192. Import the library's
+// own `MapLibreMap` alias rather than `Map`, which would shadow the JS built-in.
+import { MapLibreMap, Marker, type MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { depthRank, type DepthLevel } from "@/lib/depth/scale";
 
@@ -1326,6 +1451,15 @@ export interface MapReport {
 /** Shallow to deep. Index matches depthRank(). */
 const DEPTH_COLORS = ["#7dd3fc", "#38bdf8", "#0284c7", "#1e40af", "#581c87"];
 
+/** A depth outside the known scale still gets a marker, in the worst-case colour.
+ *  Never throw here — losing the whole map over one bad row is worse than one
+ *  oddly-coloured pin. */
+const FALLBACK_COLOR = DEPTH_COLORS[DEPTH_COLORS.length - 1];
+
+function colorForDepth(depth: DepthLevel): string {
+  return DEPTH_COLORS[depthRank(depth)] ?? FALLBACK_COLOR;
+}
+
 interface FloodMapProps {
   reports: MapReport[];
   onPick: (lat: number, lon: number) => void;
@@ -1333,26 +1467,28 @@ interface FloodMapProps {
 
 export function FloodMap({ reports, onPick }: FloodMapProps) {
   const container = useRef<HTMLDivElement>(null);
-  const map = useRef<maplibregl.Map | null>(null);
+  const map = useRef<MapLibreMap | null>(null);
 
   useEffect(() => {
     if (!container.current || map.current) return;
 
-    map.current = new maplibregl.Map({
+    map.current = new MapLibreMap({
       container: container.current,
       style: "https://demotiles.maplibre.org/style.json",
       center: [121.1, 14.65],
       zoom: 13,
     });
 
-    map.current.on("click", (e) => onPick(e.lngLat.lat, e.lngLat.lng));
+    map.current.on("click", (e: MapMouseEvent) =>
+      onPick(e.lngLat.lat, e.lngLat.lng),
+    );
   }, [onPick]);
 
   useEffect(() => {
     if (!map.current) return;
 
     const markers = reports.map((report) =>
-      new maplibregl.Marker({ color: DEPTH_COLORS[depthRank(report.depth)] })
+      new Marker({ color: colorForDepth(report.depth) })
         .setLngLat([report.lon, report.lat])
         .addTo(map.current!),
     );
@@ -1615,10 +1751,13 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  use: { baseURL: "http://localhost:3000" },
+  // 127.0.0.1, not localhost: browsers treat them as different origins, and the local
+  // Supabase site_url is http://127.0.0.1:3000. On localhost the OTP redirect silently
+  // lands on the site root instead of /auth/confirm.
+  use: { baseURL: "http://127.0.0.1:3000" },
   webServer: {
     command: "npm run dev",
-    url: "http://localhost:3000",
+    url: "http://127.0.0.1:3000",
     reuseExistingServer: true,
   },
 });
