@@ -58,4 +58,37 @@ describe("validateReport", () => {
     expect(MARIKINA_BOUNDS.minLat).toBeLessThan(MARIKINA_BOUNDS.maxLat);
     expect(MARIKINA_BOUNDS.minLon).toBeLessThan(MARIKINA_BOUNDS.maxLon);
   });
+
+  it("accepts a point exactly on the pilot area boundary", () => {
+    const result = validateReport({
+      ...valid,
+      lat: MARIKINA_BOUNDS.minLat,
+      lon: MARIKINA_BOUNDS.minLon,
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("does not warn when GPS accuracy is exactly at the threshold", () => {
+    const result = validateReport({ ...valid, gpsAccuracyM: 100 });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.warnings).not.toContain("low_gps_accuracy");
+  });
+
+  it("rejects a report invalid on latitude alone", () => {
+    const result = validateReport({ ...valid, lat: 14.9, lon: 121.1 });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors).toContain("outside_pilot_area");
+  });
+
+  it("rejects a report invalid on longitude alone", () => {
+    const result = validateReport({ ...valid, lat: 14.65, lon: 121.9 });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors).toContain("outside_pilot_area");
+  });
+
+  it("returns an empty warnings array for a fully valid report", () => {
+    const result = validateReport(valid);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.warnings).toEqual([]);
+  });
 });

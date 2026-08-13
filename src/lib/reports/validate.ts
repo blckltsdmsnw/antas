@@ -1,11 +1,11 @@
 import { isDepthLevel, type DepthLevel } from "@/lib/depth/scale";
 
-export const MARIKINA_BOUNDS = {
+export const MARIKINA_BOUNDS = Object.freeze({
   minLat: 14.6,
   maxLat: 14.72,
   minLon: 121.05,
   maxLon: 121.15,
-} as const;
+} as const);
 
 /** GPS readings worse than this are accepted but flagged. */
 export const LOW_GPS_ACCURACY_M = 100;
@@ -17,13 +17,20 @@ export interface ReportInput {
   gpsAccuracyM: number | null;
 }
 
+export type ReportErrorCode =
+  | "invalid_depth"
+  | "invalid_coordinates"
+  | "outside_pilot_area";
+
+export type ReportWarningCode = "low_gps_accuracy";
+
 export type ValidationResult =
-  | { ok: true; depth: DepthLevel; warnings: string[] }
-  | { ok: false; errors: string[] };
+  | { ok: true; depth: DepthLevel; warnings: ReportWarningCode[] }
+  | { ok: false; errors: ReportErrorCode[] };
 
 export function validateReport(input: ReportInput): ValidationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
+  const errors: ReportErrorCode[] = [];
+  const warnings: ReportWarningCode[] = [];
 
   if (!isDepthLevel(input.depth)) {
     errors.push("invalid_depth");
