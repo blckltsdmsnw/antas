@@ -159,6 +159,19 @@ h3 {
   background: var(--raised);
 }
 
+/* Findable without being alarming. Red carries meaning here - it is the only
+   place in the interface outside an error where danger colour appears - but a
+   filled red button in the header would shout on a page about ankle-deep
+   water. */
+.nav-link-sos {
+  color: var(--danger);
+  border: 1px solid currentColor;
+}
+
+.nav-link-sos:hover {
+  background: var(--danger-tint);
+}
+
 /* --------------------------------------------------------------------------
    Map screen - the map is the product, chrome recedes
    -------------------------------------------------------------------------- */
