@@ -1,0 +1,11 @@
+-- handle_new_user is a SECURITY DEFINER function: it runs with its owner's
+-- privileges so it can insert into public.profiles on behalf of a user who has
+-- no grant on that table. Postgres grants EXECUTE on new functions to PUBLIC by
+-- default, which put a definer-rights function on the API surface for no reason.
+--
+-- Not exploitable as it stands - Postgres refuses direct calls to a trigger
+-- function regardless of privileges - but least privilege says a definer-rights
+-- function should not be callable by anyone who does not need it. Triggers fire
+-- as part of the DML that invokes them and do not check EXECUTE on the trigger
+-- function, so revoking this does not affect sign-up.
+revoke execute on function handle_new_user() from public, anon, authenticated;

@@ -1,36 +1,121 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Antas
 
-## Getting Started
+**Live demo → [antas-one.vercel.app](https://antas-one.vercel.app)**
 
-First, run the development server:
+Crowdsourced flood-depth reporting for Marikina City, Philippines. Antas records how deep
+the water is the way Filipinos actually describe it — *hanggang bukong-bukong, tuhod,
+baywang, dibdib* — instead of asking someone standing in floodwater to estimate
+centimetres.
+
+The name means "level", as in *antas ng tubig*.
+
+---
+
+## This does not dispatch emergency responders
+
+Antas is a portfolio project running on **seeded demonstration data**. Nobody is monitoring
+it. No report reaches any rescue service.
+
+That boundary is a design requirement, not a disclaimer added at the end. If a person
+believed help was coming through this application and it was not, the result would be worse
+than the application not existing. Distress signalling and the responder console are
+designed in the specification but deliberately unbuilt — see
+[`docs/superpowers/specs/2026-08-13-antas-design.md`](docs/superpowers/specs/2026-08-13-antas-design.md).
+
+---
+
+## What it does
+
+- **Public map** — flood reports plotted over Marikina, colour-coded by depth. No sign-in
+  required; a visitor who has never registered can use it, which is the point.
+- **Street history** — tap anywhere to see what was reported nearby and how deep it got.
+  The question people actually ask is *"has this street flooded before?"*, not *"is it
+  flooding right now?"*
+- **Report submission** — a body-height slider, three taps, no typing. Signed-in users
+  only, and the database enforces that you can only file in your own name.
+
+## Why the body-height scale
+
+It is the whole idea. Existing tools report river gauges and rainfall; none capture
+street-level lived depth, and none keep a historical record. A frightened person in rising
+water will not estimate a number, but everyone can say *hanggang baywang*.
+
+The scale is stored as an ordered enum with approximate centimetre ranges attached, so it
+stays sortable and analysable without ever presenting a number to the user.
+
+## Stack
+
+| Layer | Choice |
+|---|---|
+| App | Next.js 16 (App Router), React 19, TypeScript — installable PWA |
+| Database | PostgreSQL 17 + PostGIS, via Supabase |
+| Auth | Email OTP with session refresh in `src/proxy.ts` |
+| Map | MapLibre GL 6 with CARTO raster basemap |
+| Tests | Vitest + Testing Library (unit, integration), Playwright (end-to-end) |
+| Hosting | Vercel |
+
+## Running locally
+
+Requires Node 20+ and Docker (for the local Supabase stack).
 
 ```bash
+npm install
+npx supabase start          # starts Postgres, PostGIS, auth, mail catcher
+npx supabase migration up
+npm run seed                # ~100 demo reports around four Marikina hotspots
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open **http://127.0.0.1:3000** — not `localhost`. Browsers treat the two as different
+origins, and the local Supabase `site_url` is `127.0.0.1`, so sign-in redirects fail on
+`localhost`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Sign-in emails are captured by Mailpit at http://127.0.0.1:54324 rather than being sent.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run test        # 62 unit and integration tests
+npm run test:e2e    # 3 Playwright tests
+```
 
-## Learn More
+## Security posture
 
-To learn more about Next.js, take a look at the following resources:
+Access control is enforced by the database, not by the application:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Depth reports are public to read, authenticated to write.** The insert policy is
+  `with check (reporter_id = auth.uid())`, so a signed-in user cannot file a report in
+  somebody else's name — the server action derives the reporter from the session and never
+  from the request body.
+- **No UPDATE or DELETE policy exists on reports**, and no grant either. Those operations
+  are denied at both layers rather than relying on the absence of a policy alone.
+- **Profiles are denied to anonymous callers at the grant layer as well as by RLS.** That
+  table gains verified phone numbers in a later phase, so it has two independent barriers.
+- **PostGIS is installed into the `extensions` schema, not `public`.** It ships a writable
+  catalog table (`spatial_ref_sys`); in `public`, PostgREST would expose it to anonymous
+  callers with DELETE and no row-level security, allowing anyone to drop the SRID
+  definition every geography column depends on.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+These are asserted by integration tests, not just documented — a privacy claim without a
+test is a comment.
 
-## Deploy on Vercel
+## Project layout
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/lib/depth/       the depth scale - pure, zero I/O
+src/lib/reports/     validation and row building - pure, zero I/O
+src/lib/supabase/    browser and server clients
+src/app/actions/     server action for submitting a report
+src/components/      map, street history, depth slider
+src/proxy.ts         refreshes the Supabase session on every request
+supabase/migrations/ schema, row-level security, spatial lookup
+tests/integration/   row-level security and spatial queries against a real database
+tests/e2e/           Playwright
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The logic that carries risk — the depth scale, validation — lives in pure modules with no
+I/O, so it is unit-testable without a database or a network.
+
+## Status
+
+Phase 1 of three. Distress signalling with a trust and plausibility pipeline (Phase 2) and
+a barangay moderator console (Phase 3) are specified but not built. The specification and
+implementation plan are in [`docs/superpowers/`](docs/superpowers/).
