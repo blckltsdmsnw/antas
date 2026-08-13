@@ -346,15 +346,23 @@ Create `src/lib/reports/validate.ts`:
 ```ts
 import { isDepthLevel, type DepthLevel } from "@/lib/depth/scale";
 
-export const MARIKINA_BOUNDS = {
+export const MARIKINA_BOUNDS = Object.freeze({
   minLat: 14.6,
   maxLat: 14.72,
   minLon: 121.05,
   maxLon: 121.15,
-} as const;
+} as const);
 
 /** GPS readings worse than this are accepted but flagged. */
 export const LOW_GPS_ACCURACY_M = 100;
+
+/** These codes are a contract: the server action and the report page both map them. */
+export type ReportErrorCode =
+  | "invalid_depth"
+  | "invalid_coordinates"
+  | "outside_pilot_area";
+
+export type ReportWarningCode = "low_gps_accuracy";
 
 export interface ReportInput {
   depth: string;
@@ -364,12 +372,12 @@ export interface ReportInput {
 }
 
 export type ValidationResult =
-  | { ok: true; depth: DepthLevel; warnings: string[] }
-  | { ok: false; errors: string[] };
+  | { ok: true; depth: DepthLevel; warnings: ReportWarningCode[] }
+  | { ok: false; errors: ReportErrorCode[] };
 
 export function validateReport(input: ReportInput): ValidationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
+  const errors: ReportErrorCode[] = [];
+  const warnings: ReportWarningCode[] = [];
 
   if (!isDepthLevel(input.depth)) {
     errors.push("invalid_depth");
@@ -892,12 +900,23 @@ Create `src/app/actions/submit-report.ts`:
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { validateReport, type ReportInput } from "@/lib/reports/validate";
+import {
+  validateReport,
+  type ReportInput,
+  type ReportErrorCode,
+  type ReportWarningCode,
+} from "@/lib/reports/validate";
 import { buildReportRow } from "@/lib/reports/row";
 
+/** Validation codes plus the two failures only the action can detect. */
+export type SubmitErrorCode =
+  | ReportErrorCode
+  | "not_signed_in"
+  | "insert_failed";
+
 export type SubmitResult =
-  | { ok: true; warnings: string[] }
-  | { ok: false; errors: string[] };
+  | { ok: true; warnings: ReportWarningCode[] }
+  | { ok: false; errors: SubmitErrorCode[] };
 
 export async function submitReport(input: ReportInput): Promise<SubmitResult> {
   const validation = validateReport(input);
@@ -1057,10 +1076,13 @@ Create `src/app/report/page.tsx`:
 
 import { useState } from "react";
 import { DepthSlider } from "@/components/DepthSlider";
-import { submitReport } from "@/app/actions/submit-report";
+import { submitReport, type SubmitErrorCode } from "@/app/actions/submit-report";
 import type { DepthLevel } from "@/lib/depth/scale";
 
-const ERROR_MESSAGES: Record<string, string> = {
+/** Everything the page can display, including the one failure it detects itself. */
+type PageErrorCode = SubmitErrorCode | "no_location";
+
+const ERROR_MESSAGES: Record<PageErrorCode, string> = {
   invalid_depth: "Pumili ng lalim ng tubig.",
   invalid_coordinates: "Hindi mabasa ang lokasyon mo.",
   outside_pilot_area: "Sa ngayon, Marikina lang ang saklaw ng Antas.",
@@ -1072,7 +1094,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 export default function ReportPage() {
   const [depth, setDepth] = useState<DepthLevel>("knee");
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
-  const [errors, setErrors] = useState<string[]>([]);
+  const [errors, setErrors] = useState<PageErrorCode[]>([]);
 
   async function handleSubmit() {
     setStatus("sending");
@@ -1120,7 +1142,7 @@ export default function ReportPage() {
       </button>
       {errors.map((code) => (
         <p key={code} role="alert">
-          {ERROR_MESSAGES[code] ?? "May hindi inaasahang problema."}
+          {ERROR_MESSAGES[code]}
         </p>
       ))}
     </main>
