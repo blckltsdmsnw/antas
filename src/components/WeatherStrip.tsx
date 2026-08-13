@@ -109,8 +109,13 @@ export function WeatherStrip({ onWeather }: WeatherStripProps) {
       )}
       {/* The three-hour total is the number that predicts a flooded street; the
           current hour alone reads as calm the moment the rain pauses. */}
+      {/* "25.2 mm / 3h" reads as unit jargon; "sa 3 oras" says the period in a
+          word. The decimal goes too - tenths of a millimetre change nothing
+          about whether you should walk down a street. */}
       {typeof rain === "number" && rain > 0 && (
-        <span className="weather-rain">{rain} mm / 3h</span>
+        <span className="weather-rain">
+          {Math.round(rain)} mm ulan sa 3 oras
+        </span>
       )}
     </p>
   );

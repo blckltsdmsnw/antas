@@ -49,11 +49,32 @@ export function weatherLabel(code: number | null): string | null {
   return "May kulog at kidlat";
 }
 
-/** The point at which rain is worth showing on the map itself. */
+/** The point at which measured rain is worth showing on the map itself. */
 export const RAINING_MM_PER_HOUR = 0.2;
 
+/**
+ * First WMO code that means water is falling: 51-57 drizzle, 61-67 rain,
+ * 80-86 showers, 95+ thunderstorm.
+ */
+const FIRST_PRECIPITATION_CODE = 51;
+
+/**
+ * Whether to draw rain on the map.
+ *
+ * Two signals, either of which is enough. Drizzle can measure below the
+ * millimetre threshold while the observation plainly says "Ambon" - and a
+ * strip reading "Ambon" above a map drawn as if it were dry is the interface
+ * contradicting itself. Whichever source notices the rain, the map shows it.
+ *
+ * Unknown weather is still not rain: `null` fails both tests, so an
+ * unreachable provider never animates.
+ */
 export function isRaining(weather: CurrentWeather): boolean {
-  return (weather.precipitationMm ?? 0) >= RAINING_MM_PER_HOUR;
+  if ((weather.precipitationMm ?? 0) >= RAINING_MM_PER_HOUR) return true;
+  return (
+    weather.weatherCode !== null &&
+    weather.weatherCode >= FIRST_PRECIPITATION_CODE
+  );
 }
 
 function sumLastHours(

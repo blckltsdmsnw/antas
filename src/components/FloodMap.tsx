@@ -6,7 +6,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { depthLabel, type DepthLevel } from "@/lib/depth/scale";
 import { DEPTH_HEX } from "@/lib/depth/presentation";
 import { clusterByProximity, CLUSTER_RADIUS_PX } from "@/lib/map/cluster";
-import { mapThemeFor, type MapTheme } from "@/lib/map/theme";
+import { mapThemeFor, preferredScheme, type MapTheme } from "@/lib/map/theme";
 import { freshnessOf, freshnessOpacity } from "@/lib/reports/freshness";
 import { reportPhotoUrl } from "@/lib/reports/photo";
 
@@ -57,18 +57,12 @@ const TILES: Record<MapTheme, string[]> = {
 };
 
 /**
- * The resolved colour-scheme preference, or null where none is stated.
- *
  * Read on demand rather than held in state so the map can be *built* with the
  * right tiles. Deciding after mount meant the first paint was always light and
  * then swapped, which at night is a white flash in a dark room.
  */
-function resolvePreference(): boolean | null {
-  if (typeof window === "undefined") return null;
-  if (window.matchMedia("(prefers-color-scheme: no-preference)").matches) {
-    return null;
-  }
-  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+function currentTheme(): MapTheme {
+  return mapThemeFor(new Date(), preferredScheme());
 }
 
 const BASEMAP_ATTRIBUTION =
@@ -169,7 +163,7 @@ export function FloodMap({
    */
   useEffect(() => {
     const query = window.matchMedia("(prefers-color-scheme: dark)");
-    const decide = () => setTheme(mapThemeFor(new Date(), resolvePreference()));
+    const decide = () => setTheme(currentTheme());
 
     decide();
     const timer = window.setInterval(decide, 5 * 60_000);
@@ -193,7 +187,7 @@ export function FloodMap({
             type: "raster",
             // Decided here, not read from state: state has not settled on the
             // first commit, and building light-then-swapping is a white flash.
-            tiles: TILES[mapThemeFor(new Date(), resolvePreference())],
+            tiles: TILES[currentTheme()],
             tileSize: 256,
             attribution: BASEMAP_ATTRIBUTION,
           },

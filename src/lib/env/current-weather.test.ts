@@ -57,6 +57,27 @@ describe("isRaining", () => {
     // Absence of data must never animate rain onto the map.
     expect(isRaining(UNKNOWN_WEATHER)).toBe(false);
   });
+
+  it("counts drizzle even when it measures below the threshold", () => {
+    // The reported bug: the strip read "Ambon" while the map was drawn dry.
+    // Drizzle is light by definition and often measures under 0.2mm, so the
+    // observation code has to count too or the interface contradicts itself.
+    expect(
+      isRaining({ ...UNKNOWN_WEATHER, precipitationMm: 0, weatherCode: 55 }),
+    ).toBe(true);
+  });
+
+  it("counts every kind of falling water", () => {
+    for (const code of [51, 61, 65, 80, 82, 95]) {
+      expect(isRaining({ ...UNKNOWN_WEATHER, weatherCode: code })).toBe(true);
+    }
+  });
+
+  it("does not count clear or cloudy skies", () => {
+    for (const code of [0, 1, 2, 3, 45]) {
+      expect(isRaining({ ...UNKNOWN_WEATHER, weatherCode: code })).toBe(false);
+    }
+  });
 });
 
 describe("fetchCurrentWeather", () => {

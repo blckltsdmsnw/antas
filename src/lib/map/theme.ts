@@ -40,11 +40,11 @@ function manilaMinutes(date: Date): number {
 }
 
 /**
- * `prefersDark` is the resolved `prefers-color-scheme` media query, or null
- * where the user has expressed no preference.
+ * `prefersDark` is the user's stated colour-scheme preference, or null where
+ * they have not stated one.
  *
- * An explicit preference always wins. Someone who set their phone to dark mode
- * meant it, and a clock reading has no business overruling a stated choice.
+ * A stated preference wins. Someone who set their phone to dark mode meant it,
+ * and a clock reading has no business overruling a deliberate choice.
  */
 export function mapThemeFor(now: Date, prefersDark: boolean | null): MapTheme {
   if (prefersDark !== null) return prefersDark ? "dark" : "light";
@@ -53,4 +53,33 @@ export function mapThemeFor(now: Date, prefersDark: boolean | null): MapTheme {
   return minutes >= DAY_START_HOUR * 60 && minutes <= DAY_END_HOUR * 60
     ? "light"
     : "dark";
+}
+
+/**
+ * What the browser says the user prefers - `true` for dark, `null` for "no
+ * stated choice". It never returns `false`, and that asymmetry is the point.
+ *
+ * `prefers-color-scheme: no-preference` was removed from the specification and
+ * matches nothing: a browser reports `light` both for someone who chose light
+ * and for someone who chose nothing at all. Treating that `light` as a stated
+ * preference meant the clock was never consulted, and the map stayed bright at
+ * four in the morning.
+ *
+ * So only a dark preference overrides. Light is indistinguishable from the
+ * default, and the default should defer to the time of day.
+ */
+export function preferredScheme(
+  matchMedia?: (query: string) => { matches: boolean },
+): boolean | null {
+  // Checking for the function, not just for `window`: an old webview can have
+  // a window and no matchMedia at all, and calling .bind on undefined there
+  // throws inside the component and takes the whole map down with it.
+  const match =
+    matchMedia ??
+    (typeof window !== "undefined" && typeof window.matchMedia === "function"
+      ? window.matchMedia.bind(window)
+      : undefined);
+
+  if (!match) return null;
+  return match("(prefers-color-scheme: dark)").matches ? true : null;
 }
