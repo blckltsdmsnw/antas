@@ -7,6 +7,10 @@ import { SimulationBanner } from "@/components/SimulationBanner";
 import { ReasonList } from "@/components/ReasonList";
 import { decideSos } from "@/app/actions/decide-sos";
 import { DISMISS_REASONS, dismissReasonLabel } from "@/lib/sos/decision";
+import {
+  formatAccuracy,
+  needsLocationConfirmation,
+} from "@/lib/reports/accuracy";
 import { depthLabel, type DepthLevel } from "@/lib/depth/scale";
 import type { Reason } from "@/lib/scoring/types";
 
@@ -99,6 +103,16 @@ export default function SignalDetailPage({
             ? ` · ${detail.confidence} (${detail.trust_score}/100)`
             : " · hindi pa nasusuri"}
         </p>
+
+        {/* A moderator deciding where to send people needs to know how much to
+            trust the pin itself. Without this, a fix uncertain by kilometres
+            looks exactly like one accurate to the doorstep. */}
+        {needsLocationConfirmation(detail.gps_accuracy_m) && (
+          <p className="alert" style={{ marginTop: 16 }}>
+            Malabo ang lokasyon: mga {formatAccuracy(detail.gps_accuracy_m)} ang
+            puwedeng pagkakamali. Maaaring hindi ito ang tamang kalye.
+          </p>
+        )}
 
         <h2 className="sheet-count">Pagsusuri</h2>
         <ReasonList reasons={detail.reasons ?? []} />

@@ -147,8 +147,13 @@ describe("ReportPage", () => {
 
     fireEvent.click(button);
 
+    // Waiting on GPS and waiting on the server are separate waits, and on a bad
+    // signal the first one is the long one. Saying "Ipinapadala..." during it
+    // would claim the report had been sent when it had not.
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Ipinapadala..." })).toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: "Hinahanap ang lokasyon..." }),
+      ).toBeDisabled();
     });
 
     resolveGeolocation?.();
@@ -158,5 +163,66 @@ describe("ReportPage", () => {
         screen.getByText("Salamat. Naitala na ang report mo."),
       ).toBeInTheDocument();
     });
+  });
+
+  it("asks for confirmation instead of submitting a wildly imprecise fix", async () => {
+    const user = userEvent.setup();
+    // What a desktop browser with no GPS actually returns: an IP-derived guess.
+    getCurrentPositionMock.mockImplementation((success) => {
+      success(makePosition({ accuracy: 100_000 }));
+    });
+
+    render(<ReportPage />);
+    await user.click(screen.getByRole("button", { name: "I-report" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Malabo ang lokasyon mo" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/100 km/)).toBeInTheDocument();
+    expect(mockedSubmitReport).not.toHaveBeenCalled();
+  });
+
+  it("submits the imprecise fix when the reporter says the place is right", async () => {
+    const user = userEvent.setup();
+    getCurrentPositionMock.mockImplementation((success) => {
+      success(makePosition({ latitude: 14.5, longitude: 121.05, accuracy: 4000 }));
+    });
+    mockedSubmitReport.mockResolvedValue({ ok: true, warnings: [] });
+
+    render(<ReportPage />);
+    await user.click(screen.getByRole("button", { name: "I-report" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Ituloy — tama ang lugar" }),
+    );
+
+    // The reporter's judgement wins: the fix goes through unchanged, accuracy
+    // included, so the moderator sees the same uncertainty they did.
+    await waitFor(() => {
+      expect(mockedSubmitReport).toHaveBeenCalledWith({
+        depth: "knee",
+        lat: 14.5,
+        lon: 121.05,
+        gpsAccuracyM: 4000,
+      });
+    });
+    expect(
+      await screen.findByText("Salamat. Naitala na ang report mo."),
+    ).toBeInTheDocument();
+  });
+
+  it("returns to the form when the reporter cancels", async () => {
+    const user = userEvent.setup();
+    getCurrentPositionMock.mockImplementation((success) => {
+      success(makePosition({ accuracy: 100_000 }));
+    });
+
+    render(<ReportPage />);
+    await user.click(screen.getByRole("button", { name: "I-report" }));
+    await user.click(await screen.findByRole("button", { name: "Kanselahin" }));
+
+    expect(
+      screen.getByRole("heading", { name: "Gaano kalalim ang tubig?" }),
+    ).toBeInTheDocument();
+    expect(mockedSubmitReport).not.toHaveBeenCalled();
   });
 });

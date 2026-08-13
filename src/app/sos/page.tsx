@@ -7,6 +7,10 @@ import { HoldToConfirm } from "@/components/HoldToConfirm";
 import { LiveCamera } from "@/components/LiveCamera";
 import { createClient } from "@/lib/supabase/client";
 import { submitSos, type SosErrorCode } from "@/app/actions/submit-sos";
+import {
+  formatAccuracy,
+  needsLocationConfirmation,
+} from "@/lib/reports/accuracy";
 import type { DepthLevel } from "@/lib/depth/scale";
 
 type PageErrorCode = SosErrorCode | "no_location" | "upload_failed";
@@ -28,6 +32,9 @@ export default function SosPage() {
   const [note, setNote] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [errors, setErrors] = useState<PageErrorCode[]>([]);
+  /** Accuracy of the fix that was actually sent, so the confirmation screen can
+   *  be honest about how well the map found them. */
+  const [sentAccuracyM, setSentAccuracyM] = useState<number | null>(null);
 
   async function handleConfirm() {
     if (!photo) return;
@@ -80,6 +87,10 @@ export default function SosPage() {
       setStatus("idle");
       return;
     }
+    // Deliberately never blocked on accuracy. Someone chest-deep in water is
+    // not going to walk outside for a better fix, and a signal placed one
+    // barangay off is still worth far more than no signal. We send, then say so.
+    setSentAccuracyM(position.coords.accuracy ?? null);
     setStatus("sent");
   }
 
@@ -93,6 +104,15 @@ export default function SosPage() {
             mas mataas na lugar.
           </p>
         </div>
+
+        {needsLocationConfirmation(sentAccuracyM) && (
+          <p className="alert" role="alert" style={{ marginTop: 20 }}>
+            Malabo ang lokasyon mo — mga {formatAccuracy(sentAccuracyM)} ang
+            puwedeng pagkakamali. Naipadala pa rin ang SOS mo. Kung may
+            makakausap ka, sabihin mo ang eksaktong kalye o palatandaan.
+          </p>
+        )}
+
         <p className="notice" style={{ marginTop: 24 }}>
           Demonstrasyon lamang ito. Walang tunay na rescue service na
           nakakatanggap nito. Sa totoong emergency, tumawag sa 911.

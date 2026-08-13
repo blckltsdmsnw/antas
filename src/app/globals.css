@@ -552,9 +552,36 @@ h3 {
   font-size: 15px;
 }
 
+/* The lower-weight choice on a screen with two of them. Same size and target
+   as .btn - the difference is emphasis, not importance, because "ituloy" is
+   sometimes the correct answer. */
+.btn-quiet {
+  background: var(--raised);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.btn-quiet:hover:not(:disabled) {
+  background: var(--raised-hover, var(--raised));
+  border-color: var(--accent);
+}
+
 .quiet-link {
   color: var(--accent);
   font-weight: 600;
+}
+
+/* Used on <button> as well as <a>, so strip the control chrome the browser
+   adds and keep the tap target big enough to hit. */
+button.quiet-link {
+  background: none;
+  border: 0;
+  padding: 8px 0;
+  min-height: 44px;
+  font-family: var(--font-body), sans-serif;
+  font-size: inherit;
+  cursor: pointer;
+  text-decoration: underline;
 }
 
 /* --------------------------------------------------------------------------
