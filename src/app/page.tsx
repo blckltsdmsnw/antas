@@ -1,69 +1,51 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import { FloodMap, type MapReport } from "@/components/FloodMap";
+import { StreetHistory } from "@/components/StreetHistory";
+import { createClient } from "@/lib/supabase/client";
+import type { DepthLevel } from "@/lib/depth/scale";
+
+/** Wide enough to cover the whole pilot area from its centre. */
+const CITY_CENTRE = { lat: 14.65, lon: 121.1 };
+const CITY_RADIUS_M = 10_000;
+
+interface NearbyRow {
+  id: string;
+  depth: DepthLevel;
+  lat: number;
+  lon: number;
+}
+
+export default function HomePage() {
+  const [reports, setReports] = useState<MapReport[]>([]);
+  const [point, setPoint] = useState<{ lat: number; lon: number } | null>(null);
+
+  useEffect(() => {
+    createClient()
+      .rpc("reports_near", {
+        lat: CITY_CENTRE.lat,
+        lon: CITY_CENTRE.lon,
+        radius_m: CITY_RADIUS_M,
+      })
+      .then(({ data }) => {
+        const rows = (data ?? []) as NearbyRow[];
+        setReports(
+          rows.map((row) => ({
+            id: row.id,
+            depth: row.depth,
+            lat: row.lat,
+            lon: row.lon,
+          })),
+        );
+      });
+  }, []);
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>
-            To get started, edit the{" "}
-            <code className={styles.code}>page.tsx</code> file.
-          </h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main>
+      <h1>Antas</h1>
+      <FloodMap reports={reports} onPick={(lat, lon) => setPoint({ lat, lon })} />
+      <StreetHistory point={point} />
+    </main>
   );
 }
