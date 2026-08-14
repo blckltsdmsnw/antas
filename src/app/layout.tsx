@@ -58,15 +58,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             Antas
           </Link>
           <nav className="site-nav">
-            {/* Everything you navigate to moved to the tab bar. Tulong did not:
-                a tab is one of four equal things and this is not equal to the
-                others. The accidental-press risk lives in the submit - a live
-                photo and a three-second hold - not in reaching the page, so it
-                stays a standing chip on every screen. Someone in a flood should
-                not have to hunt for this. */}
-            <Link href="/sos" className="nav-link nav-link-sos">
-              Tulong
-            </Link>
+            {/* Tulong moved to the tab bar. It was a chip here on the argument
+                that an emergency control is not a peer of ordinary navigation -
+                which held while navigation was also up here. Once navigation
+                went to the bottom, the most reachable place on a one-handed
+                phone was down there, so the emergency control went where the
+                thumb already is. It stays visually unlike its neighbours. */}
             <ModeratorLink />
           </nav>
         </header>

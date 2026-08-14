@@ -9,6 +9,7 @@ import { WeatherStrip } from "@/components/WeatherStrip";
 import { RainOverlay } from "@/components/RainOverlay";
 import { SplashScreen } from "@/components/SplashScreen";
 import { PlaceSearch, type Place } from "@/components/PlaceSearch";
+import { LocateButton } from "@/components/LocateButton";
 import { mapThemeFor, type MapTheme } from "@/lib/map/theme";
 import type { CurrentWeather } from "@/lib/env/current-weather";
 import { createClient } from "@/lib/supabase/client";
@@ -54,6 +55,7 @@ export default function HomePage() {
   const [mapTheme, setMapTheme] = useState<MapTheme>(() => mapThemeFor(new Date()));
   const [weather, setWeather] = useState<CurrentWeather | null>(null);
   const [focus, setFocus] = useState<{ lat: number; lon: number; at: number } | null>(null);
+  const [self, setSelf] = useState<{ lat: number; lon: number } | null>(null);
 
   // Two signals, because either alone lies. The basemap can paint before a
   // single pin exists, and the reports can arrive before there is a map to put
@@ -169,6 +171,15 @@ export default function HomePage() {
     setFocus({ lat: place.lat, lon: place.lon, at: Date.now() });
   }, []);
 
+  // Both, from one tap: fly there, and mark it. Flying alone answers "go here"
+  // and leaves you working out which of these streets was yours.
+  const goToSelf = useCallback((position: { lat: number; lon: number }) => {
+    setSelected(null);
+    setPoint(null);
+    setSelf(position);
+    setFocus({ ...position, at: Date.now() });
+  }, []);
+
   return (
     <main className="map-shell">
       <h1 className="sr-only">Antas</h1>
@@ -181,10 +192,12 @@ export default function HomePage() {
           onTheme={setMapTheme}
           onReady={markMapReady}
           focus={focus}
+          self={self}
         />
       </div>
       <SplashScreen ready={mapReady && reportsReady} />
       <PlaceSearch onPick={goToPlace} />
+      <LocateButton onLocate={goToSelf} />
 
       {/* Stated, never implied. An empty map is a claim about the world. */}
       {loadFailed && (

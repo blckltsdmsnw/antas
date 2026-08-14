@@ -66,7 +66,10 @@ test("cancelling returns to the depth form with nothing submitted", async ({
   await expect(
     page.getByRole("heading", { name: "Gaano kalalim ang tubig?" }),
   ).toBeVisible();
-  await expect(page.getByRole("slider")).toBeVisible();
+  // The depth control is a list of levels now, not a range input - the gauge is
+  // a body. What has to be true is that the form is usable again, so assert a
+  // level can still be chosen rather than asserting the old implementation.
+  await expect(page.getByRole("button", { name: "Tuhod" })).toBeVisible();
 });
 
 test("a good fix goes straight through without an extra tap", async ({

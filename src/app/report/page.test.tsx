@@ -65,7 +65,13 @@ describe("ReportPage", () => {
       screen.getByRole("heading", { name: "Gaano kalalim ang tubig?" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Hanggang tuhod")).toBeInTheDocument();
-    expect(screen.getByRole("slider")).toBeInTheDocument();
+    // The depth control is a list of levels now, not a range input - the gauge
+    // is a body. Asserting the level is *selected* survives that change, where
+    // asserting role="slider" was really asserting the implementation.
+    expect(screen.getByRole("button", { name: "Tuhod" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   it("submits the depth and geolocation coordinates, then shows the thank-you message", async () => {
@@ -132,7 +138,9 @@ describe("ReportPage", () => {
     expect(
       screen.getByRole("button", { name: "I-report" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("slider")).toBeInTheDocument();
+    // The form is still usable for a retry, which is what "keeps the form
+    // visible" has to mean: the depth control is still there to change.
+    expect(screen.getByRole("button", { name: "Tuhod" })).toBeInTheDocument();
   });
 
   it("disables the button while the request is in flight", async () => {

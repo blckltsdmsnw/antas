@@ -47,27 +47,53 @@ test.describe("the preparedness guide", () => {
  * reaches there. Tulong deliberately did not move with it.
  */
 test.describe("navigation", () => {
-  for (const path of ["/", "/gabay", "/report", "/ako"]) {
+  // Including /sos. Hiding the bar there left that page with no visible exit
+  // once Tulong moved out of the header - stranding someone is worse than
+  // distracting them, and leaving costs nothing: an SOS is only sent by the
+  // live photo and the three-second hold.
+  for (const path of ["/", "/gabay", "/report", "/ako", "/sos"]) {
     test(`the tab bar is reachable on ${path}`, async ({ page }) => {
       await page.goto(path);
       await expect(page.locator(".tabbar")).toBeVisible();
     });
   }
 
-  test("the tab bar stays out of the way on /sos", async ({ page }) => {
-    await page.goto("/sos");
-    // One task, under duress. Offering four ways to leave it at the moment
-    // concentration matters most is the wrong trade.
-    await expect(page.locator(".tabbar")).toHaveCount(0);
-  });
-
-  test("Tulong is on every screen, and is not a tab", async ({ page }) => {
+  test("Tulong is reachable from every screen", async ({ page }) => {
     for (const path of ["/", "/gabay", "/report", "/ako"]) {
       await page.goto(path);
-      await expect(page.locator(".nav-link-sos")).toBeVisible();
-      // A tab is one of four equal things; this is not equal to the others.
-      await expect(page.locator(".tabbar .nav-link-sos")).toHaveCount(0);
+      const sos = page.locator('.tabbar [data-kind="sos"]');
+      await expect(sos).toBeVisible();
+      await expect(sos).toHaveAttribute("href", "/sos");
     }
+  });
+
+  test("Tulong is never styled as an ordinary destination", async ({ page }) => {
+    await page.goto("/");
+    // It sits in the bar because that is where a thumb reaches, but it must not
+    // read as one more place to go. Its own colour, distinct from both the
+    // resting tabs and the active one.
+    const colours = await page.evaluate(() => {
+      const pick = (sel: string) =>
+        getComputedStyle(document.querySelector(sel)!).color;
+      return {
+        sos: pick('.tabbar [data-kind="sos"]'),
+        active: pick('.tabbar [data-active="true"]'),
+        resting: pick('.tabbar [href="/gabay"]'),
+      };
+    });
+    expect(colours.sos).not.toBe(colours.resting);
+    expect(colours.sos).not.toBe(colours.active);
+  });
+
+  test("SOS is a labelled destination, not a hidden gesture", async ({ page }) => {
+    await page.goto("/");
+    // Deliberately reachable by a plain tap on a labelled control. An emergency
+    // path hidden behind a long-press on the report button cannot be discovered
+    // by someone who needs it now, and under panic people do the routine thing.
+    const sos = page.locator('.tabbar [data-kind="sos"]');
+    await expect(sos).toContainText("Tulong");
+    await sos.click();
+    await expect(page).toHaveURL(/\/sos$/);
   });
 
   test("the map stops above the tab bar rather than running under it", async ({

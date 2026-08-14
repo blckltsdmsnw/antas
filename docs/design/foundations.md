@@ -366,6 +366,46 @@ at the worst possible moment, and it inverts the honest image the splash is buil
   colour and blend mode, so where they cross each other the multiply darkens and the water
   gains depth without a gradient
 
+## 7c. The gauge is a body, and where the controls live
+
+**The depth control is a figure, not a column.** The scale is body parts, so the
+control is a body: water rises up a silhouette and the answer is read off it the
+way it would be read off yourself, standing in the street.
+
+Two rules hold it together:
+
+- **The list of five is the real control**, the figure is a picture of what the
+  list says. Ordinary buttons — keyboard operable, screen-reader legible, 48px
+  tall per §7. A drag gesture on a silhouette can be none of those on its own
+- **The waterline is defined in the figure's own coordinates**, never as a
+  percentage of its container. Two earlier attempts drifted: even fifths put
+  *dibdib* at the neck, and hand-converted percentages drifted again because the
+  SVG letterboxes inside its box. A gauge showing a depth one level worse than
+  the one selected is the exact error this product exists to prevent
+
+**Navigation is a bottom tab bar** — Mapa · Gabay · [I-report] · Ako · Tulong —
+because a phone held one-handed in the rain reaches the bottom, not the top.
+I-report is a raised centre action: filing a report is the one thing this
+application asks anyone to do, and it was previously the third of five identical
+items.
+
+**Tulong moved into the bar, reversing an earlier decision.** It was a chip in
+the header, on the argument that an emergency control is not a peer of ordinary
+navigation. That held while navigation was *also* in the header. Once navigation
+moved to the bottom, the most reachable place on the screen was down there — so
+the emergency control went where the thumb already is, styled red and unlike its
+neighbours so it never reads as one more destination. The bar therefore shows on
+`/sos` too: hiding it there left that page with no visible exit.
+
+**SOS is not a long-press on I-report**, and will not become one. Hiding the
+emergency path inside a gesture on the routine one fails twice — it cannot be
+discovered by somebody who needs it now, and under panic people do the routine
+thing. The three-second hold stays where it belongs: confirming an SOS, not
+finding it.
+
+**There is no Abiso tab.** A tab named for notifications promises alerts nobody
+is sending; see §12 of `design.md`.
+
 ## 8. What this deliberately avoids
 
 - Dark UI **on task pages** - worse outdoors in daylight, which is when floods happen. The

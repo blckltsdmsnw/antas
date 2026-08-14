@@ -197,7 +197,7 @@ export default function ReportPage() {
     <main className="task-page">
       <h1 className="task-title">Gaano kalalim ang tubig?</h1>
       <p className="task-lede">
-        Hilahin pataas ang tubig hanggang sa lalim na nakikita mo ngayon.
+        Pindutin kung saan umaabot ang tubig sa katawan ngayon.
       </p>
 
       <DepthSlider value={depth} onChange={setDepth} />

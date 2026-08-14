@@ -137,6 +137,25 @@ existed locally, for `0013` alone.
 If a future push ever fails on something "already exists", that is this: repair
 the history, never `db reset` a database with real rows in it.
 
+**A locate button, a body gauge, and a centre action.** Three more taken from
+mockups, after the five below:
+
+- **"Hanapin ang kinaroroonan ko"** — a crosshair on the map that flies to your
+  own position and marks it. Search answers "take me to Malanday"; this answers
+  "take me to *me*", which is the more common question. Asks for location only
+  on tap, never on load.
+- **The depth gauge is now a figure**, not a water column. The scale is body
+  parts, so the control is a body. The list of five beside it is the real
+  control; the figure is a picture of what the list says.
+- **I-report is a raised centre action**, and **Tulong moved into the tab bar**,
+  reversing an earlier call — once navigation left the header, the emergency
+  control belonged where the thumb already is. `foundations.md` §7c has both.
+
+Refused: **SOS as a long-press on I-report.** Hiding the emergency path inside a
+gesture on the routine one cannot be discovered by someone who needs it now, and
+under panic people do the routine thing. The three-second hold stays where it
+belongs — confirming an SOS, not finding it.
+
 **Search, your own reports, a preparedness guide, and a tab bar.** Five changes,
 taken from Google Stitch mockups and filtered hard:
 

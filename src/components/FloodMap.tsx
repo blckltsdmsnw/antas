@@ -118,6 +118,12 @@ interface FloodMapProps {
    * and picking Malanday again would change no prop and do nothing.
    */
   focus?: { lat: number; lon: number; at: number } | null;
+  /**
+   * Where the user is, once they have asked. Rendered as its own marker so the
+   * locate button answers "where am I" rather than only "go there" - a camera
+   * move with nothing marked leaves you guessing which street was yours.
+   */
+  self?: { lat: number; lon: number } | null;
 }
 
 /**
@@ -200,6 +206,7 @@ export function FloodMap({
   onTheme,
   onReady,
   focus,
+  self,
 }: FloodMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
@@ -310,6 +317,29 @@ export function FloodMap({
       essential: true,
     });
   }, [focus]);
+
+  /**
+   * Kept out of the clustering effect below on purpose. That one wipes and
+   * rebuilds its whole marker set on every `moveend`, and this dot is not a
+   * report - it should not blink out and back on every pan, and it must never
+   * be swept into a cluster count.
+   */
+  useEffect(() => {
+    const instance = map.current;
+    if (!instance || !self) return;
+
+    const element = document.createElement("div");
+    element.className = "self-dot";
+    element.setAttribute("aria-hidden", "true");
+
+    const marker = new Marker({ element })
+      .setLngLat([self.lon, self.lat])
+      .addTo(instance);
+
+    return () => {
+      marker.remove();
+    };
+  }, [self]);
 
   useEffect(() => {
     const instance = map.current;

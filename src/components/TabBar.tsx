@@ -10,12 +10,29 @@ import { usePathname } from "next/navigation";
  * the top. The header keeps the wordmark and Tulong; everything you navigate to
  * lives down here, under a thumb.
  *
- * TULONG IS DELIBERATELY NOT A TAB. Generated designs either buried SOS in a
- * tab bar or dropped it from navigation altogether, and both are wrong: a tab
- * is one of four equal things, and this is not equal to the others. It stays a
- * standing red chip in the header, present on every screen, because someone in
- * a flood should not have to hunt for it - and because a tab bar can be covered
- * by a sheet or pushed off by a keyboard.
+ * I-REPORT IS A RAISED CENTRE ACTION, not a peer tab. Filing a report is the
+ * one thing this application asks people to do, and it was previously the third
+ * of four identical items.
+ *
+ * TULONG MOVED HERE, and that reverses an earlier decision worth explaining. It
+ * was a chip in the header, on the argument that a tab is one of several equal
+ * things and an emergency control is not equal. That held while navigation was
+ * in the header. Once navigation moved to the bottom, the most reachable place
+ * on a one-handed phone was down here - so the emergency control belongs where
+ * the thumb already is, styled red and unlike its neighbours so it is plainly
+ * not a peer. Reaching /sos is harmless in any case: the real guard is the live
+ * photo and the three-second hold on submit.
+ *
+ * WHAT IS NOT HERE: an "Abiso" tab. Generated designs put notifications in this
+ * bar, and a tab named Abiso promises alerts nobody is sending. On a
+ * crowdsourced map a flood with no reporter produces no alert, so the tab would
+ * lead to an empty page forever while implying someone is watching.
+ *
+ * AND SOS IS NOT A LONG-PRESS ON I-REPORT. Hiding the emergency path inside a
+ * gesture on the routine one fails twice: it cannot be discovered by someone
+ * who needs it now, and under panic people do the routine thing. The
+ * three-second hold stays where it belongs - confirming the SOS, not finding
+ * it.
  */
 
 interface Tab {
@@ -23,17 +40,17 @@ interface Tab {
   label: string;
   /** Paths this tab owns beyond its own href, so a related page keeps it lit. */
   also?: readonly string[];
+  /** The raised centre action, or the emergency control. Neither is a peer. */
+  kind?: "action" | "sos";
 }
 
 const TABS: readonly Tab[] = [
   { href: "/", label: "Mapa" },
   { href: "/gabay", label: "Gabay" },
-  { href: "/report", label: "Mag-report" },
+  { href: "/report", label: "I-report", kind: "action" },
   { href: "/ako", label: "Ako", also: ["/login", "/console"] },
+  { href: "/sos", label: "Tulong", kind: "sos" },
 ];
-
-/** Routes that own the whole screen and must not compete with navigation. */
-const HIDDEN_ON = ["/sos"];
 
 function isActive(pathname: string, tab: Tab): boolean {
   if (tab.href === "/") return pathname === "/";
@@ -46,14 +63,14 @@ function isActive(pathname: string, tab: Tab): boolean {
 export function TabBar() {
   const pathname = usePathname();
 
-  // The SOS screen is a single task under duress. Offering four ways to leave
-  // it, at the moment concentration matters most, is the wrong trade.
-  if (
-    HIDDEN_ON.some((path) => pathname === path || pathname.startsWith(`${path}/`))
-  ) {
-    return null;
-  }
-
+  // Shown on every screen, including /sos.
+  //
+  // It was hidden there, on the reasoning that a single task under duress
+  // should not offer four ways to leave. That was defensible while Tulong sat
+  // in the header - but with Tulong moved down here, hiding the bar on /sos
+  // left that page with no visible exit except the wordmark. Stranding someone
+  // is worse than distracting them, and there is nothing to lose by leaving:
+  // an SOS is only sent by the live photo and the three-second hold.
   return (
     <nav className="tabbar" aria-label="Pangunahing nabigasyon">
       {TABS.map((tab) => {
@@ -64,6 +81,7 @@ export function TabBar() {
             href={tab.href}
             className="tab"
             data-active={active}
+            data-kind={tab.kind}
             // `aria-current` is what a screen reader announces; the colour
             // change is only for eyes, and one of those is not enough.
             aria-current={active ? "page" : undefined}
@@ -116,12 +134,23 @@ function TabIcon({ href }: { href: string }) {
   }
 
   if (href === "/report") {
-    // A rising level with a plus: filing a reading, not writing a note.
+    // A plain plus. The raised disc already says "this is the action"; a
+    // detailed glyph inside it competes with the shape carrying that meaning.
+    return (
+      <svg {...common} strokeWidth={2.4}>
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+    );
+  }
+
+  if (href === "/sos") {
+    // A life ring. Not a cross, which reads as medical, and not a siren, which
+    // would promise a response nobody is sending.
     return (
       <svg {...common}>
-        <path d="M3 16c2.5-2 4.5-2 7 0s4.5 2 7 0" />
-        <path d="M3 20c2.5-2 4.5-2 7 0s4.5 2 7 0" />
-        <path d="M17 3v7M13.5 6.5h7" />
+        <circle cx="12" cy="12" r="8.6" />
+        <circle cx="12" cy="12" r="3.4" />
+        <path d="M5.9 5.9l3.7 3.7M14.4 14.4l3.7 3.7M18.1 5.9l-3.7 3.7M9.6 14.4l-3.7 3.7" />
       </svg>
     );
   }

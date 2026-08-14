@@ -380,161 +380,109 @@ h3 {
 }
 
 /* --------------------------------------------------------------------------
-   Depth gauge - the signature control.
-   The track fills with water to the selected level. The control becomes the
-   thing it measures, which is the one detail worth remembering.
+   Depth gauge - a body, not a column.
+
+   The scale is body parts, so the control is a body: water rises up a figure
+   and the answer is read off it the way it would be read off yourself. The
+   previous version was a water column with a label ruler beside it - a good
+   gauge, and one abstraction away from the thing being measured.
+
+   The list of five is the real control; the figure is a picture of what the
+   list says. See DepthSlider for why it has to be that way round.
    -------------------------------------------------------------------------- */
 
-/* The water column is the signature control, so it gets real width rather than
-   a 76px sliver with two thirds of the row left empty beside it. */
-.gauge {
+.body-gauge-row {
   display: grid;
   grid-template-columns: 116px 1fr;
-  gap: 22px;
+  gap: 16px;
   align-items: stretch;
 }
 
-.gauge-column {
+.body-figure {
   position: relative;
-  height: 300px;
-  border-radius: 14px;
+  height: 260px;
+  border-radius: var(--radius-card);
   background: var(--raised);
   border: 1px solid var(--line);
   overflow: hidden;
 }
 
-/* The water. Height is driven by --fill, set inline from the selected level. */
-.gauge-water {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: var(--fill, 20%);
-  /* Deeper water reads darker, so the gradient darkens the level's own colour
-     rather than jumping to an unrelated one. */
-  background: linear-gradient(
-    180deg,
-    var(--water-top, var(--depth-waist)) 0%,
-    color-mix(in oklab, var(--water-top, var(--depth-waist)) 62%, #0f172a) 100%
-  );
-  transition: height 140ms ease-out, background 140ms linear;
-}
-
-/* A waterline that reads as a surface rather than a hard edge.
-   Widened past the track so it can drift sideways without exposing an end. */
-.gauge-water::before {
-  content: "";
-  position: absolute;
-  left: -50%;
-  right: -50%;
-  top: -1px;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.65);
-}
-
-/* The surface drifts, slowly.
- *
- * The design doc rules out animated *transitions* beyond 150ms - nobody in a
- * flood should wait for the interface. This is not a transition: it blocks
- * nothing, delays nothing, and only signals that the control represents water.
- * It stops entirely for anyone who has asked for reduced motion.
- */
-@media (prefers-reduced-motion: no-preference) {
-  .gauge-water::before {
-    animation: waterline-drift 7s ease-in-out infinite alternate;
-  }
-}
-
-@keyframes waterline-drift {
-  from {
-    transform: translateX(-6%);
-  }
-  to {
-    transform: translateX(6%);
-  }
-}
-
-.gauge-ticks {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.gauge-tick {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: rgba(15, 23, 42, 0.12);
-}
-
-/* A genuinely vertical range: shallowest at the bottom, so dragging upward
-   makes the water rise. Kept invisible over the column, which is the real
-   control surface. */
-.gauge-input {
+/* Figure and water share the viewBox, so the surface lands on the same body
+   part at every size - no percentage of the container to drift out of step. */
+.body-figure-svg {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  padding: 12px 0;
+}
+
+.body-person {
+  fill: #94a3b8;
+}
+
+.body-water {
+  fill: var(--accent);
+  /* Multiply, so the submerged part of the figure darkens the way something
+     under water does, instead of vanishing behind a flat panel. */
+  mix-blend-mode: multiply;
+  transition: transform 180ms cubic-bezier(0.33, 0.1, 0.25, 1);
+}
+
+/* The surface, which is the line the reader is actually setting. Outside the
+   multiplied group: white multiplied by anything is the identity, so a
+   highlight inside it could never show. */
+.body-surface {
+  fill: rgba(255, 255, 255, 0.8);
+  transition: transform 180ms cubic-bezier(0.33, 0.1, 0.25, 1);
+}
+
+.body-levels {
+  list-style: none;
   margin: 0;
-  opacity: 0;
-  cursor: ns-resize;
-  writing-mode: vertical-lr;
-  direction: rtl;
-  appearance: slider-vertical;
-}
-
-/* Labels beside the column, aligned to their tick. */
-.gauge-legend {
-  position: relative;
-  height: 300px;
-  flex: none;
-}
-
-.gauge-legend-item {
-  position: absolute;
-  left: 0;
-  right: 0;
-  transform: translateY(50%);
-  display: flex;
-  align-items: center;
+  padding: 0;
+  display: grid;
+  /* Five equal rows spanning the figure's height, so a level's position in the
+     list lines up with its position on the body. */
+  grid-template-rows: repeat(5, 1fr);
   gap: 8px;
-  font-size: 14px;
-  color: var(--ink-muted);
-  transition: color 140ms linear;
 }
 
-/* A leader line running out to the edge, so each label reads as a graduation
-   on a ruler rather than as text floating beside the track. This is what fills
-   the right-hand space - the column was previously as wide as its longest word
-   and blank thereafter. */
-.gauge-legend-item::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--line);
-}
-
-.gauge-legend-item[data-active="true"]::after {
-  background: color-mix(in oklab, var(--accent) 40%, transparent);
-}
-
-.gauge-legend-item[data-active="true"] {
+.body-level {
+  width: 100%;
+  height: 100%;
+  /* Never below the 48px floor in foundations 7, whatever the row maths does. */
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--ground);
+  font-family: inherit;
+  font-size: 16px;
+  text-align: left;
   color: var(--ink);
+  cursor: pointer;
+}
+
+.body-level:hover {
+  border-color: var(--accent);
+}
+
+.body-level[data-active="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
   font-weight: 600;
 }
 
-.gauge-legend-rule {
-  width: 14px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--line);
+@media (prefers-reduced-motion: reduce) {
+  .body-water,
+  .body-surface {
+    transition: none;
+  }
 }
 
-.gauge-legend-item[data-active="true"] .gauge-legend-rule {
-  background: var(--accent);
-  width: 22px;
-}
+
 
 .gauge-readout {
   margin-top: 22px;
@@ -1648,6 +1596,51 @@ a.btn {
   font-weight: 600;
 }
 
+/* The raised centre action. Filing a report is the one thing this application
+   asks anyone to do, and it was previously the third of five identical items. */
+.tab[data-kind="action"] .tab-icon {
+  width: 52px;
+  height: 52px;
+  padding: 13px;
+  margin-top: -22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: var(--shadow-lifted);
+  /* The disc overlaps the bar's top edge; without this the border shows
+     through the circle as a chord. */
+  border: 3px solid var(--ground);
+}
+
+.tab[data-kind="action"] {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* The emergency control. In the bar because that is where a thumb reaches, but
+   deliberately unlike its neighbours - red, and outlined rather than flat, so
+   it never reads as one more place to go. */
+.tab[data-kind="sos"] {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.tab[data-kind="sos"] .tab-icon {
+  border-radius: 50%;
+  padding: 2px;
+  box-shadow: inset 0 0 0 1.5px currentColor;
+}
+
+/* Never greyed at night. Dimming the emergency entry point after dark is the
+   last thing this interface should do - the same rule the header link had. */
+[data-map-theme="dark"] .tab[data-kind="sos"] {
+  color: #fca5a5;
+}
+
+[data-map-theme="dark"] .tab[data-kind="action"] .tab-icon {
+  border-color: var(--panel);
+}
+
 /* The map turns dark at night and the bar sits directly against it - a white
    strip under a night map is the same mismatch the header already avoids. */
 [data-map-theme="dark"] .tabbar {
@@ -1800,6 +1793,85 @@ a.btn {
 [data-map-theme="dark"] .place-search-result:hover,
 [data-map-theme="dark"] .place-search-result[data-active="true"] {
   background: rgba(255, 255, 255, 0.08);
+}
+
+/* --------------------------------------------------------------------------
+   Locate me - the other way to reach your own street
+
+   Bottom-right, above the sheet: the far corner from where a right thumb rests
+   on the search field, and clear of the legend.
+   -------------------------------------------------------------------------- */
+
+.locate-wrap {
+  position: absolute;
+  right: 12px;
+  /* Sits above the street-history sheet's collapsed hint. */
+  bottom: 76px;
+  z-index: var(--z-search);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.locate {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--ground);
+  color: var(--accent);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+
+.locate svg {
+  width: 24px;
+  height: 24px;
+}
+
+.locate:disabled {
+  cursor: progress;
+  color: var(--ink-muted);
+}
+
+.locate-note {
+  margin: 0;
+  max-width: 220px;
+  padding: 8px 10px;
+  border-radius: var(--radius-control);
+  background: var(--ground);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  color: var(--ink-muted);
+  text-align: right;
+}
+
+[data-map-theme="dark"] .locate,
+[data-map-theme="dark"] .locate-note {
+  background: var(--panel);
+  border-color: var(--panel-line);
+}
+
+[data-map-theme="dark"] .locate-note {
+  color: var(--panel-ink-muted);
+}
+
+/* Where you are. Deliberately not a depth pin: it carries no depth, and a
+   marker that looked like one would be a report nobody filed. */
+.self-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid #fff;
+  box-shadow:
+    0 0 0 6px rgba(2, 132, 199, 0.22),
+    0 1px 4px rgba(15, 23, 42, 0.4);
 }
 
 /* --------------------------------------------------------------------------
