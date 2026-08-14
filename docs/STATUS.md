@@ -17,21 +17,37 @@ traffic. Do not verify deploys that way. If a challenge page ever returns, it is
 
 ## Do these first
 
-Ordered by how much they matter. Both need your credentials, which is why they
-are still open.
+### 1. Moderator scope — fixed on 2026-08-14, and the old diagnosis here was wrong
 
-### 1. Moderator role is on the wrong account
-
-There are two real accounts:
+Both real accounts now moderate **South Signal Village**:
 
 | Account | Role |
 |---|---|
-| `elijaholores@gmail.com` | moderator, barangay `New Lower Bicutan` |
-| `olores2216305@ceu.edu.ph` | no moderator row — made the one real photo report |
+| `elijaholores@gmail.com` | moderator, `South Signal Village` (was `New Lower Bicutan`) |
+| `olores2216305@ceu.edu.ph` | moderator, `South Signal Village` (added; also made the one real photo report) |
 
-If you sign in to `/console` with the school account the queue will look empty
-and nothing is wrong. Moving it is a one-line update to the `moderators` table
-(`user_id`, `barangay`).
+**This section used to say the role was on the wrong account, and that was not
+the reason `/console` looked empty.** The one pending SOS signal on production
+is in `South Signal Village`, and `moderator_queue` matches
+`m.barangay = s.barangay` exactly — so a moderator for `New Lower Bicutan` saw
+nothing no matter which account they used. Both barangays are in Taguig; being
+"in the right city" is not what the queue checks.
+
+Worth remembering when a queue looks empty: check where the **signals** are
+before assuming the moderator row is wrong.
+
+```
+npx tsx --env-file=.env.hosted scripts/make-moderator.ts you@example.com "South Signal Village"
+```
+
+Scope is one **barangay** per moderator — `moderators` is keyed on `user_id`
+with a single `barangay` column, and Taguig has 26. Covering a whole city would
+need a schema change touching `moderator_queue`, `sos_detail` and `decide_sos`,
+all of which join on a single barangay today.
+
+There is no "responder" role, deliberately. `moderators.role` allows
+`moderator` and `admin` only, and the product never dispatches anyone — a
+moderator triages a signal, they do not answer it.
 
 ### 2. Seeded demo data on production — what is there, and how to remove it
 
