@@ -123,6 +123,7 @@ Eighteen migrations, `supabase/migrations/0001` … `0018`. The significant ones
 | `0020` | The `admin` role made real, and the barangay check reduced to one predicate |
 | `0021` | Manila split from one city-wide bucket into its 16 districts |
 | `0022` | `profiles.phone`, reachable only through `sos_detail` |
+| `0023` | Suspension enforced, and `profiles` UPDATE narrowed to the columns a user owns |
 
 `reports_near(lat, lon, radius_m)` is a PostGIS function rather than a filtered
 select: proximity is a spatial question, and answering it in the client means
@@ -158,6 +159,16 @@ merely documented — a privacy claim without a test is a comment.
   to forge rather than a forged name to reject.
 - **Profiles are denied to anonymous callers at the grant layer as well as by
   RLS** — two independent barriers, because that table now holds phone numbers.
+- **Suspension is enforced, and cannot be lifted by the suspended person
+  (`0023`).** `decide_sos` had written `profiles.suspended_at` since `0010` and
+  **nothing ever read it** — a moderator dismissing three fabricated signals
+  believed they had stopped somebody and had set a timestamp. The UPDATE grant
+  also covered the whole table, so the suspended account could clear its own
+  flag in one request. The grant is now scoped to `display_name`, `barangay`
+  and `phone` — the same lesson `0018` learned for `depth_reports.status`:
+  "may edit their own row" is not "may edit every column of their own row".
+  It blocks **depth reports only**; see §8 for why it deliberately does not
+  block an SOS.
 - **An SOS requires no account, via an anonymous session rather than an
   unauthenticated write.** That distinction is the design: `reporter_id` stays
   non-null, so `profiles`, `reputation`, the one-active-signal index, every RLS
@@ -362,6 +373,23 @@ not apply. Treating silence as a weak claim would have sunk the people who asked
 for help fastest to the bottom of a moderator's queue, over a field they were
 deliberately never shown.
 
+**A suspended account can still send an SOS**, and that follows from the same
+principle rather than being an oversight. Suspension (`0023`) blocks depth
+reports, because filing one is a contribution to a shared map and somebody who
+fabricated three emergencies has forfeited that. It does not block the
+emergency path: a person who fabricated three floods last year can still be in
+one today, and refusing there would be the product deciding, from its own
+moderation history, that somebody's emergency does not count. The doubt is
+expressed the way every other doubt is — `reputation.false_report_count` feeds
+the score, so the signal is ranked lower and still arrives. Ranking is what you
+do when you know less; refusing is what you do when you have decided.
+
+**That feedback loop was not connected until `0023`.** `decide_sos` had
+maintained `reputation` since `0010`, and `submit-sos.ts` passed literal zeros
+for both counts — so every moderator decision fed a wire with nothing on the
+other end, and a reporter with twenty confirmed floods scored exactly like an
+account created a minute earlier.
+
 Capture is still deliberately expensive — a live photo through an in-page
 viewfinder and a three-second hold. `/sos` keeps that viewfinder rather than handing off to
 the phone's camera app, unlike `/report`: there it is an anti-abuse measure,
@@ -392,7 +420,7 @@ offer the gallery instead.
 ## 10. Testing
 
 ```bash
-npm test                            # unit + integration (303)
+npm test                            # unit + integration (315)
 npx vitest run tests/integration    # integration only - needs local Supabase
 npx playwright test                 # end-to-end (35)
 npm run build

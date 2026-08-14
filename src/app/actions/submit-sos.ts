@@ -79,7 +79,14 @@ export async function submitSos(input: SosInput): Promise<SosResult> {
   //
   // The response is still sent immediately: a person standing in floodwater
   // must not wait on a weather API before being told their signal went out.
-  after(() => enrichAndScore(inserted.id, input, userData.user.created_at));
+  after(() =>
+    enrichAndScore(
+      inserted.id,
+      input,
+      userData.user.id,
+      userData.user.created_at,
+    ),
+  );
 
   return { ok: true, signalId: inserted.id };
 }
@@ -94,6 +101,7 @@ function minutesSince(iso: string | undefined): number {
 async function enrichAndScore(
   signalId: string,
   input: SosInput,
+  reporterId: string,
   accountCreatedAt: string | undefined,
 ): Promise<void> {
   try {
@@ -103,7 +111,7 @@ async function enrichAndScore(
     // is the server acting on its own behalf.
     const supabase = createAdminClient();
 
-    const [reading, corroboration] = await Promise.all([
+    const [reading, corroboration, reputation] = await Promise.all([
       openMeteoProvider.read(input.lat, input.lon),
       supabase.rpc("corroborating_reports", {
         lat: input.lat,
@@ -111,10 +119,26 @@ async function enrichAndScore(
         radius_m: 500,
         within_minutes: 60,
       }),
+      // The reporter's own history. `decide_sos` has maintained this table since
+      // 0010 and nothing ever read it back - the two counts below were passed as
+      // literal zeros, so every moderator decision fed a loop that was not
+      // connected at the far end. Scoring treated a reporter with twenty
+      // confirmed floods exactly like somebody who signed up a minute ago.
+      supabase
+        .from("reputation")
+        .select("confirmed_count, false_report_count")
+        .eq("user_id", reporterId)
+        .maybeSingle(),
     ]);
 
     const corroboratingReports =
       typeof corroboration.data === "number" ? corroboration.data : 0;
+
+    // Absent history reads as none, never as bad history. A first-time reporter
+    // and a reporter whose row simply failed to load must not be scored as
+    // though they had a record of fabricating.
+    const confirmedCount = reputation.data?.confirmed_count ?? 0;
+    const falseReportCount = reputation.data?.false_report_count ?? 0;
 
     const providerOk =
       reading.rainfall24hMm !== null || reading.elevationM !== null;
@@ -125,8 +149,8 @@ async function enrichAndScore(
       gpsAccuracyM: input.gpsAccuracyM,
       hasLivePhoto: input.photoPath.length > 0,
       accountAgeMinutes: minutesSince(accountCreatedAt),
-      reporterConfirmedCount: 0,
-      reporterFalseReportCount: 0,
+      reporterConfirmedCount: confirmedCount,
+      reporterFalseReportCount: falseReportCount,
       corroboratingReports,
       rainfall24hMm: reading.rainfall24hMm,
       elevationM: reading.elevationM,

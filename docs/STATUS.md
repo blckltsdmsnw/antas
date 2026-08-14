@@ -421,6 +421,43 @@ less about a signal; refusing it is not.
 Note that anonymous users count toward Supabase's monthly-active-user billing
 tier, which is worth knowing before this ever sees real traffic.
 
+### Audit findings, and what was done about them (migration `0023`)
+
+Three of these were live defects, found by reading the code rather than by any
+test failing.
+
+**Suspension suspended nothing.** `decide_sos` has written
+`profiles.suspended_at` since `0010` after three false reports, and **nothing
+ever read it**. A moderator dismissing three fabricated signals believed they
+had stopped somebody; they had set a timestamp. Worse, the UPDATE grant covered
+the whole of `profiles`, so the suspended account could clear its own flag in
+one request — verified against a real database, not inferred. Now enforced, and
+the grant is scoped to `display_name`, `barangay`, `phone`.
+
+It blocks **depth reports only**. An SOS from a suspended account still goes
+through, because the rule this system runs on is that it never refuses a call
+for help — the doubt is expressed by scoring the signal lower.
+
+**The reputation loop was never connected.** `submit-sos.ts` passed literal
+zeros for `confirmed_count` and `false_report_count`, so every moderator
+decision fed a wire with nothing on the far end, and a reporter with twenty
+confirmed floods scored the same as an account made a minute ago. Now read.
+
+**The SOS hold button could not be used by keyboard.** It listened only for
+pointer events — no `onClick`, no key handlers — so a keyboard, switch or
+voice-control user could focus it, press it, and have nothing happen, on the one
+control in the product that calls for help. Its `aria-valuenow` was also on the
+`<button>`, where that attribute is not supported, so no progress was announced
+to anybody. Both fixed; the existing test had asserted the attribute in its
+invalid position and passed while announcing nothing.
+
+**Documentation had gone false.** `README.md` claimed "No UPDATE or DELETE
+policy exists on reports" — untrue since `0018`, and it was a *security* claim.
+
+Not fixed, and small: `display_name` is dead schema (written `'Anonymous'` by a
+trigger, read by nothing), an unused `DepthLevel` import in `submit-sos.ts`, and
+`_map.png` is still an untracked debug screenshot.
+
 ---
 
 ## Needs you: your local emergency numbers

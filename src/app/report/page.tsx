@@ -22,6 +22,13 @@ const ERROR_MESSAGES: Record<PageErrorCode, string> = {
   outside_pilot_area: "Sa ngayon, Metro Manila lang ang saklaw ng Antas.",
   not_signed_in: "Mag-sign in muna bago mag-report.",
   insert_failed: "May problema sa pag-save. Subukan ulit.",
+  // Says what happened, and deliberately does NOT say "subukan ulit" - retrying
+  // will not help, and inviting it wastes the time of somebody who deserves a
+  // straight answer. It also says the emergency route is still open, which is
+  // true: suspension withdraws the ability to contribute, never the ability to
+  // ask for help.
+  suspended:
+    "Naka-hold ang account mo dahil sa mga naunang report na hindi napatunayang totoo. Hindi ka muna makakapag-report ng lalim ng tubig. Kung nasa panganib ka, gamitin pa rin ang Tulong o tumawag sa 911.",
   no_location: "Buksan ang location para makapag-report.",
   upload_failed: "Hindi naipadala ang larawan. Subukan ulit.",
 };

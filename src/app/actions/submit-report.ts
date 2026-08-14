@@ -10,10 +10,11 @@ import {
 } from "@/lib/reports/validate";
 import { buildReportRow } from "@/lib/reports/row";
 
-/** Validation codes plus the two failures only the action can detect. */
+/** Validation codes plus the failures only the action can detect. */
 export type SubmitErrorCode =
   | ReportErrorCode
   | "not_signed_in"
+  | "suspended"
   | "insert_failed";
 
 export type SubmitResult =
@@ -37,6 +38,21 @@ export async function submitReport(input: ReportInput): Promise<SubmitResult> {
     .insert(buildReportRow(userData.user.id, { ...input, depth: validation.depth }));
 
   if (error) {
+    /**
+     * A suspended reporter is refused by row-level security, and would
+     * otherwise be told "may problema sa pagpapadala" - which reads as a
+     * transient glitch and invites them to retry forever. A refusal somebody
+     * cannot explain is the silent failure this codebase keeps having to fix.
+     *
+     * Asked directly rather than inferred from the Postgres error code, which
+     * would also match unrelated permission problems. One extra round trip, on
+     * the failure path only.
+     */
+    const { data: suspended } = await supabase.rpc("is_suspended");
+    if (suspended === true) {
+      return { ok: false, errors: ["suspended"] };
+    }
+
     // TODO: replace with real telemetry once a logger exists.
     console.error("depth_reports insert failed", {
       code: error.code,
