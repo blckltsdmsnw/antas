@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Antas</title>
+  <rect width="64" height="64" rx="14" ry="14" fill="#0f172a"/>
+  <clipPath id="p"><rect x="12" y="5" width="40" height="54" rx="5" ry="5"/></clipPath>
+  <g clip-path="url(#p)">
+    <rect x="12" y="5"    width="40" height="10.8" fill="#7dd3fc"/>
+    <rect x="12" y="15.8" width="40" height="10.8" fill="#38bdf8"/>
+    <rect x="12" y="26.6" width="40" height="10.8" fill="#0284c7"/>
+    <rect x="12" y="37.4" width="40" height="10.8" fill="#1e40af"/>
+    <rect x="12" y="48.2" width="40" height="10.8" fill="#581c87"/>
+    <rect x="12" y="14.6" width="12" height="2.4" fill="#0f172a"/>
+    <rect x="12" y="25.4" width="12" height="2.4" fill="#0f172a"/>
+    <rect x="12" y="36.2" width="12" height="2.4" fill="#0f172a"/>
+    <rect x="12" y="47.0" width="12" height="2.4" fill="#0f172a"/>
+  </g>
+</svg>

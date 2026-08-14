@@ -107,6 +107,11 @@ interface FloodMapProps {
    * the map element itself is unreachable from their selectors.
    */
   onTheme?: (theme: MapTheme) => void;
+  /**
+   * Fired once the basemap has actually painted. The splash waits on this
+   * rather than on a timer, so it covers real latency instead of inventing it.
+   */
+  onReady?: () => void;
 }
 
 /**
@@ -178,6 +183,7 @@ export function FloodMap({
   onSelect,
   selectedId,
   onTheme,
+  onReady,
 }: FloodMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
@@ -248,8 +254,10 @@ export function FloodMap({
       });
     });
 
+    map.current.on("load", () => onReady?.());
+
     map.current.on("click", (e: MapMouseEvent) => onPick(e.lngLat.lat, e.lngLat.lng));
-  }, [onPick]);
+  }, [onPick, onReady]);
 
   // Swap the basemap in place rather than rebuilding the style: setStyle would
   // drop every marker and reset the camera, so the map would visibly flash and

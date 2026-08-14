@@ -95,6 +95,20 @@ it stamped `data-map-theme="light"` for a frame before consulting the clock —
 the white flash in a dark room the basemap already avoided. Both states are now
 seeded from the clock.
 
+**A real logo, and a loading screen.** The mark is a staff gauge — the graduated
+post used to read a river by eye — drawn as SVG rather than generated, so it is
+exact at every size. It replaces a pixel-art "A" placeholder. The favicon comes
+from `src/app/icon.svg` via the App Router convention; `public/icon-192.png` and
+`icon-512.png` are rasterised from it. The "antas ng tubig" gloss is gone from
+the header.
+
+The splash rises water over the mark while the map loads, stepping through the
+five depth colours in scale order. It is bound to real readiness — basemap
+painted, first reports request settled — never to a timer, with a hard ceiling so
+a failed request cannot strand anyone behind a logo. Once per session. This is
+the only animation permitted past `foundations.md` §8; the terms it has to meet
+are written down in §7b.
+
 **Pins are reachable everywhere on the map.** The legend and the weather strip
 were opaque panels that painted over the pins and swallowed taps aimed at them,
 so a cluster landing in a corner could be neither seen nor opened. The whole

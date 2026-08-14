@@ -35,8 +35,31 @@ test("clicking the map shows street history", async ({ page }) => {
  * Asserted without any report data on purpose: this is a property of the
  * chrome, and needing a seeded database is what kept it untested.
  */
+/**
+ * The splash covers the whole application, so the one property that matters is
+ * that it always leaves. A load screen that can strand someone behind it is
+ * worse than no load screen at all - this is the page people open while
+ * standing in water.
+ */
+test("the splash always clears and hands the map back", async ({ page }) => {
+  await page.goto("/");
+
+  // Generous: MAX_MS is 2600ms, plus the surge and the fade.
+  await expect(page.locator(".splash")).toBeHidden({ timeout: 6000 });
+
+  const hit = await page.evaluate(() => {
+    const el = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
+    return el ? `${el.tagName}.${el.className}` : "";
+  });
+  expect(hit).not.toContain("splash");
+});
+
 test("the legend cannot intercept a tap meant for the map", async ({ page }) => {
   await page.goto("/");
+  // The splash sits above everything by design, so hit-testing before it goes
+  // measures the splash rather than the legend.
+  await expect(page.locator(".splash")).toBeHidden({ timeout: 6000 });
+
   const legend = page.locator(".legend");
   await expect(legend).toBeVisible();
 

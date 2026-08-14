@@ -128,10 +128,12 @@ h3 {
   z-index: 20;
 }
 
+/* Mark plus word. Centred rather than baseline-aligned: the mark has no
+   baseline, and hanging a square off the text baseline drops it visibly low. */
 .wordmark {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: center;
+  gap: 9px;
   text-decoration: none;
   color: var(--ink);
   font-family: var(--font-display), sans-serif;
@@ -140,20 +142,10 @@ h3 {
   letter-spacing: -0.02em;
 }
 
-/* The tagline earns its place: "Antas" alone means nothing to a
-   non-Filipino speaker, and everything to one. */
-.wordmark-gloss {
-  font-family: var(--font-body), sans-serif;
-  font-weight: 400;
-  font-size: 13px;
-  color: var(--ink-muted);
-  letter-spacing: 0;
-}
-
-@media (max-width: 380px) {
-  .wordmark-gloss {
-    display: none;
-  }
+/* The mark keeps its own colours in every theme - it is the depth scale, and a
+   depth scale that restyles itself at night is not a scale. */
+.wordmark svg {
+  flex: none;
 }
 
 .site-nav {
@@ -1137,7 +1129,6 @@ a.btn {
   color: var(--panel-ink);
 }
 
-[data-map-theme="dark"] .wordmark-gloss,
 [data-map-theme="dark"] .nav-link {
   color: var(--panel-ink-muted);
 }
@@ -1402,6 +1393,84 @@ a.btn {
   /* Never wraps. Broken across two lines it stops reading as one figure. */
   white-space: nowrap;
   flex: none;
+}
+
+/* --------------------------------------------------------------------------
+   Splash - water rising over the mark while the map loads
+
+   Bound to real readiness, never to a timer; see SplashScreen. Above the
+   lightbox because it covers the whole application, including a photo left open
+   when the tab was reloaded.
+   -------------------------------------------------------------------------- */
+
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--ground);
+  transition: opacity 320ms ease;
+}
+
+/* Taps go nowhere while the cover is opaque - the map underneath is not ready
+   to answer them - and stop being intercepted the moment it starts to clear. */
+.splash[data-stage="leaving"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.splash-word {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 30px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+/* `multiply` is what sells the submersion: over the white ground it shows as
+   the water colour, and over the mark and the word it darkens them the way
+   depth does, instead of hiding them behind a flat panel. */
+.splash-water {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+  mix-blend-mode: multiply;
+  transition:
+    height var(--rise-ms, 1500ms) cubic-bezier(0.33, 0.1, 0.25, 1),
+    background-color 450ms linear;
+}
+
+/* A surface, so the water has a top rather than simply ending. Deliberately
+   outside `.splash-water`: multiply by white is the identity, so a highlight
+   placed inside the blended layer can never show. */
+.splash-crest {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.65);
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.18);
+  transition: bottom var(--rise-ms, 300ms) cubic-bezier(0.33, 0.1, 0.25, 1);
+}
+
+/* Reduced motion keeps the covering - it is load state, not decoration - and
+   drops only the travel, so the level steps rather than climbs. */
+@media (prefers-reduced-motion: reduce) {
+  .splash-water,
+  .splash-crest {
+    transition: background-color 200ms linear;
+  }
 }
 
 /* --------------------------------------------------------------------------

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Archivo, Public_Sans } from "next/font/google";
 import { ModeratorLink } from "@/components/ModeratorLink";
+import { AntasMark } from "@/components/AntasMark";
 import "./globals.css";
 
 /** Headings. A grotesque with signage DNA — it should read like something
@@ -42,8 +43,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body>
         <header className="site-header">
           <Link href="/" className="wordmark">
+            <AntasMark size={22} />
             Antas
-            <span className="wordmark-gloss">antas ng tubig</span>
           </Link>
           <nav className="site-nav">
             <Link href="/report" className="nav-link">

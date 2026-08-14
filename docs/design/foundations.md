@@ -265,11 +265,38 @@ and typhoon flooding does not stop at 6pm. So:
 - The SOS link keeps a red at night, lightened for contrast. Greying out the emergency entry
   point after dark is the last thing this interface should do
 
+## 7b. The mark, and the splash
+
+The mark is a **staff gauge** — the graduated post planted in a river to read its level by
+eye, which is the instrument this app replaces with a crowd. Five bands, in scale order, pale
+at the top and deepest at the foot. The home-screen icon and the map key are therefore the
+same object, and nothing new has to be learned to read it. Not a droplet and not a wave:
+neither can say *how deep*, which is the only question this product answers.
+
+It sits on an ink ground rather than bleeding to the edge. Full-bleed, the palest band
+dissolved into a white browser tab and the icon read as though its top had been cropped.
+
+The wordmark is the mark plus "Antas". The gloss "antas ng tubig" that used to sit beside it
+is gone.
+
+**The splash is the one animation allowed past §8**, and only on these terms:
+
+- The water level is bound to real readiness — the basemap painting and the first reports
+  request settling — never to a timer. It covers latency that already exists and never
+  manufactures any. Ready in 300ms means gone in 300ms
+- There is a hard ceiling (`MAX_MS`). A failed request must not leave someone stranded behind
+  a logo, so the splash leaves whether the map arrives or not
+- Once per session. A second full-screen splash on a reload is an interruption
+- It rises one depth band at a time, in scale order, so the load screen teaches the legend
+  before the map is reached and the rise reads as increasing danger
+- It **submerges** the mark rather than floating it. A logo bobbing to safety reads as
+  reassurance; this is a warning tool
+
 ## 8. What this deliberately avoids
 
 - Dark UI **on task pages** - worse outdoors in daylight, which is when floods happen. The
   map is the documented exception; see 7a
 - Decorative illustration, gradients, glassmorphism - this is a safety tool
 - Animated transitions beyond 150ms feedback - nobody in a flood wants to wait for an
-  animation
+  animation. The splash is the single exception, and earns it by never adding time; see 7b
 - Styling the severity of chrome - only the water gets to be alarming

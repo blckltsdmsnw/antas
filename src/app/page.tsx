@@ -7,6 +7,7 @@ import { ReportDetail } from "@/components/ReportDetail";
 import { MapLegend } from "@/components/MapLegend";
 import { WeatherStrip } from "@/components/WeatherStrip";
 import { RainOverlay } from "@/components/RainOverlay";
+import { SplashScreen } from "@/components/SplashScreen";
 import { mapThemeFor, type MapTheme } from "@/lib/map/theme";
 import type { CurrentWeather } from "@/lib/env/current-weather";
 import { createClient } from "@/lib/supabase/client";
@@ -47,6 +48,12 @@ export default function HomePage() {
   const [mapTheme, setMapTheme] = useState<MapTheme>(() => mapThemeFor(new Date()));
   const [weather, setWeather] = useState<CurrentWeather | null>(null);
 
+  // Two signals, because either alone lies. The basemap can paint before a
+  // single pin exists, and the reports can arrive before there is a map to put
+  // them on - clearing the splash on one of them shows a half-built map.
+  const [mapReady, setMapReady] = useState(false);
+  const [reportsReady, setReportsReady] = useState(false);
+
   useEffect(() => {
     createClient()
       .rpc("reports_near", {
@@ -55,6 +62,7 @@ export default function HomePage() {
         radius_m: CITY_RADIUS_M,
       })
       .then(({ data }) => {
+        setReportsReady(true);
         const rows = (data ?? []) as NearbyRow[];
         setReports(
           rows.map((row) => ({
@@ -91,6 +99,10 @@ export default function HomePage() {
     setSelected(report);
   }, []);
 
+  // Stable: it sits in the dependency list of the effect that builds the map,
+  // and a fresh identity every render would churn that effect needlessly.
+  const markMapReady = useCallback(() => setMapReady(true), []);
+
   const openStreet = useCallback((lat: number, lon: number) => {
     setSelected(null);
     setPoint({ lat, lon });
@@ -106,8 +118,10 @@ export default function HomePage() {
           onSelect={openReport}
           selectedId={selected?.id ?? null}
           onTheme={setMapTheme}
+          onReady={markMapReady}
         />
       </div>
+      <SplashScreen ready={mapReady && reportsReady} />
       <RainOverlay weather={weather} />
       <WeatherStrip onWeather={setWeather} />
       <MapLegend />
