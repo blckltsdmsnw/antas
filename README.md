@@ -96,9 +96,13 @@ origins, and the local Supabase `site_url` is `127.0.0.1`, so sign-in redirects 
 Sign-in emails are captured by Mailpit at http://127.0.0.1:54324 rather than being sent.
 
 ```bash
-npm run test        # 62 unit and integration tests
-npm run test:e2e    # 3 Playwright tests
+npm test                            # 171 unit tests
+npx vitest run tests/integration    # 48 integration tests, needs the local stack
+npm run test:e2e                    # 16 Playwright tests
 ```
+
+`vitest run src/` covers only the unit tests. `tests/integration/` is a separate
+directory, and running only `src/` once let a migration regression through.
 
 ## Security posture
 
@@ -137,8 +141,20 @@ tests/e2e/           Playwright
 The logic that carries risk — the depth scale, validation — lives in pure modules with no
 I/O, so it is unit-testable without a database or a network.
 
+## Design documents
+
+| Document | Answers |
+|---|---|
+| [`docs/design/design.md`](docs/design/design.md) | How the system is built — architecture, data model, failure behaviour, decisions |
+| [`docs/design/foundations.md`](docs/design/foundations.md) | How it looks — colour, type, components, the mark, the splash |
+| [`docs/STATUS.md`](docs/STATUS.md) | What is done and what is still open |
+
 ## Status
 
-Phase 1 of three. Distress signalling with a trust and plausibility pipeline (Phase 2) and
-a barangay moderator console (Phase 3) are specified but not built. The specification and
-implementation plan are in [`docs/superpowers/`](docs/superpowers/).
+Depth reporting, distress signalling with a trust and plausibility pipeline, and the
+barangay moderator console are all built. Photos, screen-space clustering, live weather,
+rain on the map and a clock-driven night basemap came after.
+
+Still deliberately unbuilt: dispatch or anything implying rescue, push notification, and
+offline caching. The known open items are in [`docs/STATUS.md`](docs/STATUS.md); the
+original pre-implementation specification is in [`docs/superpowers/`](docs/superpowers/).
