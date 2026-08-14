@@ -227,6 +227,42 @@ h3 {
   inset: 0;
 }
 
+/* --------------------------------------------------------------------------
+   Night tint
+
+   The day map got its colour by changing basemap - Positron drew water as grey,
+   Voyager draws it blue. That fix has no equivalent after dark: CARTO's dark
+   tiles are genuinely greyscale, which was measured rather than assumed
+   (saturation at x2 and x3.5 is indistinguishable from raw, because there is no
+   hue there to amplify), and there is no keyless coloured dark basemap to swap
+   to. Darkening Voyager instead produces a light-ground map with dark labels on
+   a dimmed background - unreadable, and glare in a dark street besides.
+
+   So the colour is added here. `mix-blend-mode: color` takes hue and saturation
+   from this layer and keeps LUMINANCE from the map underneath, so every street,
+   label and river stays exactly as legible as it was and the whole thing turns
+   navy instead of flat grey. The water still reads, because it is still the
+   lighter shape - it is simply a lighter navy now.
+
+   Purely a tint. It states nothing about the data, which is why it is allowed
+   to be decorative in a product that otherwise is not.
+   -------------------------------------------------------------------------- */
+
+.map-tint {
+  position: absolute;
+  inset: 0;
+  /* Above the canvas, below the rain, the pins and every panel. */
+  z-index: 1;
+  pointer-events: none;
+  display: none;
+}
+
+[data-map-theme="dark"] .map-tint {
+  display: block;
+  background: #1d3a5c;
+  mix-blend-mode: color;
+}
+
 /* The history sheet sits over the map rather than pushing it into a strip.
    On mobile it rises from the bottom; on desktop it docks left. */
 .history-sheet {

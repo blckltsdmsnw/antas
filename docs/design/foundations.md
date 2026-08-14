@@ -264,6 +264,19 @@ and typhoon flooding does not stop at 6pm. So:
   was always light and then swapped, which at night is a white flash in a dark room
 - The SOS link keeps a red at night, lightened for contrast. Greying out the emergency entry
   point after dark is the last thing this interface should do
+- **The night map is tinted, not re-styled.** The day map got its colour by changing basemap
+  — Positron drew water as grey, Voyager draws it blue. There is no equivalent swap after
+  dark: CARTO's dark tiles are genuinely greyscale (measured — saturation at ×2 and ×3.5 is
+  indistinguishable from raw, because there is no hue to amplify), and no keyless coloured
+  dark basemap exists to move to. Darkening Voyager instead yields a light-ground map with
+  dark labels on a dimmed background: unreadable, and glare in a dark street besides.
+
+  So colour is added with an overlay in `mix-blend-mode: color`, which takes hue and
+  saturation from the overlay and keeps **luminance** from the map underneath. Every street,
+  label and river stays exactly as legible as it was; the whole map turns navy instead of
+  flat grey, and the river still reads because it is still the lighter shape — now a lighter
+  navy. It is purely a tint and states nothing about the data, which is why a product that
+  otherwise avoids decoration is allowed it here
 
 ## 7b. The mark, and the splash
 

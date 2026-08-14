@@ -100,8 +100,8 @@ const RASTER_PAINT: Record<MapTheme, RasterPaint> = {
     "raster-saturation": -0.25,
   },
   dark: {
-    "raster-brightness-min": 0.22,
-    "raster-contrast": -0.08,
+    "raster-brightness-min": 0.18,
+    "raster-contrast": 0.06,
     "raster-saturation": 0,
   },
 };

@@ -194,6 +194,10 @@ export default function HomePage() {
           focus={focus}
           self={self}
         />
+        {/* Colours the night basemap without touching its legibility - see
+            `.map-tint`. Inside the canvas wrapper so it blends against the map
+            and nothing else. */}
+        <div className="map-tint" aria-hidden="true" />
       </div>
       <SplashScreen ready={mapReady && reportsReady} />
       <PlaceSearch onPick={goToPlace} />

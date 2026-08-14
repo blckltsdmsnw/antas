@@ -153,6 +153,14 @@ for (const [when, expected] of [
       // the theme follows the Manila clock rather than a media query.
       const themeColour = await page.getAttribute('meta[name="theme-color"]', "content");
       expect(themeColour).toBe(expected === "dark" ? "#253044" : "#ffffff");
+
+      // The night tint colours the greyscale dark basemap, and must never sit
+      // over the day one - Voyager already has its own colour, and blending a
+      // second hue on top would fight it.
+      const tint = await page.evaluate(
+        () => getComputedStyle(document.querySelector(".map-tint")!).display,
+      );
+      expect(tint).toBe(expected === "dark" ? "block" : "none");
     });
   }
 }
