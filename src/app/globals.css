@@ -38,6 +38,24 @@
   --shadow-lifted: 0 2px 6px rgba(15, 23, 42, 0.1), 0 12px 28px rgba(15, 23, 42, 0.12);
 
   --header-h: 56px;
+
+  /* Stacking order over the map, in one place because it was previously spread
+     across five rules and the ordering was impossible to see - which is how the
+     legend ended up painting over the pins it exists to explain.
+
+     Pins sit ABOVE the informational chrome deliberately. A pin hidden under an
+     opaque panel is a report nobody can reach; a legend with a pin drawn across
+     one of its rows is merely untidy, and panning moves it. The chrome is also
+     pointer-transparent, so it can never swallow a tap meant for the map.
+
+     `.map-shell` is position:relative with z-index:auto, so it does NOT open a
+     stacking context and these values compete directly with the header's 20.
+     Everything here must stay below that. */
+  --z-rain: 5;
+  --z-map-chrome: 6;
+  --z-pin: 8;
+  --z-sheet: 14;
+  --z-sheet-detail: 16;
 }
 
 *,
@@ -195,7 +213,7 @@ h3 {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 10;
+  z-index: var(--z-sheet);
   background: var(--ground);
   border-top: 1px solid var(--line);
   border-radius: var(--radius-card) var(--radius-card) 0 0;
@@ -673,7 +691,12 @@ button.quiet-link {
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: 10;
+  z-index: var(--z-map-chrome);
+  /* Nothing in here is clickable - it is a key, not a control. Leaving it
+     hit-testable meant a tap aimed at a pin underneath landed on the legend and
+     did nothing at all, and the map could not even be panned by dragging across
+     this corner. */
+  pointer-events: none;
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(6px);
   border: 1px solid var(--line);
@@ -903,6 +926,15 @@ a.btn {
    depth it is AND whether tapping it will show you a photo.
    -------------------------------------------------------------------------- */
 
+/* Pins and clusters are MapLibre's own marker wrappers, and they default to
+   z-index:auto - which put them underneath the legend and the weather strip.
+   A cluster that lands in the top-right corner was drawn behind an opaque panel
+   and so could be neither seen nor tapped. It now sits on top of that chrome;
+   the sheets, which are the user's active task, still cover it. */
+.maplibregl-marker {
+  z-index: var(--z-pin);
+}
+
 .pin {
   width: 20px;
   height: 20px;
@@ -993,7 +1025,7 @@ a.btn {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 12;
+  z-index: var(--z-sheet-detail);
   background: var(--ground);
   border-top: 1px solid var(--line);
   border-radius: var(--radius-card) var(--radius-card) 0 0;
@@ -1192,7 +1224,10 @@ a.btn {
 .rain {
   position: absolute;
   inset: 0;
-  z-index: 5;
+  /* Atmosphere, so it falls between the basemap and the information drawn on
+     it. It used to sit above the pins, which meant the streaks washed over the
+     one thing on screen that has to stay legible. */
+  z-index: var(--z-rain);
   overflow: hidden;
   /* Must never swallow a tap meant for a pin. */
   pointer-events: none;
@@ -1294,7 +1329,11 @@ a.btn {
      Without this the rain figure - the one number on the strip that matters -
      slid underneath it as soon as the strip grew. */
   max-width: calc(100% - 24px - 152px);
-  z-index: 10;
+  z-index: var(--z-map-chrome);
+  /* Same reasoning as the legend: in its loaded state this is a read-only <p>
+     over the top-left of the map, and it had the same tap-stealing problem. The
+     idle state is a real button, so that variant takes its events back below. */
+  pointer-events: none;
   display: flex;
   align-items: baseline;
   /* Wraps to a second line rather than truncating. On a 360px phone the
@@ -1321,6 +1360,8 @@ a.btn {
   font-weight: 600;
   cursor: pointer;
   min-height: 40px;
+  /* The one weather-strip state that is actually a control. */
+  pointer-events: auto;
 }
 
 .weather-strip--muted {

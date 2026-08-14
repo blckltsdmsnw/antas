@@ -90,12 +90,19 @@ raining on you. Neither asks for location on load.
 **Night map** — light 06:00–18:00 Manila time, dark after. Task pages stay light
 in every condition. See `docs/design/foundations.md` §7a.
 
+**Pins are reachable everywhere on the map.** The legend and the weather strip
+were opaque panels that painted over the pins and swallowed taps aimed at them,
+so a cluster landing in a corner could be neither seen nor opened. The whole
+stacking order now lives in one commented block of `:root` tokens in
+`globals.css`: rain 5, chrome 6, pins 8, sheets 14/16, header 20. Pins deliberately
+paint *above* the chrome — an unreachable report is worse than an untidy legend —
+and the chrome is `pointer-events: none` except the one weather-strip state that
+is a real button.
+
 ---
 
 ## Known issues, not fixed
 
-- **Clusters can sit under the legend panel**, where a tap hits the legend
-  instead of the pin. Needs a layout decision rather than a patch.
 - **`_map.png`** in the repo root is a leftover debug screenshot. Untracked,
   safe to delete.
 - **Hydration warning on `/report`** from a `caret-color` style Chromium injects
