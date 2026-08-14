@@ -1,32 +1,26 @@
 # Antas — where things stand
 
-Last updated: 2026-08-14, ~05:00 PHT.
+Last updated: 2026-08-14, ~14:00 PHT.
 
 Everything described here is committed and pushed to
 `github.com/blckltsdmsnw/antas`. Vercel auto-deploys `main`; a push takes about
 45 seconds to go live.
 
+**Production loads.** The 403 bot challenge that blocked every other check is
+gone — confirmed in a real browser on 2026-08-14. It was self-inflicted:
+production had been polled repeatedly with `curl` and headless browsers to
+verify deploys, and Vercel's attack protection started challenging automated
+traffic. Do not verify deploys that way. If a challenge page ever returns, it is
+**Vercel → antas → Settings → Firewall → Attack Challenge Mode**.
+
 ---
 
 ## Do these first
 
-Ordered by how much they matter. All of them need your credentials, which is
-why they are still open.
+Ordered by how much they matter. Both need your credentials, which is why they
+are still open.
 
-### 1. Check the site actually loads
-
-`antas-one.vercel.app` was returning **403** with a Vercel bot challenge. This
-was self-inflicted: production was polled repeatedly with `curl` and headless
-browsers to verify deploys, and Vercel's attack protection started challenging
-automated traffic. A real browser can usually solve the challenge; automated
-clients cannot.
-
-If you hit a challenge or error page:
-**Vercel → antas → Settings → Firewall → disable Attack Challenge Mode.**
-
-Never confirmed either way. Until it is, nothing else here is verifiable.
-
-### 2. Moderator role is on the wrong account
+### 1. Moderator role is on the wrong account
 
 There are two real accounts:
 
@@ -39,7 +33,7 @@ If you sign in to `/console` with the school account the queue will look empty
 and nothing is wrong. Moving it is a one-line update to the `moderators` table
 (`user_id`, `barangay`).
 
-### 3. Seed a few more reports if you want to see clustering
+### 2. Seed a few more reports if you want to see clustering
 
 Production has ~23 pins spread across Marikina and Taguig, so clusters rarely
 form. Locally 680 reports collapse to 6 clusters at city zoom.
