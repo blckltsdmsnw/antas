@@ -202,6 +202,46 @@ paint *above* the chrome — an unreachable report is worse than an untidy legen
 and the chrome is `pointer-events: none` except the one weather-strip state that
 is a real button.
 
+### Later the same session — giving a report an afterlife
+
+Three things, all answering the same complaint: a report was something you sent
+into silence, and `/gabay` was something you read once.
+
+**"Kumusta na?" on every report** (migration `0018`). Three buttons under the
+depth meter — *Wala na* / *Ganoon pa rin* / *Mas mataas na* — and the most
+**recent** answer leads, not the most numerous: ten people saying "ganoon pa
+rin" an hour ago do not outrank one person saying "mas mataas na" two minutes
+ago. Ties break toward the worse state.
+
+This is the honest version of the comment thread that was asked for. Free text
+under a report on a tool **nobody moderates** is a way for "wala na po" to
+appear beneath water that is still chest-deep. Three states carry the same
+information, need no moderation because there is no prose to moderate, and can
+be counted.
+
+**Remove your own report.** Two taps (`Tanggalin` → `Sigurado ka?`), and the row
+is **hidden, never deleted** — it is evidence that somebody reported something.
+The map filters on `status = 'active'`, so hiding is all it takes to leave.
+
+**The go bag is a checklist now**, not a paragraph. Stored in `localStorage`, not
+on an account: packing survives with no signal and no login, which is the
+condition that page is most likely read in.
+
+Two defects in `0018` were found only by running it against a real database, and
+both are worth remembering:
+
+- **Hiding your own report could never have worked.** PostgreSQL applies SELECT
+  policies to the *new* row of an UPDATE, so the moment `status` became
+  `hidden` the row fell outside `status = 'active'` and Postgres rejected the
+  write. The fix is a second policy letting reporters read their own rows —
+  which the hide policy silently depends on, so it is commented as such.
+- **The privacy design and the write path were in conflict.** `report_updates`
+  rows say who was standing where, so `reporter_id` had to stay unreadable; but
+  a PostgREST upsert needs SELECT on the table to resolve its conflict target.
+  Writes now go through a `security definer` function that takes **no**
+  `reporter_id` at all, and the table grants nothing to `anon` or
+  `authenticated` — there is no name to forge and no row to read.
+
 ---
 
 ## Needs you: your local emergency numbers

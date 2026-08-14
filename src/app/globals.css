@@ -1268,6 +1268,54 @@ a.btn {
   background: var(--panel-line);
 }
 
+/* Kumusta na, at night.
+ *
+ * The light-mode tints are near-white by design - `--danger-tint` is #fef2f2 -
+ * and dropping one into a dark sheet puts a glaring white slab in the middle of
+ * a night screen, which is the exact glare the dark map exists to avoid. Same
+ * for the buttons, which paint `--ground`. Both are washes over the panel here,
+ * with the state colour carried by the text instead of the fill. */
+[data-map-theme="dark"] .fresh {
+  border-top-color: var(--panel-line);
+}
+
+[data-map-theme="dark"] .fresh-lead {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--panel-ink);
+}
+
+[data-map-theme="dark"] .fresh-lead[data-state="gone"] {
+  background: rgba(34, 197, 94, 0.16);
+  color: #86efac;
+}
+
+[data-map-theme="dark"] .fresh-lead[data-state="deeper"] {
+  background: rgba(220, 38, 38, 0.18);
+  color: #fca5a5;
+}
+
+[data-map-theme="dark"] .fresh-button {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--panel-line);
+  color: var(--panel-ink);
+}
+
+[data-map-theme="dark"] .fresh-button:hover {
+  border-color: var(--panel-ink-muted);
+}
+
+/* The chosen answer keeps the accent fill in both themes - it is the one thing
+   on this block that has to stay obviously "yours". */
+[data-map-theme="dark"] .fresh-button[data-mine="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+[data-map-theme="dark"] .fresh-note {
+  color: var(--panel-ink-muted);
+}
+
 /* --------------------------------------------------------------------------
    Rain
    Shown only when measured precipitation says it is raining on the user - see
@@ -1509,6 +1557,55 @@ a.btn {
   color: var(--ink-muted);
 }
 
+/* The go bag, ticked off rather than read. A checked item is dimmed instead of
+   removed: the list is a record of what you packed, and a shrinking list would
+   destroy the one thing it is for - seeing at a glance what is still missing. */
+.go-bag-count {
+  margin: -4px 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.go-bag-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  /* The whole row is the target, not the 22px box. One-handed, in the rain. */
+  cursor: pointer;
+}
+
+/* A real checkbox, coloured by the accent. Hand-drawn ticks were considered and
+   dropped: the native control already announces its own state to a screen
+   reader and already looks like the thing it is on every platform. */
+.go-bag-box {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+/* The title and body are spans here, not paragraphs - a <p> inside a <label>
+   is invalid - so they need the block behaviour their own rules assume. */
+.go-bag-item .guide-item-title,
+.go-bag-item .guide-item-body {
+  display: block;
+}
+
+.go-bag-item[data-checked="true"] {
+  background: transparent;
+}
+
+.go-bag-item[data-checked="true"] .guide-item-title {
+  color: var(--ink-muted);
+  text-decoration: line-through;
+}
+
 /* The call rows. Given the accent rather than the danger red: this is the way
    out, not the emergency itself, and a wall of red stops reading as urgent. */
 .contact-list {
@@ -1624,9 +1721,54 @@ a.btn {
   color: var(--ink-muted);
 }
 
-.my-report-status {
+/* Status and the remove button, stacked at the right edge. */
+.my-report-side {
   flex: none;
   align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+/* Quiet on purpose. Removing your own report is allowed, but it is not the
+   thing this screen is encouraging - a red button here would read as the
+   primary action on a list of contributions. */
+.my-report-remove {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Only once it has asked "sigurado ka?". The second tap is the destructive
+   one, so that is where the warning colour belongs - not on the first. */
+.my-report-remove[data-confirming="true"] {
+  background: var(--danger-tint);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.my-report-remove:hover {
+  border-color: var(--ink-muted);
+  color: var(--ink);
+}
+
+.my-report-remove[data-confirming="true"]:hover {
+  color: var(--danger);
+}
+
+.my-report-remove:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.my-report-status {
+  flex: none;
   padding: 4px 10px;
   border-radius: 999px;
   background: var(--success-tint);
@@ -2264,6 +2406,97 @@ a.btn {
   flex: 1;
   border-radius: 3px;
   background: var(--line);
+}
+
+/* --------------------------------------------------------------------------
+   Kumusta na? - whether the report above is still true
+
+   Three buttons instead of a comment box. Sized like the depth control, not
+   like a form: this is answered one-handed, outdoors, in seconds.
+   -------------------------------------------------------------------------- */
+
+.fresh {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.fresh-title {
+  margin: 0 0 10px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* The current answer, coloured by what it says. Green here is a real all-clear
+   and has to be distinguishable from the blue of the depth ramp above it. */
+.fresh-lead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-control);
+  background: var(--raised);
+  font-size: 15px;
+}
+
+.fresh-lead[data-state="gone"] {
+  background: var(--success-tint);
+  color: var(--success);
+}
+
+.fresh-lead[data-state="deeper"] {
+  background: var(--danger-tint);
+  color: var(--danger);
+}
+
+.fresh-when {
+  flex: none;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.fresh-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.fresh-button {
+  flex: 1;
+  min-height: 44px;
+  padding: 8px 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--ground);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.fresh-button:hover {
+  border-color: var(--ink-muted);
+}
+
+/* Your own answer, held visibly. Without this the buttons look untouched a
+   second after you press one, and people press again. */
+.fresh-button[data-mine="true"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.fresh-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.fresh-note {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: var(--ink-muted);
 }
 
 /* Console */

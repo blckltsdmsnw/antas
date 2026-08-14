@@ -106,7 +106,7 @@ trusted about *rules*, and why it cannot be trusted about *behaviour* (§10).
 
 ## 5. Data model
 
-Thirteen migrations, `supabase/migrations/0001` … `0013`. The significant ones:
+Eighteen migrations, `supabase/migrations/0001` … `0018`. The significant ones:
 
 | Migration | Adds |
 |---|---|
@@ -115,6 +115,10 @@ Thirteen migrations, `supabase/migrations/0001` … `0013`. The significant ones
 | `0009`, `0011`, `0012` | Barangays, then Metro Manila and Taguig areas |
 | `0010` | Moderation — the queue and moderator rows |
 | `0013` | The public `report-photos` bucket, and `reports_near` widened to return the path |
+| `0014`, `0015` | `search_places`, and `my_reports` for `/ako` |
+| `0016` | Revokes EXECUTE from `public` where earlier migrations wrongly revoked it from `anon` |
+| `0017` | Depth becomes optional on an SOS signal |
+| `0018` | `report_updates` — "kumusta na?" — and hiding your own report |
 
 `reports_near(lat, lon, radius_m)` is a PostGIS function rather than a filtered
 select: proximity is a spatial question, and answering it in the client means
@@ -129,8 +133,25 @@ merely documented — a privacy claim without a test is a comment.
   `with check (reporter_id = auth.uid())`. A signed-in user cannot file in
   someone else's name, and the server action derives the reporter from the
   session rather than from the request body.
-- **No UPDATE or DELETE policy exists on reports**, and no grant either. Denied
-  at both layers, rather than relying on the absence of a policy alone.
+- **A reporter may change exactly one column of their own report, to exactly one
+  value.** `0018` grants `update (status)` — column-scoped — and a policy whose
+  `with check` pins the new value to `'hidden'`. Everything else on a report is
+  still denied at both layers. A table-wide grant would let somebody file
+  "ankle", watch it get scored, and rewrite the claim afterwards, which is
+  precisely what the accuracy score exists to make costly. DELETE is granted
+  nowhere.
+- **Hiding a report needs a second, non-obvious policy.** PostgreSQL applies
+  SELECT policies to the *new* row of an UPDATE, so with only
+  `status = 'active'` on the table the write is rejected the instant the row
+  stops being active. `0018` therefore also lets reporters read their own rows
+  — correct on its own terms, and load-bearing for the hide.
+- **`report_updates` grants nothing to `anon` or `authenticated`.** Not
+  column-scoped: nothing. Its rows record who was standing where, and a
+  PostgREST upsert needs SELECT on the table to resolve its conflict target, so
+  permitting people to answer would have meant permitting them to read who else
+  had. Both the read and the write go through `security definer` functions, and
+  the write takes no `reporter_id` — it writes `auth.uid()`, so there is no name
+  to forge rather than a forged name to reject.
 - **Profiles are denied to anonymous callers at the grant layer as well as by
   RLS** — two independent barriers, because that table gains verified phone
   numbers in a later phase.
@@ -158,28 +179,37 @@ states which one it is before offering the shutter.
 
 | Route | Audience | Notes |
 |---|---|---|
-| `/` | Anyone, no sign-in | Map, search, street history, report detail |
-| `/gabay` | Anyone, no sign-in | Preparedness, and the numbers that reach a person |
+| `/` | Anyone, no sign-in | Map, search, street history, report detail, "kumusta na?" |
+| `/gabay` | Anyone, no sign-in | Preparedness, a packable go bag, and the numbers that reach a person |
 | `/report` | Signed in | Body-height slider, three taps, no typing |
-| `/ako` | Signed in | Your own reports, and whether each is still on the map |
+| `/ako` | Signed in | Your own reports, whether each is still on the map, and removing one |
 | `/sos` | Signed in, in danger | Live photo, three-second hold |
 | `/console`, `/console/[id]` | Barangay moderators | Triage queue |
 | `/login`, `/auth/confirm` | — | Email OTP |
 
-Navigation is a **bottom tab bar** — Mapa, Gabay, Mag-report, Ako — because a phone
-held one-handed in the rain reaches the bottom of the screen and not the top.
+Navigation is a **bottom tab bar** — Mapa, Gabay, a centre I-report button, Ako,
+Tulong — because a phone held one-handed in the rain reaches the bottom of the
+screen and not the top.
 
-**Tulong is deliberately not a tab.** A tab is one of four equal things, and this
-is not equal to the others; it stays a standing red chip in the header on every
-screen. The tab bar is hidden entirely on `/sos`, which is a single task under
-duress — offering four ways to leave at the moment concentration matters most is
-the wrong trade.
+**Tulong sits in the bar but is not styled as one more destination.** It carries
+its own red, distinct from both the resting tabs and the active one; an earlier
+draft kept it as a header chip instead, which put the emergency route in the one
+part of the screen a thumb cannot reach. It is a **labelled tap, never a
+gesture** — an SOS hidden behind a long-press on the report button cannot be
+found by someone who needs it now, and under panic people do the routine thing.
+
+The bar stays visible on `/sos` too. Hiding it there left that page with no
+visible way out once Tulong moved off the header, and stranding someone is worse
+than distracting them — leaving costs nothing, because an SOS is only sent by
+the live photo and the three-second hold.
 
 `/gabay` is the only screen that is useful with no signal, no data and no
 reports, which is the condition it is most likely to be read in. So it is a
 server component with no fetch: no spinner, no failure state to design. The
 hotline section is first, not last, because Antas cannot dispatch anyone — that
-fact used to be only a disclaimer, and here it becomes an action.
+fact used to be only a disclaimer, and here it becomes an action. Its one piece
+of state, the go bag checklist, lives in `localStorage` rather than on an
+account, so it works signed-out and offline like the rest of the page.
 
 Moderator rights are granted by script, not by a UI:
 
@@ -203,6 +233,13 @@ A moderator is a vetted person at a barangay desk, not somebody who signed up.
   so the tap always does something.
 - **Age is shown as opacity, and also stated in words** on the detail card, which
   is what someone who cannot perceive the fade relies on.
+- **An ageing pin can be asked whether it is still true.** *Kumusta na?* under
+  the depth meter: three buttons, one standing answer per person per report, and
+  the most recent answer leads rather than the most numerous — ten people an
+  hour ago describe an earlier moment. Ties break toward the worse state,
+  because being wrong in the direction of caution is the survivable mistake.
+  This is also the only thing a reporter gets back: filing used to be something
+  you did into silence.
 - **The basemap follows the Manila clock and nothing else.** See
   [`foundations.md`](foundations.md) §7a for why `prefers-color-scheme` is
   deliberately ignored.
@@ -288,9 +325,9 @@ offer the gallery instead.
 ## 10. Testing
 
 ```bash
-npm test                            # unit (171)
-npx vitest run tests/integration    # integration (48) - needs local Supabase
-npx playwright test                 # end-to-end (28)
+npm test                            # unit + integration (251)
+npx vitest run tests/integration    # integration only - needs local Supabase
+npx playwright test                 # end-to-end (35)
 npm run build
 ```
 
@@ -320,9 +357,24 @@ application; the suite was green through all of them. The recorded cases:
   *reached*, never that it was **kept** — when the defect is a state that comes
   back, the test has to wait and look twice.
 
-So: drive it, screenshot it, count the network requests, read the database. And
-prove every new regression guard fails against the unfixed code before trusting
-it — a test that cannot go red is not a test.
+- And a third time, caught only *because* of that habit. A guard written to
+  prove the go bag never flashes "0 sa 4" before its saved state loads passed
+  with the guard deliberately removed: any in-page read happens after the effect
+  has already run, so the flash is over before an assertion can see it. It was
+  rewritten to fetch the page's own HTML and require that the count is absent
+  from it — the one place the defect is actually visible. **A test written for a
+  real bug can still be vacuous.**
+- `0018` shipped two defects that no amount of unit testing would have reached,
+  because both live in PostgreSQL's rules rather than in the code: SELECT
+  policies are applied to the *new* row of an UPDATE (so hiding your own report
+  could never succeed), and a plpgsql parameter named after a column shadows it
+  in `on conflict` (which fails only on the *second* write, passing every
+  first-write test). Both surfaced within minutes of running the migration
+  against a real database.
+
+So: drive it, screenshot it, count the network requests, read the database, and
+run the migration. And prove every new regression guard fails against the
+unfixed code before trusting it — a test that cannot go red is not a test.
 
 ## 11. Decisions worth not relitigating
 
@@ -365,3 +417,15 @@ an authority relationship or live operational data the project does not have:
   open drains and moves fast
 - **A satellite basemap with filled heat zones**, which claims continuous area
   knowledge from sparse point reports
+- **Free-text comments and replies under a report.** Asked for directly, and
+  built as *kumusta na?* instead. Nobody moderates this application, and prose
+  under a safety reading is a way for "wala na po" to sit beneath water that is
+  still chest-deep — the same class of harm as a "Ligtas" label. Three states
+  carry what the comment carried, need no moderation because there is no prose
+  to moderate, and can be counted, which a thread cannot
+- **Reporter names on reports.** Also asked for, and deliberately still open
+  rather than quietly shipped: `profiles` is locked at the grant layer because
+  it gains verified phone numbers later, and attaching a name to a location and
+  a timestamp is a different privacy decision from anything already made. It
+  needs an explicit choice — anonymous by default with opt-in, or not at all —
+  not a default chosen by whoever implements it

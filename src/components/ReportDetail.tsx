@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { MapReport } from "@/components/FloodMap";
 import { PhotoLightbox } from "@/components/PhotoLightbox";
+import { ReportFreshness } from "@/components/ReportFreshness";
 import { depthLabel, depthRank, DEPTH_LEVELS } from "@/lib/depth/scale";
 import { DEPTH_VAR, depthRangeLabel } from "@/lib/depth/presentation";
 import { reportPhotoUrl } from "@/lib/reports/photo";
@@ -111,6 +112,10 @@ export function ReportDetail({ report, onClose }: ReportDetailProps) {
             />
           ))}
         </div>
+
+        {/* Everything above describes the moment the report was filed. This is
+            the only part that can say whether it is still true. */}
+        <ReportFreshness reportId={report.id} />
       </div>
 
       {zoomed && photo && (

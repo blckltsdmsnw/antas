@@ -164,12 +164,18 @@ describe("depth_reports row-level security", () => {
   });
 });
 
-describe("depth_reports has no update or delete policy", () => {
-  // Phase 1 deliberately grants no update/delete privilege to authenticated on
-  // depth_reports and defines no update/delete policy either -- denied twice over.
-  // These tests exist so that a future migration which copy-pastes a grant line
-  // (e.g. `grant update on depth_reports to authenticated`) fails loudly instead
-  // of silently reopening editing/deletion of other people's reports.
+describe("depth_reports cannot be edited or deleted", () => {
+  // These were once denied twice over -- no grant, and no policy. 0018 changed
+  // half of that: hiding your own report needs an UPDATE path, so `authenticated`
+  // now holds `update (status)` on depth_reports plus a policy pinning the new
+  // value to 'hidden'.
+  //
+  // That the grant is COLUMN-SCOPED is what keeps these tests meaningful. Depth
+  // is a different column, so it must still be refused, and a future migration
+  // that widens the grant to the whole table (`grant update on depth_reports to
+  // authenticated`) fails here rather than silently letting reporters rewrite a
+  // claim after it has been scored. See report-updates.test.ts for the other
+  // half: that 'hidden' is the only value the one permitted column may take.
   it("does not let a signed-in user update a depth report", async () => {
     // Each test inserts and targets its own row (by id) rather than sharing rows
     // with other tests, so the assertion doesn't depend on query ordering being

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { NATIONAL_CONTACTS, LOCAL_CONTACTS } from "@/lib/emergency/contacts";
+import { GoBagList } from "@/components/GoBagList";
 
 /**
  * Preparedness, and the numbers that actually reach someone.
@@ -173,7 +174,10 @@ export default function GabayPage() {
         )}
       </section>
 
-      <Section id="go-bag" title="Go bag - ihanda bago pa mangyari" items={GO_BAG} />
+      {/* The only interactive part of this page, and the only one that should
+          be: packing is a task, so it gets checkboxes. Everything else here is
+          read once and acted on, not tracked. */}
+      <GoBagList items={GO_BAG} />
       <Section id="bago" title="Bago ang baha" items={BEFORE} />
       <Section id="habang" title="Habang may baha" items={DURING} />
 

@@ -43,6 +43,74 @@ test.describe("the preparedness guide", () => {
 });
 
 /**
+ * The go bag is the only part of the guide with state, and all of it is local.
+ *
+ * That is the point worth protecting: packing has to survive a closed tab and a
+ * dead connection, because the person re-reading this page may have neither an
+ * account nor a signal.
+ */
+test.describe("the go bag", () => {
+  test("remembers what you packed across a reload", async ({ page }) => {
+    await page.goto("/gabay");
+    await page.evaluate(() => localStorage.removeItem("antas:go-bag"));
+    await page.reload();
+
+    const items = page.locator(".go-bag-item");
+    await expect(page.locator(".go-bag-count")).toContainText("0 sa");
+
+    await items.first().click();
+    await items.nth(2).click();
+    await expect(page.locator(".go-bag-count")).toContainText("2 sa");
+
+    await page.reload();
+    // The assertion that matters. Without persistence this reads "0 sa 4" and
+    // every tick is lost the moment the tab closes.
+    await expect(page.locator(".go-bag-count")).toContainText("2 sa");
+    await expect(page.locator('.go-bag-item[data-checked="true"]')).toHaveCount(2);
+  });
+
+  test("never ships a count in the HTML for the client to correct", async ({
+    page,
+    request,
+  }) => {
+    // The flash this guards against - "0 sa 4" painting before the saved state
+    // is read - happens too early for any in-page assertion to catch; reading
+    // the DOM twice after load passes whether or not the guard exists. The
+    // server's own HTML is the one place the defect is actually visible: the
+    // count belongs to state the server cannot know, so it must not be there.
+    const html = await (await request.get("/gabay")).text();
+    expect(html).toContain("go-bag-item");
+    expect(html).not.toContain("go-bag-count");
+
+    // And once the client has read localStorage, the real figure appears.
+    await page.goto("/gabay");
+    await page.evaluate(() =>
+      localStorage.setItem("antas:go-bag", JSON.stringify(["Tubig at pagkain"])),
+    );
+    await page.reload();
+    await expect(page.locator(".go-bag-count")).toContainText("1 sa");
+  });
+
+  test("stays readable when localStorage is unavailable", async ({ page }) => {
+    // Private browsing and locked-down webviews both do this. Losing the ticks
+    // is acceptable; losing the checklist is not - it is a safety page.
+    await page.addInitScript(() => {
+      const boom = () => {
+        throw new Error("blocked");
+      };
+      Object.defineProperty(window, "localStorage", {
+        get: () => ({ getItem: boom, setItem: boom, removeItem: boom }),
+      });
+    });
+    await page.goto("/gabay");
+
+    await expect(page.locator(".go-bag-item")).toHaveCount(4);
+    await page.locator(".go-bag-item").first().click();
+    await expect(page.locator(".go-bag-count")).toContainText("1 sa");
+  });
+});
+
+/**
  * Navigation moved to the bottom because a phone held one-handed in the rain
  * reaches there. Tulong deliberately did not move with it.
  */

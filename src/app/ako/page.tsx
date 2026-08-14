@@ -7,6 +7,7 @@ import { depthLabel, type DepthLevel } from "@/lib/depth/scale";
 import { DEPTH_VAR } from "@/lib/depth/presentation";
 import { reportPhotoUrl } from "@/lib/reports/photo";
 import { timestampLabel } from "@/lib/time/relative";
+import { hideReport } from "@/app/actions/submit-update";
 
 /**
  * Your own reports.
@@ -46,6 +47,8 @@ export default function AkoPage() {
   const [stage, setStage] = useState<Stage>("loading");
   const [reports, setReports] = useState<MyReport[]>([]);
   const [email, setEmail] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -73,6 +76,35 @@ export default function AkoPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  /**
+   * Two taps, not a modal.
+   *
+   * Removing a report is reversible in principle - the row is only hidden - but
+   * not by the person doing it, so it should not happen on one stray thumb. The
+   * button asks "sigurado ka?" in place rather than opening a dialogue, which
+   * on a phone is both faster and harder to dismiss by accident.
+   */
+  const remove = useCallback(
+    async (reportId: string) => {
+      if (confirming !== reportId) {
+        setConfirming(reportId);
+        return;
+      }
+
+      setRemoving(reportId);
+      const result = await hideReport(reportId);
+      setRemoving(null);
+      setConfirming(null);
+
+      if (!result.ok) {
+        setStage("failed");
+        return;
+      }
+      await load();
+    },
+    [confirming, load],
+  );
 
   return (
     <main className="task-page">
@@ -153,9 +185,29 @@ export default function AkoPage() {
                       </p>
                     </div>
 
-                    <span className="my-report-status" data-status={report.status}>
-                      {STATUS_LABEL[report.status] ?? report.status}
-                    </span>
+                    <div className="my-report-side">
+                      <span
+                        className="my-report-status"
+                        data-status={report.status}
+                      >
+                        {STATUS_LABEL[report.status] ?? report.status}
+                      </span>
+
+                      {/* Only while it is on the map. Offering "remove" against
+                          something already removed is a button that can only
+                          disappoint. */}
+                      {report.status === "active" && (
+                        <button
+                          type="button"
+                          className="my-report-remove"
+                          data-confirming={confirming === report.id}
+                          disabled={removing === report.id}
+                          onClick={() => void remove(report.id)}
+                        >
+                          {confirming === report.id ? "Sigurado ka?" : "Tanggalin"}
+                        </button>
+                      )}
+                    </div>
                   </li>
                 );
               })}
