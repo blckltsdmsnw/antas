@@ -5,10 +5,11 @@ import {
   LngLatBounds,
   MapLibreMap,
   Marker,
+  type ExpressionSpecification,
   type MapMouseEvent,
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { depthLabel, type DepthLevel } from "@/lib/depth/scale";
+import { DEPTH_LEVELS, depthLabel, type DepthLevel } from "@/lib/depth/scale";
 import { DEPTH_HEX } from "@/lib/depth/presentation";
 import { clusterByProximity, CLUSTER_RADIUS_PX } from "@/lib/map/cluster";
 import { mapThemeFor, type MapTheme } from "@/lib/map/theme";
@@ -34,10 +35,19 @@ function colorForDepth(depth: DepthLevel): string {
 }
 
 /**
- * CARTO Positron basemap — free, keyless, and deliberately muted so the depth
- * markers stay readable on top of it.
+ * CARTO basemaps — free, keyless.
  *
- * Two deliberate choices here, both learned the hard way:
+ * VOYAGER BY DAY, NOT POSITRON. Positron renders water as pale grey, which on a
+ * flood map loses the single most important piece of context there is: the
+ * Marikina River and the Pasig - the reason half of this city floods - were
+ * invisible, and the whole map read as grey mush. Voyager gives water back its
+ * colour and parks their green, at the cost of warmer roads, which is what
+ * `raster-saturation` below is for.
+ *
+ * Dark stays `dark_all`: CARTO ships no dark Voyager, and after sunset the
+ * question is legibility rather than richness.
+ *
+ * Two older choices, both learned the hard way:
  *
  * 1. NOT maplibre's demotiles style. That contains only country outlines at
  *    world zoom, so at street zoom over Marikina it draws an empty rectangle
@@ -50,14 +60,14 @@ function colorForDepth(depth: DepthLevel): string {
  *    without one, so the failure presented as a blank map rather than an error.
  *    Raster tiles decode on the main thread and avoid the worker entirely.
  */
-function cartoTiles(variant: "light_all" | "dark_all"): string[] {
+function cartoTiles(variant: string): string[] {
   return ["a", "b", "c"].map(
     (host) => `https://${host}.basemaps.cartocdn.com/${variant}/{z}/{x}/{y}@2x.png`,
   );
 }
 
 const TILES: Record<MapTheme, string[]> = {
-  light: cartoTiles("light_all"),
+  light: cartoTiles("rastertiles/voyager"),
   dark: cartoTiles("dark_all"),
 };
 
@@ -76,12 +86,73 @@ const TILES: Record<MapTheme, string[]> = {
 interface RasterPaint {
   "raster-brightness-min": number;
   "raster-contrast": number;
+  "raster-saturation": number;
 }
 
 const RASTER_PAINT: Record<MapTheme, RasterPaint> = {
-  light: { "raster-brightness-min": 0, "raster-contrast": 0 },
-  dark: { "raster-brightness-min": 0.22, "raster-contrast": -0.08 },
+  // Voyager pulled back a quarter. Its roads are a confident yellow-orange,
+  // which at full strength argues with the depth ramp for attention - and only
+  // one of those two is carrying information. Desaturating takes the shout out
+  // of the roads while leaving enough blue in the water and green in the parks
+  // to answer the thing Positron could not: where the river is.
+  light: {
+    "raster-brightness-min": 0,
+    "raster-contrast": -0.04,
+    "raster-saturation": -0.25,
+  },
+  dark: {
+    "raster-brightness-min": 0.22,
+    "raster-contrast": -0.08,
+    "raster-saturation": 0,
+  },
 };
+
+/**
+ * The stain a report leaves on the map.
+ *
+ * A pin says "someone reported here". This says "the water was like this around
+ * here", which is the question people actually arrive with - and it is what
+ * turns a scatter of dots into a picture of a flood.
+ *
+ * SOFT-EDGED ON PURPOSE, and that is the honesty of it. A hard polygon would
+ * claim a surveyed extent: these streets flooded, those did not. We have point
+ * observations from people standing in water, not a boundary survey. A blurred
+ * disc says "around here" - which is exactly, and only, what a point knows.
+ *
+ * Where reports overlap the colour deepens on its own, because the discs stack.
+ * That is not a trick: more people reporting the same block genuinely is more
+ * evidence, and the map gets more emphatic in step with it. Nothing is
+ * interpolated between reports, which is what a heatmap would have done and why
+ * this is not one.
+ *
+ * A DOM ELEMENT, NOT A GEOJSON CIRCLE LAYER, and the reason is the same one
+ * that put raster tiles above: this application's MapLibre web worker does not
+ * work. A `geojson` source is parsed in that worker, so a circle layer here
+ * adds cleanly, reports the right feature count, answers `getLayer`, and then
+ * never draws a pixel - `isSourceLoaded` stays false forever and nothing
+ * errors. That was built, measured and removed; if anyone tries it again, that
+ * is what they will see.
+ *
+ * So the stain is a blurred div carried by a Marker, exactly like the pins.
+ */
+
+/** How far past the reports themselves the stain reaches, in pixels. Enough to
+ *  read as "this block", not so much as to swallow the next barangay. */
+const AREA_MARGIN_PX = 30;
+
+/** Floor, so a lone report still stains something rather than hiding under its
+ *  own pin. Ceiling, so one wide cluster does not wash the whole screen. */
+const AREA_MIN_PX = 34;
+const AREA_MAX_PX = 190;
+
+function areaElement(depth: DepthLevel, diameter: number): HTMLDivElement {
+  const el = document.createElement("div");
+  el.className = "report-area";
+  el.setAttribute("aria-hidden", "true");
+  el.style.setProperty("--area-size", `${Math.round(diameter)}px`);
+  el.style.setProperty("--area-color", colorForDepth(depth));
+  return el;
+}
 
 /**
  * Read on demand rather than held in state so the map can be *built* with the
@@ -299,6 +370,11 @@ export function FloodMap({
         paint["raster-brightness-min"],
       );
       instance.setPaintProperty("basemap", "raster-contrast", paint["raster-contrast"]);
+      instance.setPaintProperty(
+        "basemap",
+        "raster-saturation",
+        paint["raster-saturation"],
+      );
     }
     onTheme?.(theme);
   }, [theme, onTheme]);
@@ -364,7 +440,32 @@ export function FloodMap({
         return { id: report.id, x: point.x, y: point.y, depth: report.depth, report };
       });
 
-      markers = clusterByProximity(projected, CLUSTER_RADIUS_PX).map((cluster) => {
+      const clusters = clusterByProximity(projected, CLUSTER_RADIUS_PX);
+
+      /**
+       * The stains, drawn first so every pin sits on top of every stain rather
+       * than only its own.
+       *
+       * Sized to the reports underneath: a cluster's spread in pixels, plus a
+       * margin. So one report tints its corner and eleven spread across a
+       * barangay tint the barangay - the mark grows because the evidence does,
+       * not because the zoom did.
+       */
+      const areas = clusters.map((cluster) => {
+        const spread = Math.max(
+          ...cluster.members.map((m) => Math.hypot(m.x - cluster.x, m.y - cluster.y)),
+        );
+        const diameter = Math.min(
+          AREA_MAX_PX,
+          Math.max(AREA_MIN_PX, (spread + AREA_MARGIN_PX) * 2),
+        );
+
+        return new Marker({ element: areaElement(cluster.depth, diameter) })
+          .setLngLat(instance!.unproject([cluster.x, cluster.y]))
+          .addTo(instance!);
+      });
+
+      const pins = clusters.map((cluster) => {
         const single = cluster.members.length === 1 ? cluster.members[0].report : null;
 
         const element = single
@@ -428,6 +529,10 @@ export function FloodMap({
           .setLngLat(instance!.unproject([cluster.x, cluster.y]))
           .addTo(instance!);
       });
+
+      // One list, so the redraw and the unmount clean up stains and pins alike.
+      // Kept separate above only so the stains are all added before any pin.
+      markers = [...areas, ...pins];
     }
 
     draw();

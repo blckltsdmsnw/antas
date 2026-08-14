@@ -3,7 +3,7 @@
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { validateReport, type ReportErrorCode } from "@/lib/reports/validate";
+import { validateLocation, type ReportErrorCode } from "@/lib/reports/validate";
 import { scoreSignal } from "@/lib/scoring/score";
 import { openMeteoProvider } from "@/lib/env/open-meteo";
 import type { DepthLevel } from "@/lib/depth/scale";
@@ -11,8 +11,16 @@ import { buildSosRow, type SosInput } from "@/lib/sos/row";
 
 export type { SosInput };
 
+/**
+ * `invalid_depth` is deliberately absent.
+ *
+ * It comes with `ReportErrorCode`, and an SOS can no longer produce it: the
+ * sender is never asked for a depth, so there is no depth to be invalid. Naming
+ * the two codes that can actually occur keeps the page from carrying a message
+ * for a failure that cannot happen.
+ */
 export type SosErrorCode =
-  | ReportErrorCode
+  | Exclude<ReportErrorCode, "invalid_depth">
   | "not_signed_in"
   | "already_active"
   | "insert_failed";
@@ -22,8 +30,10 @@ export type SosResult =
   | { ok: false; errors: SosErrorCode[] };
 
 export async function submitSos(input: SosInput): Promise<SosResult> {
-  const validation = validateReport({
-    depth: input.depth,
+  // Location only. An SOS carries no depth, and failing one on `invalid_depth`
+  // would be refusing a call for help over a field the sender was deliberately
+  // never shown.
+  const validation = validateLocation({
     lat: input.lat,
     lon: input.lon,
     gpsAccuracyM: input.gpsAccuracyM,
@@ -110,7 +120,8 @@ async function enrichAndScore(
       reading.rainfall24hMm !== null || reading.elevationM !== null;
 
     const result = scoreSignal({
-      claimedDepth: input.depth as DepthLevel,
+      // Never asked. Not a shallow claim - see isDeepClaim.
+      claimedDepth: null,
       gpsAccuracyM: input.gpsAccuracyM,
       hasLivePhoto: input.photoPath.length > 0,
       accountAgeMinutes: minutesSince(accountCreatedAt),

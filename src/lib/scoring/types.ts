@@ -8,7 +8,16 @@ import type { DepthLevel } from "@/lib/depth/scale";
  * different from zero and must never be treated as evidence against a signal.
  */
 export interface ScoringSnapshot {
-  claimedDepth: DepthLevel;
+  /**
+   * The depth the sender claimed, or `null` because they were never asked.
+   *
+   * An SOS stopped collecting a depth: that is a question for someone deciding
+   * whether a street is passable, not for someone in the water. `null` here
+   * means no claim was made, which is not the same as a shallow claim - see
+   * `scoreSignal`, where it withdraws the checks that exist only to contradict
+   * a claim.
+   */
+  claimedDepth: DepthLevel | null;
   gpsAccuracyM: number | null;
   hasLivePhoto: boolean;
   accountAgeMinutes: number;

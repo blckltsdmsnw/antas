@@ -3,9 +3,21 @@ import type { Confidence, Reason, ScoreResult, ScoringSnapshot } from "./types";
 
 const START = 50;
 
-/** Deep claims are the ones rainfall and elevation can meaningfully contradict. */
-function isDeepClaim(depth: DepthLevel): boolean {
-  return depthRank(depth) >= depthRank("waist");
+/**
+ * Deep claims are the ones rainfall and elevation can meaningfully contradict.
+ *
+ * `null` means the sender was never asked - an SOS no longer collects a depth.
+ * You cannot contradict a claim nobody made, so both penalties that depend on
+ * this withdraw rather than treating silence as a shallow claim.
+ *
+ * That matters more than it looks. The governing rule is that the system never
+ * refuses an SOS; docking someone's score for a form field they were
+ * deliberately not shown would be the system penalising its own design
+ * decision, and it would push exactly the people who asked for help fastest
+ * toward the bottom of a moderator's queue.
+ */
+function isDeepClaim(depth: DepthLevel | null): boolean {
+  return depth !== null && depthRank(depth) >= depthRank("waist");
 }
 
 function clamp(n: number): number {

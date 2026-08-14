@@ -137,8 +137,24 @@ existed locally, for `0013` alone.
 If a future push ever fails on something "already exists", that is this: repair
 the history, never `db reset` a database with real rows in it.
 
+**The map shows water, reports stain the ground, and an SOS no longer asks for
+a depth.**
+
+- **Voyager basemap by day.** Positron drew water as pale grey, so the Marikina
+  River and the Pasig — the reason half this city floods — were invisible, and
+  the map read as grey mush. Saturation pulled back a quarter so the warmer
+  roads do not compete with the depth ramp.
+- **Every report stains the map around it**, a blurred disc in its depth colour.
+  Overlapping reports deepen the colour by themselves. Soft-edged on purpose: a
+  hard boundary would claim a survey we have not done.
+- **The Tulong form has no depth gauge.** Nobody in danger works a five-level
+  slider, and the form should not spend their seconds asking. `sos_signals.depth`
+  is now nullable; the scorer treats "never asked" as different from "claimed
+  something shallow", so it withdraws the checks that exist only to contradict a
+  claim rather than penalising silence.
+
 **A locate button, a body gauge, and a centre action.** Three more taken from
-mockups, after the five below:
+mockups:
 
 - **"Hanapin ang kinaroroonan ko"** — a crosshair on the map that flies to your
   own position and marks it. Search answers "take me to Malanday"; this answers

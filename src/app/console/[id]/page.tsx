@@ -17,7 +17,7 @@ import type { Reason } from "@/lib/scoring/types";
 interface Detail {
   id: string;
   barangay: string | null;
-  depth: DepthLevel;
+  depth: DepthLevel | null;
   status: string;
   trust_score: number | null;
   confidence: string | null;
@@ -96,7 +96,13 @@ export default function SignalDetailPage({
     <>
       <SimulationBanner />
       <main className="console-page">
-        <h1 className="task-title">{depthLabel(detail.depth).tl}</h1>
+        {/* The sender's own words where they gave them, and the plain fact
+            otherwise. An SOS no longer asks for a depth, so most signals from
+            here on carry none - and inventing one would put a claim about the
+            water into a record a moderator reads as theirs. */}
+        <h1 className="task-title">
+          {detail.depth ? depthLabel(detail.depth).tl : "Humihingi ng tulong"}
+        </h1>
         <p className="task-lede">
           {detail.barangay} · {new Date(detail.created_at).toLocaleString("en-PH")}
           {detail.trust_score !== null

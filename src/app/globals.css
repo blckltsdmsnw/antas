@@ -898,6 +898,33 @@ a.btn {
    depth it is AND whether tapping it will show you a photo.
    -------------------------------------------------------------------------- */
 
+/* The stain a report leaves on the map.
+
+   A blurred disc rather than a hard shape, and that is the honesty of it: we
+   have point observations from people standing in water, not a boundary survey,
+   so the edge must not look surveyed. Where reports overlap the colour deepens
+   by itself - more people reporting the same block genuinely is more evidence.
+
+   Below the pins and never clickable, so it can never take a tap meant for a
+   report. */
+.report-area {
+  width: var(--area-size);
+  height: var(--area-size);
+  border-radius: 50%;
+  background: var(--area-color);
+  opacity: 0.3;
+  /* Scaled to the disc: a fixed blur turns a large stain into a hard-edged
+     blob and a small one into nothing at all. */
+  filter: blur(calc(var(--area-size) * 0.16));
+  pointer-events: none;
+}
+
+/* MapLibre adds its own class to the element we hand it, so this wins over the
+   shared marker rule below without needing an override. */
+.maplibregl-marker.report-area {
+  z-index: 7;
+}
+
 /* Pins and clusters are MapLibre's own marker wrappers, and they default to
    z-index:auto - which put them underneath the legend and the weather strip.
    A cluster that lands in the top-right corner was drawn behind an opaque panel

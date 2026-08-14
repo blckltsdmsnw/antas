@@ -4,7 +4,8 @@ import { depthLabel, type DepthLevel } from "@/lib/depth/scale";
 export interface QueueSignal {
   id: string;
   barangay: string | null;
-  depth: DepthLevel;
+  /** Null on every signal sent since the SOS form stopped asking for one. */
+  depth: DepthLevel | null;
   status: string;
   trust_score: number | null;
   confidence: string | null;
@@ -28,7 +29,13 @@ export function SignalCard({ signal }: { signal: QueueSignal }) {
         <span className="signal-band" data-band={band}>
           {signal.confidence ?? "hindi pa nasusuri"}
         </span>
-        <strong>{depthLabel(signal.depth).tl}</strong>
+        {/* A signal is a person asking for help, not a depth reading. Where a
+            sender did choose one it is still their word and still shown; where
+            they were never asked, the card says the thing that is actually
+            true rather than inventing a level. */}
+        <strong>
+          {signal.depth ? depthLabel(signal.depth).tl : "Humihingi ng tulong"}
+        </strong>
       </span>
       <span className="signal-meta">
         {signal.barangay ?? "walang barangay"} · {minutesAgo(signal.created_at)}

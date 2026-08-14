@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { DepthSlider } from "@/components/DepthSlider";
 import { HoldToConfirm } from "@/components/HoldToConfirm";
 import { PhotoCapture } from "@/components/PhotoCapture";
 import { createClient } from "@/lib/supabase/client";
@@ -11,12 +10,10 @@ import {
   formatAccuracy,
   needsLocationConfirmation,
 } from "@/lib/reports/accuracy";
-import type { DepthLevel } from "@/lib/depth/scale";
 
 type PageErrorCode = SosErrorCode | "no_location" | "upload_failed";
 
 const ERROR_MESSAGES: Record<PageErrorCode, string> = {
-  invalid_depth: "Pumili ng lalim ng tubig.",
   invalid_coordinates: "Hindi mabasa ang lokasyon mo.",
   outside_pilot_area: "Sa ngayon, Metro Manila lang ang saklaw ng Antas.",
   not_signed_in: "Mag-sign in muna bago humingi ng tulong.",
@@ -27,7 +24,6 @@ const ERROR_MESSAGES: Record<PageErrorCode, string> = {
 };
 
 export default function SosPage() {
-  const [depth, setDepth] = useState<DepthLevel>("chest");
   const [photo, setPhoto] = useState<File | null>(null);
   const [note, setNote] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
@@ -74,7 +70,6 @@ export default function SosPage() {
     }
 
     const result = await submitSos({
-      depth,
       lat: position.coords.latitude,
       lon: position.coords.longitude,
       gpsAccuracyM: position.coords.accuracy ?? null,
@@ -141,9 +136,6 @@ export default function SosPage() {
         />
       )}
 
-      <div style={{ marginTop: 28 }}>
-        <DepthSlider value={depth} onChange={setDepth} />
-      </div>
 
       <label className="field" style={{ marginTop: 24 }}>
         <span className="field-label">Dagdag na detalye (opsyonal)</span>

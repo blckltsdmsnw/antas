@@ -1,0 +1,22 @@
+-- An SOS no longer claims a depth.
+--
+-- The distress form asked the sender to set a depth on a five-level gauge
+-- before they could send. That is a question for somebody standing safely on a
+-- kerb deciding whether a street is passable, not for somebody in the water
+-- asking to be reached. Nobody in danger is going to work a gauge, and the form
+-- should not spend their seconds asking.
+--
+-- The premise is simply different: a depth report says how deep the water is,
+-- an SOS says a person needs help. The second does not require the first, and
+-- the design has said so from the start - "separate records, separate tables,
+-- separate flows". This column was the last place the two were still entangled.
+--
+-- NOT DEFAULTED TO THE WORST LEVEL, which was the tempting shortcut. Writing
+-- 'above_head' onto every signal would put a claim about the water into the
+-- record that nobody made, and the moderator console reads that field as the
+-- sender's own words.
+--
+-- Nullable rather than dropped: signals sent before this carry a depth their
+-- senders really did choose, and deleting it would be rewriting what they said.
+
+alter table sos_signals alter column depth drop not null;

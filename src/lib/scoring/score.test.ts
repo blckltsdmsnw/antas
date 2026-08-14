@@ -16,6 +16,56 @@ const baseline: ScoringSnapshot = {
   surroundingElevationM: 13,
 };
 
+/**
+ * An SOS stopped asking for a depth, so `claimedDepth` is null on every signal
+ * sent since. The danger is that the scorer reads silence as a weak claim and
+ * quietly sinks the people who asked for help fastest to the bottom of a
+ * moderator's queue - penalising them for a field they were never shown.
+ */
+describe("scoreSignal with no depth claimed", () => {
+  const noClaim: ScoringSnapshot = { ...baseline, claimedDepth: null };
+
+  it("never scores lower than the same signal with a depth", () => {
+    const dry = { rainfall24hMm: 0, elevationM: 40, surroundingElevationM: 12 };
+
+    const claimed = scoreSignal({ ...baseline, claimedDepth: "above_head", ...dry });
+    const silent = scoreSignal({ ...noClaim, ...dry });
+
+    // Both penalties exist only to contradict a claim. With nothing claimed
+    // there is nothing to contradict, so they withdraw.
+    expect(silent.score).toBeGreaterThan(claimed.score);
+  });
+
+  it("does not hold dry weather against a signal that claimed nothing", () => {
+    const result = scoreSignal({ ...noClaim, rainfall24hMm: 0 });
+
+    expect(result.reasons.map((r) => r.text)).not.toContain(
+      "No rainfall recorded in 24h.",
+    );
+  });
+
+  it("does not hold high ground against a signal that claimed nothing", () => {
+    const result = scoreSignal({
+      ...noClaim,
+      elevationM: 40,
+      surroundingElevationM: 12,
+    });
+
+    expect(result.reasons.some((r) => r.text.includes("above surrounding"))).toBe(
+      false,
+    );
+  });
+
+  it("still rewards the evidence it does have", () => {
+    // Silence about depth must not silence everything else: corroboration, a
+    // live photo and an accurate fix are all still real evidence.
+    const alone = scoreSignal({ ...noClaim, corroboratingReports: 0 });
+    const backed = scoreSignal({ ...noClaim, corroboratingReports: 4 });
+
+    expect(backed.score).toBeGreaterThan(alone.score);
+  });
+});
+
 describe("scoreSignal", () => {
   it("scores a corroborated, plausible signal as high confidence", () => {
     const result = scoreSignal({

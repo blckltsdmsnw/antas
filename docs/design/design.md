@@ -208,6 +208,22 @@ A moderator is a vetted person at a barangay desk, not somebody who signed up.
   deliberately ignored.
 - **Rain draws only when measured precipitation says it is raining on the user**,
   and sits below the pins: atmosphere under information.
+- **Each report stains the map around it** — a blurred disc in its depth colour,
+  under the pins and never clickable. Soft-edged deliberately: a hard polygon
+  would claim a surveyed extent, and these are point observations from people
+  standing in water. Where reports overlap the colour deepens on its own, which
+  is honest — more people reporting a block is more evidence. Nothing is
+  interpolated *between* reports, which is what a heatmap would do.
+- **The stain is a DOM element, not a GeoJSON circle layer.** A `geojson` source
+  is parsed in MapLibre's web worker, and this application's worker does not
+  work — the same reason the basemap is raster. A circle layer here adds
+  cleanly, reports the right feature count, answers `getLayer`, and then never
+  draws a pixel: `isSourceLoaded` stays false forever and nothing errors. That
+  was built, measured, and replaced.
+- **The basemap is Voyager by day, not Positron.** Positron draws water as pale
+  grey, which on a flood map loses the single most important piece of context
+  there is — the Marikina River and the Pasig were invisible. Its saturation is
+  pulled back a quarter so the roads stop competing with the depth ramp.
 - **Map chrome never intercepts a tap.** The legend and the weather strip are
   pointer-transparent, and pins paint above them — an unreachable report is worse
   than an untidy legend.
@@ -220,8 +236,30 @@ moderator's queue; it never silently discards a signal, because the cost of
 suppressing one real call for help is not comparable to the cost of showing a
 moderator one false one.
 
-Capture is deliberately expensive — a live photo through an in-page viewfinder
-and a three-second hold. `/sos` keeps that viewfinder rather than handing off to
+**An SOS carries no depth.** The form used to require one on a five-level gauge
+before it would send — a question for somebody on a kerb deciding whether a
+street is passable, not for somebody in the water asking to be reached. Nobody
+in danger works a gauge, and the form should not spend their seconds asking.
+
+That also completes a separation this document already claimed: a depth report
+says how deep the water is, an SOS says a person needs help, and the second does
+not require the first. The depth column was the last place the two were still
+entangled. It is nullable rather than dropped, because signals sent before the
+change carry a depth their senders really did choose.
+
+It is **not defaulted to the worst level**, which was the tempting shortcut.
+Writing `above_head` onto every signal would put a claim about the water into a
+record the console reads as the sender's own words. Where there is no claim the
+console says *"Humihingi ng tulong"* — the thing that is actually true.
+
+And **the scorer withdraws rather than penalises**: the rainfall and elevation
+checks exist only to contradict a deep claim, so with nothing claimed they do
+not apply. Treating silence as a weak claim would have sunk the people who asked
+for help fastest to the bottom of a moderator's queue, over a field they were
+deliberately never shown.
+
+Capture is still deliberately expensive — a live photo through an in-page
+viewfinder and a three-second hold. `/sos` keeps that viewfinder rather than handing off to
 the phone's camera app, unlike `/report`: there it is an anti-abuse measure,
 since `capture="environment"` is only a hint and many browsers will happily
 offer the gallery instead.
