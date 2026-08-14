@@ -28,7 +28,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: "#0284c7",
+  /**
+   * White, not the accent blue it used to be. This paints the browser and
+   * Android status bar, and every task page in this product is light in all
+   * conditions - a blue band above a white header only ever matched nothing.
+   * The map page overrides it live when the night basemap turns on, since the
+   * theme follows the Manila clock rather than any media query.
+   */
+  themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover" as const,

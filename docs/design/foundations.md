@@ -282,7 +282,22 @@ Two variants, and the split matters:
 | `plain` — splash | none | none; the splash's own water does the flooding |
 
 A mark carrying a fixed waterline underneath a rising one shows two contradictory levels at
-once, which is why the splash gets the dry pin.
+once, which is why the splash gets the dry pin. **This split is settled, not an oversight** —
+it was queried and deliberately kept. On the splash the rising water *is* the level; a second
+one inside the pin would state the same thing twice, and disagree with it while doing so.
+
+Icon delivery, since a logo that never reaches the device is not a logo:
+
+- `src/app/icon.svg` — the favicon, via the App Router file convention. The scaffold's
+  `favicon.ico` sat alongside it for four rounds of logo work and was still serving the
+  Next.js mark to anything that prefers `.ico`; it is deleted, not overwritten
+- `src/app/apple-icon.png` — 180px, **squared off**. iOS applies its own mask, so shipping our
+  rounded corners inside theirs rounds it twice and leaves pale slivers in the corners
+- `public/icon-maskable-512.png` — Android adaptive, artwork inset to 72% of the field. The
+  launcher may crop to a circle, which would otherwise shave off the pin's tip and its base
+- `theme_color` is white, matching the header. Task pages are light in every condition; the
+  map page rewrites the meta tag live when the night basemap turns on, because the theme
+  follows the Manila clock and no static value can track a clock
 
 Constraints learned by rendering it, not by reasoning about it:
 

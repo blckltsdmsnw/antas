@@ -118,6 +118,12 @@ for (const [when, expected] of [
       const settled = await read();
 
       expect({ first, settled }).toEqual({ first: expected, settled: expected });
+
+      // The status bar has to follow the basemap, or an installed app shows a
+      // white band above a night map. It cannot be declared statically, since
+      // the theme follows the Manila clock rather than a media query.
+      const themeColour = await page.getAttribute('meta[name="theme-color"]', "content");
+      expect(themeColour).toBe(expected === "dark" ? "#253044" : "#ffffff");
     });
   }
 }

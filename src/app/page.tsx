@@ -27,6 +27,11 @@ import type { DepthLevel } from "@/lib/depth/scale";
 const CITY_CENTRE = { lat: 14.58, lon: 121.02 };
 const CITY_RADIUS_M = 40_000;
 
+/** The header's two backgrounds, mirrored into the status bar. Literals rather
+ *  than custom properties because `meta[content]` cannot resolve `var()`. */
+const PAPER = "#ffffff";
+const PANEL = "#253044";
+
 interface NearbyRow {
   id: string;
   depth: DepthLevel;
@@ -86,8 +91,17 @@ export default function HomePage() {
    */
   useEffect(() => {
     document.documentElement.dataset.mapTheme = mapTheme;
+
+    // The status bar too, or an installed app shows a white band above a night
+    // map - the same mismatch the attribute above exists to prevent, one strip
+    // further out. It cannot be declared statically in `viewport`: the theme
+    // follows the Manila clock, and a static value cannot track a clock.
+    const meta = document.querySelector('meta[name="theme-color"]');
+    meta?.setAttribute("content", mapTheme === "dark" ? PANEL : PAPER);
+
     return () => {
       delete document.documentElement.dataset.mapTheme;
+      meta?.setAttribute("content", PAPER);
     };
   }, [mapTheme]);
 
