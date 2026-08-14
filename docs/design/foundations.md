@@ -284,19 +284,26 @@ Two variants, and the split matters:
 A mark carrying a fixed waterline underneath a rising one shows two contradictory levels at
 once, which is why the splash gets the dry pin.
 
-Three constraints learned by rendering it, not by reasoning about it:
+Constraints learned by rendering it, not by reasoning about it:
 
 - **The ground is pale, not ink.** An ink pin on an ink ground merged: the outline vanished
   and all that survived at 16px was the white window floating in a dark square
-- **The pin crowds its frame.** A comfortable margin spends most of an icon's pixels on empty
-  ground
 - **The buildings stand on a street**, not on the pin's tip. Running them to the point filled
   the taper and read as a solid blob rather than a city — visible in `plain`, where no water
   covers their feet
+- **The waves need real amplitude.** At 2.4 units over a 64 box they flattened into a ruled
+  line, and a ruled line is the one thing water must not be
 
-It carries deliberately less detail than the generated reference it came from: three
-buildings rather than six, two wave bands rather than four, no backdrop panel, no drop
-shadow. The detail was hiding the idea rather than carrying it.
+**On fidelity versus reduction, decided deliberately.** An intermediate version stripped the
+mark hard for legibility at glyph size — three buildings, two flat bands, no base ellipse, a
+saturated ground. It was more readable at 16px and it was no longer the drawing that had been
+approved. Fidelity won. The cost is real and worth stating plainly: below about 24px the
+skyline and the wave bands stop resolving and the mark reduces to a pin silhouette on pale
+blue. That silhouette is still distinct and still says "map", which is why the trade is
+acceptable — but it is a trade, not a free win.
+
+The base ellipse is a drawn shape in the composition, not a CSS drop shadow, which is why it
+does not fall foul of §8.
 
 The wordmark is the mark plus a plain "Antas". It briefly carried the same waterline through
 the word, which put the identical idea twice in one lockup; the mark carries the concept, the

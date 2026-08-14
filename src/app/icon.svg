@@ -1,14 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <title>Antas</title>
-  <clipPath id="pin"><path d="M32 51 C28 43 18.5 34 18.5 24 A13.5 13.5 0 1 1 45.5 24 C45.5 34 36 43 32 51 Z"/></clipPath>
-  <rect width="64" height="64" rx="14" ry="14" fill="#7dd3fc"/>
-  <path d="M32 61 C25 50 13 38 13 24 A19 19 0 1 1 51 24 C51 38 39 50 32 61 Z" fill="#0f172a"/>
-  <path d="M32 51 C28 43 18.5 34 18.5 24 A13.5 13.5 0 1 1 45.5 24 C45.5 34 36 43 32 51 Z" fill="#ffffff"/>
+  <clipPath id="pin"><path d="M32 48 C28 41 17.5 35 17.5 26 A14.5 14.5 0 1 1 46.5 26 C46.5 35 36 41 32 48 Z"/></clipPath>
+  <rect width="64" height="64" rx="14" ry="14" fill="#cbedfe"/>
+  <ellipse cx="32" cy="57.5" rx="13.5" ry="2.2" fill="#0f172a"/>
+  <path d="M32 57 C25.5 47 13 38 13 26 A19 19 0 1 1 51 26 C51 38 38.5 47 32 57 Z" fill="#0f172a"/>
+  <path d="M32 48 C28 41 17.5 35 17.5 26 A14.5 14.5 0 1 1 46.5 26 C46.5 35 36 41 32 48 Z" fill="#ffffff"/>
   <g clip-path="url(#pin)">
-    <rect x="22" y="19" width="6" height="18" fill="#0f172a"/>
-    <rect x="29" y="14" width="6.5" height="23" fill="#0f172a"/>
-    <rect x="36.5" y="21" width="6" height="16" fill="#0f172a"/>
-    <path d="M0 29 q6 -2.4 12 0 t12 0 t12 0 t12 0 t12 0 L64 64 L0 64 Z" fill="#0284c7"/>
-    <path d="M0 36 q6 -2.4 12 0 t12 0 t12 0 t12 0 t12 0 L64 64 L0 64 Z" fill="#1e40af"/>
+    <rect x="19.5" y="24" width="5" height="14" fill="#0f172a"/>
+    <rect x="24.8" y="19" width="4" height="19" fill="#0f172a"/>
+    <rect x="29.1" y="14" width="6" height="24" fill="#0f172a"/>
+    <rect x="35.4" y="21" width="4.5" height="17" fill="#0f172a"/>
+    <rect x="40.2" y="23" width="5.5" height="15" fill="#0f172a"/>
+    <path d="M0 30 q6 -4.4 12 0 t12 0 t12 0 t12 0 t12 0 t12 0 L64 64 L0 64 Z" fill="#38bdf8"/>
+    <path d="M-4.5 35 q6 -4.4 12 0 t12 0 t12 0 t12 0 t12 0 t12 0 L64 64 L-4.5 64 Z" fill="#0284c7"/>
+    <path d="M-9 40 q6 -4.4 12 0 t12 0 t12 0 t12 0 t12 0 t12 0 L64 64 L-9 64 Z" fill="#1e40af"/>
   </g>
 </svg>
