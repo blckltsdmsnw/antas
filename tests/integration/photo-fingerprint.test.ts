@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
 /**
@@ -25,7 +25,19 @@ const PHOTO_A = Buffer.from(
     "AAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==",
   "base64",
 );
-const PHOTO_B = Buffer.concat([PHOTO_A, Buffer.from([0x00])]);
+/**
+ * Different from PHOTO_A, and different on every run.
+ *
+ * It was a fixed one-byte variation at first, which passed against a fresh
+ * database and failed against one this suite had already been run on: earlier
+ * runs had left rows carrying that exact hash, so "a different photo matches
+ * nothing" became false. The claim is about a photograph nobody has sent
+ * before, so the bytes have to actually be new each time.
+ */
+const PHOTO_B = Buffer.concat([
+  PHOTO_A,
+  Buffer.from(randomUUID().replace(/-/g, ""), "hex"),
+]);
 
 const hashOf = (bytes: Buffer) =>
   createHash("sha256").update(bytes).digest("hex");

@@ -51,6 +51,8 @@ export default function AkoPage() {
   const [confirming, setConfirming] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
   const [savedPhone, setSavedPhone] = useState<string | null>(null);
+  const [anonymous, setAnonymous] = useState(false);
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -61,6 +63,9 @@ export default function AkoPage() {
       return;
     }
     setEmail(auth.user.email ?? null);
+    // An anonymous session has no email and no way back in, which changes what
+    // signing out means - see the control at the bottom of this page.
+    setAnonymous(auth.user.is_anonymous === true);
 
     // Own row only - `profiles` is scoped to `id = auth.uid()`, so this can
     // never return somebody else's number.
@@ -118,6 +123,33 @@ export default function AkoPage() {
     [confirming, load],
   );
 
+  /**
+   * Signing out, which did not exist at all until now.
+   *
+   * That was an oversight rather than a decision, and it got worse when an SOS
+   * stopped needing an account: somebody who sends one from a borrowed or
+   * shared phone is left permanently signed in on a device that is not theirs,
+   * with their reports - and possibly their phone number - one tab away from
+   * whoever owns it.
+   *
+   * For an anonymous account it is IRREVERSIBLE, and the button says so before
+   * doing it. There is no email to sign back in with, so leaving means losing
+   * the only link to the SOS they sent and the status updates on it. That is
+   * sometimes exactly what somebody wants on a borrowed phone, and it must
+   * never be a surprise.
+   */
+  const signOut = useCallback(async () => {
+    if (anonymous && !confirmingSignOut) {
+      setConfirmingSignOut(true);
+      return;
+    }
+
+    await createClient().auth.signOut();
+    // A full reload rather than a state reset: it is the only way to be sure
+    // nothing of the previous session is left rendered on a shared device.
+    window.location.assign("/");
+  }, [anonymous, confirmingSignOut]);
+
   return (
     <main className="task-page">
       <h1 className="task-title">Ako</h1>
@@ -156,7 +188,14 @@ export default function AkoPage() {
 
       {stage === "ready" && (
         <>
-          {email && <p className="task-lede">Naka-sign in bilang {email}</p>}
+          {/* An anonymous session has no email to show, and saying nothing at
+              all leaves somebody on a borrowed phone unsure whose account they
+              are looking at. */}
+          <p className="task-lede">
+            {email
+              ? `Naka-sign in bilang ${email}`
+              : "Naka-sign in nang walang account. Nagagamit mo ito dahil nagpadala ka ng SOS."}
+          </p>
 
           {/* Optional, and said so plainly. A required phone number on a flood
               map is a reason not to report at all, and most people using this
@@ -235,6 +274,28 @@ export default function AkoPage() {
               })}
             </ul>
           )}
+
+          <section className="signout">
+            <button
+              type="button"
+              className="signout-button"
+              data-confirming={confirmingSignOut}
+              onClick={() => void signOut()}
+            >
+              {confirmingSignOut ? "Sigurado ka? Hindi na maibabalik" : "Mag-sign out"}
+            </button>
+
+            {anonymous && (
+              // Said before the second tap, not after. Leaving an anonymous
+              // session is permanent, and somebody on their own phone almost
+              // certainly does not want to.
+              <p className="signout-note">
+                Walang account ang session na ito, kaya kapag nag-sign out ka ay
+                hindi mo na makikita ang SOS mo at ang kalagayan nito. Sa
+                hiniram na telepono, iyan mismo ang dapat gawin.
+              </p>
+            )}
+          </section>
         </>
       )}
     </main>

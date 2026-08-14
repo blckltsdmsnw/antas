@@ -381,6 +381,23 @@ ring, and does not appear for somebody who already has one saved. The field
 itself is shared with `/ako` (`PhoneField`), so there is one definition of which
 numbers are acceptable rather than two.
 
+### There was no way to sign out. Now there is.
+
+Not intentional — an oversight, and one the anonymous-SOS change made worse.
+Somebody who sends an SOS from a **borrowed or shared phone** was left
+permanently signed in on a device that is not theirs, with their reports and
+possibly their phone number one tab away from whoever owns it.
+
+The control sits at the bottom of `/ako`. For an **anonymous** session it is
+irreversible and says so before the second tap: there is no email to sign back
+in with, so leaving means losing the only link to the SOS they sent and its
+status. On a borrowed phone that is exactly what somebody wants; on their own it
+must never be a surprise.
+
+`/ako` also now says whose session it is when there is no email to show —
+*"Naka-sign in nang walang account"* — because saying nothing left a person on a
+shared phone unsure what they were looking at.
+
 ### Photo abuse checks — the honest half (migration `0026`)
 
 Every SOS photograph is now hashed during enrichment and compared against

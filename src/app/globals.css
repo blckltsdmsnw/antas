@@ -1931,6 +1931,48 @@ a.btn {
   color: var(--ink-muted);
 }
 
+/* Signing out. Set apart from the page above it and given no colour of its own:
+   it is the last thing on the screen because it is rarely what you came for,
+   but it must be findable without hunting - somebody on a borrowed phone is
+   looking for exactly this. */
+.signout {
+  margin: 40px 0 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.signout-button {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.signout-button:hover {
+  border-color: var(--ink-muted);
+  color: var(--ink);
+}
+
+/* Only once it has asked. For an anonymous session the second tap is
+   irreversible, so that is where the warning colour belongs. */
+.signout-button[data-confirming="true"] {
+  background: var(--danger-tint);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.signout-note {
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
 /* --------------------------------------------------------------------------
    Tab bar - navigation where a thumb actually reaches
 
