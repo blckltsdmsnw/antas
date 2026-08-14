@@ -33,10 +33,11 @@ If you sign in to `/console` with the school account the queue will look empty
 and nothing is wrong. Moving it is a one-line update to the `moderators` table
 (`user_id`, `barangay`).
 
-### 2. Seed a few more reports if you want to see clustering
+### 2. Seeded demo data on production — what is there, and how to remove it
 
-Production has ~23 pins spread across Marikina and Taguig, so clusters rarely
-form. Locally 680 reports collapse to 6 clusters at city zoom.
+Production now carries **48 active pins** (22 around Marikina, 24 around
+Taguig), seeded on 2026-08-14 so clustering and the standing line have
+something to show. To add more:
 
 ```
 npx tsx --env-file=.env.hosted scripts/seed.ts taguig 10
@@ -44,6 +45,27 @@ npx tsx --env-file=.env.hosted scripts/seed.ts taguig 10
 
 The count is a **total**, not per-hotspot. Omitting it writes 25 per hotspot,
 which is what previously buried the map in ~300 pins.
+
+**`--standing` fabricates a credibility signal, so it is opt-in.** It gives the
+seed reporter four hidden `source = 'user'` reports, each confirmed inside the
+hour, which is what makes `reporter_standing` return `reliable` for their pins.
+Seeded pins are ordinary demo data; a seeded standing is different in kind,
+because the badge means "other people checked this and it held up". Never run it
+against a project with real users reading the map.
+
+Those four rows are `source = 'user'` on purpose — standing deliberately ignores
+seeded rows — so at the database level they are indistinguishable from genuine
+reports. They are `status = 'hidden'`, so they never reach the map.
+
+Every seeded account is under `@example.test`, and the script prints the one it
+created. To remove all seeded demo data, reports and votes included:
+
+```sql
+-- deletes depth_reports and report_updates by cascade
+delete from auth.users where email like 'seed-%@example.test';
+```
+
+That leaves the two real accounts and the one real photo report untouched.
 
 ---
 

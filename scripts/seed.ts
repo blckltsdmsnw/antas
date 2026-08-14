@@ -38,7 +38,27 @@ const AREAS: Record<string, { lat: number; lon: number; severity: number }[]> = 
   ],
 };
 
-const requested = (process.argv[2] ?? "marikina").toLowerCase();
+/**
+ * `--standing` also gives the seed reporter an earned-looking track record, so
+ * the `reporter_standing` line on the report card has something to show.
+ *
+ * OPT-IN, AND IT SHOULD STAY OPT-IN. Seeded pins are ordinary demo data; a
+ * seeded standing is different in kind, because the badge's entire meaning is
+ * "other people checked this and it held up". Writing one by hand fabricates
+ * exactly the evidence it reports. Fine on a portfolio demo with no real users,
+ * wrong anywhere it would be read as true - so it never happens unless it is
+ * asked for by name.
+ *
+ * The rows it writes are deliberately findable: the reports are `status =
+ * 'hidden'` so they never reach the map, and every account involved is under
+ * @example.test. docs/STATUS.md carries the cleanup.
+ */
+const WITH_STANDING = process.argv.includes("--standing");
+
+// Positional arguments only, so the flag can sit anywhere in the command.
+const positional = process.argv.slice(2).filter((arg) => !arg.startsWith("--"));
+
+const requested = (positional[0] ?? "marikina").toLowerCase();
 const areaNames = requested === "all" ? Object.keys(AREAS) : [requested];
 
 for (const name of areaNames) {
@@ -60,7 +80,7 @@ const MAX_HOURS_AGO = 72;
  * Total rows to write. Without an explicit count this keeps the old
  * per-hotspot default, so existing invocations behave as they always did.
  */
-const totalArg = process.argv[3];
+const totalArg = positional[1];
 const TOTAL =
   totalArg === undefined
     ? HOTSPOTS.length * DEFAULT_PER_HOTSPOT
@@ -72,13 +92,19 @@ if (!Number.isInteger(TOTAL) || TOTAL < 1) {
 }
 
 async function main() {
+  const email = `seed-${Date.now()}@example.test`;
   const { data, error } = await admin.auth.admin.createUser({
-    email: `seed-${Date.now()}@example.test`,
+    email,
     password: "seed-password-123",
     email_confirm: true,
   });
   if (error) throw error;
   const reporterId = data.user!.id;
+
+  // Printed because these rows outlive the command that made them. Against a
+  // live project, "which account owns this demo data" is the first thing you
+  // need and the hardest to work out afterwards.
+  console.log(`Seed account: ${email} (${reporterId})`);
 
   // Round-robin across hotspots so a small count still spreads over every area
   // rather than piling all of it onto the first one.
@@ -107,6 +133,70 @@ async function main() {
   if (insertError) throw insertError;
 
   console.log(`Seeded ${rows.length} depth reports.`);
+
+  if (WITH_STANDING) await seedStanding(reporterId);
+}
+
+/** How much history `reporter_standing` needs before it will say anything. */
+const STANDING_REPORTS = 4;
+const STANDING_VOTERS = 3;
+const CONFIRMED_AFTER_MINUTES = 10;
+
+/**
+ * A track record for the seed reporter, so their pins carry the standing line.
+ *
+ * These reports are `source: "user"` because `reporter_standing` deliberately
+ * ignores seeded rows - somebody's demo data is not their track record. That
+ * makes these four rows indistinguishable from real reports at the database
+ * level, which is the honest cost of seeding this at all, and the reason it is
+ * behind a flag. They are hidden, so at least they never reach the map.
+ */
+async function seedStanding(reporterId: string) {
+  const voters: string[] = [];
+  for (let index = 0; index < STANDING_VOTERS; index += 1) {
+    const { data, error } = await admin.auth.admin.createUser({
+      email: `seed-voter-${Date.now()}-${index}@example.test`,
+      email_confirm: true,
+    });
+    if (error) throw error;
+    voters.push(data.user!.id);
+  }
+
+  for (let index = 0; index < STANDING_REPORTS; index += 1) {
+    // Older than the map's own window, so this reads as history rather than as
+    // something that just happened.
+    const reportedAt = new Date(Date.now() - (index + 4) * 3_600_000);
+
+    const { data: past, error } = await admin
+      .from("depth_reports")
+      .insert({
+        reporter_id: reporterId,
+        location: `SRID=4326;POINT(${HOTSPOTS[0].lon} ${HOTSPOTS[0].lat})`,
+        depth: "knee" as const,
+        source: "user" as const,
+        status: "hidden" as const,
+        reported_at: reportedAt.toISOString(),
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+
+    // Confirmed inside the hour, which is the only window that counts: after
+    // that, "wala na" describes the weather rather than a bad report.
+    const { error: updateError } = await admin.from("report_updates").insert({
+      report_id: past!.id,
+      reporter_id: voters[index % voters.length],
+      state: "same" as const,
+      created_at: new Date(
+        reportedAt.getTime() + CONFIRMED_AFTER_MINUTES * 60_000,
+      ).toISOString(),
+    });
+    if (updateError) throw updateError;
+  }
+
+  console.log(
+    `Seeded a standing for the seed reporter: ${STANDING_REPORTS} hidden reports, each confirmed.`,
+  );
 }
 
 main().catch((error: unknown) => {
