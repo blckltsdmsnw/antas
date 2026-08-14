@@ -276,7 +276,17 @@ and typhoon flooding does not stop at 6pm. So:
   label and river stays exactly as legible as it was; the whole map turns navy instead of
   flat grey, and the river still reads because it is still the lighter shape — now a lighter
   navy. It is purely a tint and states nothing about the data, which is why a product that
-  otherwise avoids decoration is allowed it here
+  otherwise avoids decoration is allowed it here.
+
+  The colour is tuned toward the palette Google's night style uses — a blue-grey ground of
+  about `#242f3e` with navy water. Worth correcting a common assumption: that style does
+  **not** use neutral grey land, which is why a uniform blue-grey cast is closer to it than
+  it looks. **One difference cannot be closed:** Google draws water *darker* than land, Dark
+  Matter draws it *lighter*, and selecting only the water needs vector geometry the worker
+  cannot parse. `soft-light` and `multiply` were both tried on the theory that they would
+  tint the water and leave the land neutral; soft-light lifted the blacks into haze and
+  multiply flattened land and water into one slate. Only `color` preserves the luminance
+  that keeps streets readable
 
 ## 7b. The mark, and the splash
 

@@ -259,7 +259,24 @@ h3 {
 
 [data-map-theme="dark"] .map-tint {
   display: block;
-  background: #1d3a5c;
+  /* Tuned toward the palette Google's night style uses: a blue-grey ground of
+     about #242f3e with navy water. Worth correcting a common assumption - that
+     style does NOT use neutral grey land, which is why a uniform blue-grey cast
+     is closer to it than it first appears.
+
+     ONE DIFFERENCE CANNOT BE CLOSED, and it is better known than rediscovered:
+     Google draws water DARKER than the land. Dark Matter draws it LIGHTER.
+     Darkening only the water needs vector geometry to select it, and this
+     application's MapLibre worker cannot parse any - so the river reads here as
+     a lighter navy ribbon rather than a darker one. It is still the most
+     legible feature on the map at night, which is what it is there for.
+
+     `soft-light` and `multiply` were both tried first, on the theory that they
+     would tint the lighter water and leave the land neutral. Both washed the
+     map out: soft-light lifted the blacks into haze, multiply flattened land
+     and water into a single slate. `color` keeps every luminance exactly as
+     drawn and changes only the hue, which is why the streets stay readable. */
+  background: #24405f;
   mix-blend-mode: color;
 }
 
