@@ -489,7 +489,7 @@ offer the gallery instead.
 ## 10. Testing
 
 ```bash
-npm test                            # unit + integration (347)
+npm test                            # unit + integration (362)
 npx vitest run tests/integration    # integration only - needs local Supabase
 npx playwright test                 # end-to-end (35)
 npm run build
@@ -564,8 +564,13 @@ unfixed code before trusting it — a test that cannot go red is not a test.
   matters most, while feeling most trustworthy because you opted in. An honest
   version would subscribe to **areas**, fire only on deep reports, and be worded
   as *"may nag-report malapit sa'yo"* — a person's report, never the water
-- Offline caching. Genuinely wanted, and honest only if stale data is labelled
-  stale; see [`../STATUS.md`](../STATUS.md)
+- ~~Offline caching~~ — **built**, on exactly the terms this line demanded. The
+  shell and `/gabay` are cached; the map keeps its last snapshot and always
+  states its age rather than merely saying "offline"; and past **six hours** it
+  refuses to draw anything, because a pin that old describes a street which has
+  almost certainly changed. The rule is a tested pure function
+  (`lib/offline/staleness.ts`), not a condition buried in a component, and it
+  treats undated data as too old — a cache cannot vouch for what it cannot date
 
 Refused from generated design mockups, for the same reason each time — they need
 an authority relationship or live operational data the project does not have:

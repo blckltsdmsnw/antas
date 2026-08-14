@@ -78,7 +78,12 @@
      would otherwise sit under a notch. */
   --search-h: 44px;
   --search-top: calc(12px + env(safe-area-inset-top));
-  --chrome-top: calc(var(--search-top) + var(--search-h) + 12px);
+  /* The row directly under the search field. `--chrome-top` is what the
+     weather chip and legend hang from, and it moves down when the offline
+     notice needs that row; `--chrome-top-base` never does, so the notice itself
+     has something stable to sit on. */
+  --chrome-top-base: calc(var(--search-top) + var(--search-h) + 12px);
+  --chrome-top: var(--chrome-top-base);
 }
 
 *,
@@ -1931,6 +1936,47 @@ a.btn {
 
 .phone-card .field {
   margin-bottom: 12px;
+}
+
+/* The age of what is on the map, when it did not come from the server.
+   Sits under the search field where the eye already goes, and is never quiet:
+   a map drawn from a snapshot has to say so, every time. */
+/* Everything else on the map yields this row while the notice is here. Without
+   it the weather chip and the legend painted straight over the one line saying
+   how old the map is - which is the line that must never be missed. */
+.map-shell[data-cached="true"] {
+  --chrome-top: calc(var(--chrome-top-base) + 48px);
+}
+
+.map-cached {
+  position: absolute;
+  top: var(--chrome-top-base);
+  left: 12px;
+  right: 12px;
+  z-index: var(--z-map-chrome);
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-control);
+  border-left: 3px solid var(--danger);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(6px);
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+/* Older data gets the full danger red; recent data still says its age but does
+   not shout, or the warning stops being read at all. */
+.map-cached[data-verdict="fresh"] {
+  border-left-color: var(--ink-muted);
+  color: var(--ink-muted);
+}
+
+[data-map-theme="dark"] .map-cached {
+  background: rgba(19, 26, 38, 0.94);
+  color: var(--panel-ink);
 }
 
 /* --------------------------------------------------------------------------

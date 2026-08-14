@@ -381,6 +381,38 @@ ring, and does not appear for somebody who already has one saved. The field
 itself is shared with `/ako` (`PhoneField`), so there is one definition of which
 numbers are acceptable rather than two.
 
+### Offline: the app opens with no signal, and says how old the map is
+
+No signal is the condition Antas is most likely to be opened in, so opening to a
+blank page was a real failure. A service worker now caches the shell and
+`/gabay` — the guide is static advice and hotline numbers, so it cannot go stale
+in any way that hurts somebody, and it is the page most worth having offline.
+
+**The map keeps its last good snapshot and always states its age.** Not
+"offline" — the age. *"Walang koneksyon. Ito ang huling nakuha, 40 minuto na ang
+nakalipas."* Saying only that the network is down would not tell somebody the
+pin under their thumb is two hours old, and that second fact is the one deciding
+whether they walk down a street.
+
+**Past six hours it refuses to draw anything**, and says why: *"masyado nang luma
+ang huling nakuha… Maaaring iba na ang lalim ng tubig ngayon."* An empty map with
+a reason beats a confident map that is wrong.
+
+Two things worth recording, both found before shipping:
+
+- **The service worker cannot cache the flood data at all.** `reports_near` is a
+  Supabase RPC, so a POST, and the Cache API refuses non-GET requests. An earlier
+  draft had a whole branch stamping report responses with their age that could
+  never once have run. The snapshot lives in the page instead — which is the
+  better place anyway, since "is this reading still true" is a question about the
+  data, not the transport.
+- **The fallback was in the wrong branch.** supabase-js resolves with an `error`
+  rather than rejecting, so an outage arrives down the *success* path — a fact
+  this file had already learned once, when reading only `data` turned every
+  outage into a convincingly empty map. Putting the fallback only in the
+  rejection handler would have repeated it exactly. Caught by an e2e test, not
+  by the unit tests, which passed throughout.
+
 ### There was no way to sign out. Now there is.
 
 Not intentional — an oversight, and one the anonymous-SOS change made worse.

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Archivo, Public_Sans } from "next/font/google";
 import { SiteHeader } from "@/components/SiteHeader";
 import { TabBar } from "@/components/TabBar";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import "./globals.css";
 
 /** Headings. A grotesque with signage DNA — it should read like something
@@ -53,6 +54,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SiteHeader />
         {children}
         <TabBar />
+        {/* Renders nothing. It installs the offline cache after load, because
+            no signal is the condition this application is most likely to be
+            opened in. */}
+        <ServiceWorkerRegistration />
       </body>
     </html>
   );

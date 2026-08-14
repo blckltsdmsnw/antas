@@ -271,3 +271,92 @@ test("sign-in page asks for an email address", async ({ page }) => {
   await page.goto("/login");
   await expect(page.getByLabel("Email")).toBeVisible();
 });
+
+/**
+ * The offline map, and the line it must never cross.
+ *
+ * Opening with no signal is the condition this application is most likely to be
+ * used in, so a cached map is worth having. But a pin from six hours ago drawn
+ * exactly like a live one claims the water is knee-deep on a street that may now
+ * be impassable - the same class of harm as promising a rescue.
+ *
+ * The rule is unit-tested in lib/offline/staleness. These drive the real page
+ * with the network cut, because the unit test cannot tell you whether the map
+ * actually refused to draw.
+ */
+test.describe("the map with no signal", () => {
+  /** Put a snapshot in place, then cut the network the page depends on. */
+  async function offlineWith(
+    page: import("@playwright/test").Page,
+    savedMinutesAgo: number,
+  ) {
+    await page.goto("/");
+    await expect(page.locator(".splash")).toBeHidden({ timeout: 6000 });
+
+    await page.evaluate((minutes) => {
+      const savedAt = new Date(Date.now() - minutes * 60_000).toISOString();
+      localStorage.setItem(
+        "antas:last-reports",
+        JSON.stringify({
+          savedAt,
+          reports: [
+            {
+              id: "11111111-1111-4111-8111-111111111111",
+              lat: 14.6507,
+              lon: 121.1029,
+              depth: "knee",
+              photoPath: null,
+              reportedAt: savedAt,
+            },
+          ],
+        }),
+      );
+    }, savedMinutesAgo);
+
+    // Nothing reaches the database from here on.
+    await page.route("**/rest/v1/**", (route) => route.abort());
+    await page.reload();
+    await expect(page.locator(".splash")).toBeHidden({ timeout: 6000 });
+    await page.waitForTimeout(1500);
+  }
+
+  test("draws a recent snapshot, and says how old it is", async ({ page }) => {
+    await offlineWith(page, 40);
+
+    const banner = page.locator(".map-cached");
+    await expect(banner).toBeVisible();
+    // The age itself, not merely the word "offline".
+    await expect(banner).toContainText("40 minuto");
+    await expect(page.locator(".pin, .pin-cluster").first()).toBeVisible();
+  });
+
+  test("refuses a snapshot older than six hours", async ({ page }) => {
+    await offlineWith(page, 6 * 60 + 5);
+
+    // Nothing drawn, and the reason said out loud.
+    await expect(page.locator(".pin, .pin-cluster")).toHaveCount(0);
+    await expect(page.locator(".map-error")).toBeVisible();
+    await expect(page.locator(".map-error")).toContainText(/iba na ang lalim/i);
+  });
+
+  test("refuses a snapshot it cannot date", async ({ page }) => {
+    // A snapshot whose shape has changed cannot be vouched for, and unknown-age
+    // flood data drawn as current is the exact failure this prevents.
+    await page.goto("/");
+    await expect(page.locator(".splash")).toBeHidden({ timeout: 6000 });
+    await page.evaluate(() => {
+      localStorage.setItem(
+        "antas:last-reports",
+        JSON.stringify({ reports: [{ id: "x", lat: 14.65, lon: 121.1 }] }),
+      );
+    });
+
+    await page.route("**/rest/v1/**", (route) => route.abort());
+    await page.reload();
+    await expect(page.locator(".splash")).toBeHidden({ timeout: 6000 });
+    await page.waitForTimeout(1500);
+
+    await expect(page.locator(".pin, .pin-cluster")).toHaveCount(0);
+    await expect(page.locator(".map-error")).toBeVisible();
+  });
+});

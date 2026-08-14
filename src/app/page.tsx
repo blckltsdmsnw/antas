@@ -14,6 +14,8 @@ import { mapThemeFor, type MapTheme } from "@/lib/map/theme";
 import type { CurrentWeather } from "@/lib/env/current-weather";
 import { createClient } from "@/lib/supabase/client";
 import type { DepthLevel } from "@/lib/depth/scale";
+import { restoreSnapshot, saveSnapshot } from "@/lib/offline/snapshot";
+import type { CacheAge } from "@/lib/offline/staleness";
 
 /**
  * Wide enough to cover the whole pilot area from its centre.
@@ -72,10 +74,41 @@ export default function HomePage() {
    * `attempt` is the retry trigger: bumping it re-runs this effect.
    */
   const [loadFailed, setLoadFailed] = useState(false);
+  // Set only when what is on the map came from the last snapshot rather than
+  // from the server. Null means live, and null is the only state that may
+  // render without an age.
+  const [cachedAge, setCachedAge] = useState<CacheAge | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let current = true;
+
+    /**
+     * Fall back to the last good snapshot, if it is still worth trusting.
+     *
+     * Shared by BOTH failure paths deliberately. supabase-js resolves with an
+     * `error` rather than rejecting, so an outage arrives down the success
+     * path - a fact this file already had to learn once, when reading only
+     * `data` turned every outage into a convincingly empty map. Putting the
+     * fallback in the rejection handler alone would have repeated it exactly:
+     * the offline map would have worked only for the failures that happened to
+     * reject, which is not the common case.
+     *
+     * `restoreSnapshot` applies the six-hour rule, so anything older comes back
+     * empty with an age that says why. The map then shows nothing rather than
+     * showing yesterday's water as though it were today's.
+     */
+    const fallBack = () => {
+      const restored = restoreSnapshot();
+      if (restored && restored.reports.length > 0) {
+        setReports(restored.reports);
+        setCachedAge(restored.age);
+        return;
+      }
+
+      setCachedAge(restored?.age ?? null);
+      setLoadFailed(true);
+    };
 
     createClient()
       .rpc("reports_near", {
@@ -92,28 +125,32 @@ export default function HomePage() {
           // failure here arrives down the success path. Reading only `data`
           // turned every outage into a convincingly empty map.
           if (error) {
-            setLoadFailed(true);
+            fallBack();
             return;
           }
 
           const rows = (data ?? []) as NearbyRow[];
-          setReports(
-            rows.map((row) => ({
-              id: row.id,
-              depth: row.depth,
-              lat: row.lat,
-              lon: row.lon,
-              photoPath: row.photo_path,
-              reportedAt: row.reported_at,
-            })),
-          );
+          const fresh = rows.map((row) => ({
+            id: row.id,
+            depth: row.depth,
+            lat: row.lat,
+            lon: row.lon,
+            photoPath: row.photo_path,
+            reportedAt: row.reported_at,
+          }));
+
+          setReports(fresh);
+          setCachedAge(null);
+          // Kept for the next time there is no signal, which on a flood map is
+          // the visit most likely to matter.
+          saveSnapshot(fresh);
         },
         // And a genuine rejection - offline, DNS, a dead fetch - never reaches
         // the handler above at all.
         () => {
           if (!current) return;
           setReportsReady(true);
-          setLoadFailed(true);
+          fallBack();
         },
       );
 
@@ -181,7 +218,10 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="map-shell">
+    // The offline notice takes the row the weather chip and legend normally
+    // occupy, so they move down while it is showing rather than sitting on top
+    // of the one line that says how old the map is.
+    <main className="map-shell" data-cached={cachedAge !== null && !loadFailed}>
       <h1 className="sr-only">Antas</h1>
       <div className="map-canvas">
         <FloodMap
@@ -203,12 +243,35 @@ export default function HomePage() {
       <PlaceSearch onPick={goToPlace} />
       <LocateButton onLocate={goToSelf} />
 
+      {/* Cached reports always say how old they are.
+          "Offline" alone would tell somebody the network is down; it would not
+          tell them the pin under their thumb is two hours old, and that second
+          fact is the one deciding whether they walk down the street. Past six
+          hours nothing is drawn at all and the failure notice below takes over
+          instead. */}
+      {cachedAge && !loadFailed && (
+        <p className="map-cached" role="status" data-verdict={cachedAge.verdict}>
+          {cachedAge.notice}
+        </p>
+      )}
+
       {/* Stated, never implied. An empty map is a claim about the world. */}
       {loadFailed && (
         <div className="map-error" role="alert">
           <p className="map-error-text">
-            <strong>Hindi ma-load ang mga report.</strong> Hindi ibig sabihin nito
-            na walang baha - hindi lang namin makuha ang datos ngayon.
+            {cachedAge?.verdict === "too-old" ? (
+              // A refusal we chose, so it says so rather than reading as a
+              // plain outage. There IS saved data; it is simply too old to put
+              // in front of somebody deciding whether a street is passable.
+              <>
+                <strong>Hindi ma-load ang mga report.</strong> {cachedAge.notice}
+              </>
+            ) : (
+              <>
+                <strong>Hindi ma-load ang mga report.</strong> Hindi ibig sabihin
+                nito na walang baha - hindi lang namin makuha ang datos ngayon.
+              </>
+            )}
           </p>
           <button
             type="button"
