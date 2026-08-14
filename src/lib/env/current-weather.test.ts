@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   fetchCurrentWeather,
   isRaining,
+  weatherKind,
   weatherLabel,
   RAINING_MM_PER_HOUR,
   UNKNOWN_WEATHER,
@@ -37,6 +38,59 @@ describe("weatherLabel", () => {
 
   it("says nothing rather than guessing when the code is missing", () => {
     expect(weatherLabel(null)).toBeNull();
+  });
+});
+
+/**
+ * The strip shows a word and a glyph side by side, so they must always describe
+ * the same weather. They did not always: the thresholds lived only inside
+ * `weatherLabel`, and an icon written against its own copy of them would drift
+ * the first time a boundary moved. Both now come from `weatherKind`, and these
+ * cases hold the two together.
+ */
+describe("weatherKind", () => {
+  it("groups the codes the way the labels do", () => {
+    expect(weatherKind(0)).toBe("clear");
+    expect(weatherKind(3)).toBe("cloudy");
+    expect(weatherKind(45)).toBe("fog");
+    expect(weatherKind(55)).toBe("drizzle");
+    expect(weatherKind(61)).toBe("rain");
+    expect(weatherKind(82)).toBe("downpour");
+    expect(weatherKind(95)).toBe("storm");
+  });
+
+  it("agrees with the label at every code the provider can send", () => {
+    // The real guard. Walking all 100 codes means a boundary cannot be nudged
+    // in one place and left in the other - which is the entire failure this
+    // refactor exists to prevent.
+    const expected: Record<string, string> = {
+      clear: "Maaliwalas",
+      cloudy: "Maulap",
+      fog: "Mahamog",
+      drizzle: "Ambon",
+      rain: "Umuulan",
+      downpour: "Malakas na ulan",
+      storm: "May kulog at kidlat",
+    };
+
+    for (let code = 0; code <= 99; code += 1) {
+      const kind = weatherKind(code);
+      expect(kind, `code ${code} has no kind`).not.toBeNull();
+      expect(weatherLabel(code), `code ${code} disagrees`).toBe(expected[kind!]);
+    }
+  });
+
+  it("says nothing rather than guessing when the code is missing", () => {
+    // Null means no icon at all, which is the honest rendering of "we do not
+    // know" - a default sun would be inventing weather.
+    expect(weatherKind(null)).toBeNull();
+  });
+
+  it("still gives showers their own kind, distinct from steady rain", () => {
+    // 80-82 are showers and 61-67 steady rain. They read differently on a
+    // flood map, and the icon has to be able to tell them apart.
+    expect(weatherKind(80)).toBe("downpour");
+    expect(weatherKind(65)).toBe("rain");
   });
 });
 

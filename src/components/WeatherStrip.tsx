@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   fetchCurrentWeather,
+  weatherKind,
   weatherLabel,
   type CurrentWeather,
 } from "@/lib/env/current-weather";
+import { WeatherIcon } from "@/components/WeatherIcon";
 
 interface WeatherStripProps {
   /** Reported upward so the map can react to real rain. */
@@ -99,10 +101,14 @@ export function WeatherStrip({ onWeather }: WeatherStripProps) {
   }
 
   const label = weatherLabel(weather.weatherCode);
+  const kind = weatherKind(weather.weatherCode);
   const rain = weather.recentRainMm;
 
   return (
     <p className="weather-strip" aria-live="polite">
+      {/* Both derived from the same grouping, so the picture and the word can
+          never describe different weather. */}
+      {kind && <WeatherIcon kind={kind} />}
       {label && <span className="weather-now">{label}</span>}
       {typeof weather.temperatureC === "number" && (
         <span className="weather-temp">{Math.round(weather.temperatureC)}°</span>

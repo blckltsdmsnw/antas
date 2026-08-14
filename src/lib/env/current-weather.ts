@@ -38,15 +38,46 @@ export const UNKNOWN_WEATHER: CurrentWeather = Object.freeze({
  * drizzle. Nobody deciding whether to walk home needs that, and every extra
  * string is another one to translate and keep consistent.
  */
-export function weatherLabel(code: number | null): string | null {
+export type WeatherKind =
+  | "clear"
+  | "cloudy"
+  | "fog"
+  | "drizzle"
+  | "rain"
+  | "downpour"
+  | "storm";
+
+/**
+ * The grouping itself, separated from the words.
+ *
+ * The strip shows a word and an icon, and they must never describe different
+ * weather. Two copies of these thresholds is exactly how that happens - one
+ * gets a boundary nudged and the other does not - so both derive from here.
+ */
+export function weatherKind(code: number | null): WeatherKind | null {
   if (code === null) return null;
-  if (code === 0) return "Maaliwalas";
-  if (code <= 3) return "Maulap";
-  if (code <= 48) return "Mahamog";
-  if (code <= 57) return "Ambon";
-  if (code <= 82) return code >= 80 ? "Malakas na ulan" : "Umuulan";
-  if (code <= 86) return "Umuulan";
-  return "May kulog at kidlat";
+  if (code === 0) return "clear";
+  if (code <= 3) return "cloudy";
+  if (code <= 48) return "fog";
+  if (code <= 57) return "drizzle";
+  if (code <= 82) return code >= 80 ? "downpour" : "rain";
+  if (code <= 86) return "rain";
+  return "storm";
+}
+
+const KIND_LABEL: Readonly<Record<WeatherKind, string>> = Object.freeze({
+  clear: "Maaliwalas",
+  cloudy: "Maulap",
+  fog: "Mahamog",
+  drizzle: "Ambon",
+  rain: "Umuulan",
+  downpour: "Malakas na ulan",
+  storm: "May kulog at kidlat",
+});
+
+export function weatherLabel(code: number | null): string | null {
+  const kind = weatherKind(code);
+  return kind === null ? null : KIND_LABEL[kind];
 }
 
 /** The point at which measured rain is worth showing on the map itself. */

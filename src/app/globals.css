@@ -1519,6 +1519,14 @@ a.btn {
   color: var(--ink-muted);
 }
 
+/* Inherits the strip's colour, so the light chip and the night one both work
+   without a second rule. `flex: none` because the strip is a flex row and an
+   SVG gets squeezed before text does. */
+.weather-icon {
+  flex: none;
+  color: var(--ink-muted);
+}
+
 .weather-now {
   font-weight: 600;
 }
