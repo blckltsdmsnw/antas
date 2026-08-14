@@ -101,6 +101,10 @@ export function DepthSlider({ value, onChange }: DepthSliderProps) {
               <button
                 type="button"
                 className="body-level"
+                // Carries its own depth colour, so the control shows the same
+                // ramp the map does. Choosing "tuhod" here and then seeing a
+                // pale blue pin appear were two unconnected facts before this.
+                data-level={level}
                 data-active={level === value}
                 aria-pressed={level === value}
                 onClick={() => onChange(level)}

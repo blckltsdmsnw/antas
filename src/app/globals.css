@@ -433,10 +433,17 @@ h3 {
   padding: 24px 16px calc(48px + var(--tabbar-total));
 }
 
+/* The page title carries the display face and real size.
+   Archivo was loaded from the start and used in nine rules, so the product read
+   in the body font almost everywhere - which is most of why every screen looked
+   like every other project's screen. A page should announce itself. */
 .task-title {
-  font-size: 26px;
-  line-height: 1.2;
-  margin-bottom: 6px;
+  font-family: var(--font-display), sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  margin-bottom: 8px;
 }
 
 .task-lede {
@@ -530,15 +537,45 @@ h3 {
   cursor: pointer;
 }
 
-.body-level:hover {
-  border-color: var(--accent);
+/* Each option wears its own depth. The ramp is the one saturated colour in the
+   product and it was confined to data - the map, the meter - while the control
+   that PRODUCES that data was five identical white boxes turning generic blue.
+   Now the colour you choose is the colour your pin becomes. */
+.body-level[data-level="ankle"] {
+  --level-colour: var(--depth-ankle);
+}
+.body-level[data-level="knee"] {
+  --level-colour: var(--depth-knee);
+}
+.body-level[data-level="waist"] {
+  --level-colour: var(--depth-waist);
+}
+.body-level[data-level="chest"] {
+  --level-colour: var(--depth-chest);
+}
+.body-level[data-level="above_head"] {
+  --level-colour: var(--depth-above-head);
 }
 
+.body-level {
+  border-left: 5px solid var(--level-colour, var(--line));
+}
+
+.body-level:hover {
+  border-color: var(--level-colour, var(--accent));
+  border-left-color: var(--level-colour, var(--accent));
+}
+
+/* Tinted rather than filled, and the text stays near-black.
+   `ankle` and `knee` are pale enough to fail contrast against white - the same
+   caution the detail sheet already observes by never colouring type with the
+   ramp - so the selected row takes a wash of its depth instead of the full
+   saturation, and reads at every level. */
 .body-level[data-active="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-  font-weight: 600;
+  background: color-mix(in srgb, var(--level-colour) 20%, #fff);
+  border-color: var(--level-colour);
+  color: var(--ink);
+  font-weight: 700;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1523,28 +1560,44 @@ a.btn {
    -------------------------------------------------------------------------- */
 
 .guide-section {
-  margin: 0 0 32px;
+  margin: 0 0 40px;
 }
 
+/* The heading leads, and is marked by the accent rather than sized like the
+   items under it. Before this, a section heading and an item title were the
+   same 16-18px semibold, so nothing on the page was in charge. */
 .guide-heading {
-  font-size: 18px;
-  line-height: 1.3;
-  margin: 0 0 12px;
+  font-family: var(--font-display), sans-serif;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+  padding-top: 12px;
+  border-top: 3px solid var(--accent);
 }
 
 .guide-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  gap: 12px;
 }
 
+/* NOT A CARD, which is the whole point of this pass.
+   Every item on this page used to be a rounded rectangle with its own border on
+   a grey field - fourteen of them down one screen. That repetition is what read
+   as template-generated: the boxes carried no meaning, they were just the
+   default shape of a container. These are a title and a sentence of advice, so
+   they get whitespace and a hairline, and the borders that remain in the
+   product now mean something. */
 .guide-item {
-  padding: 14px;
-  background: var(--raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-card);
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.guide-list li:last-child .guide-item,
+.guide-list li:last-child .go-bag-item {
+  border-bottom: 0;
 }
 
 .guide-item-title {
@@ -1577,14 +1630,15 @@ a.btn {
   color: var(--accent);
 }
 
+/* Same treatment as the advice items: a row, not a box. The checkbox already
+   marks each one, so a border around it as well was saying the same thing
+   twice. */
 .go-bag-item {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 14px;
-  background: var(--raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-card);
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
   /* The whole row is the target, not the 22px box. One-handed, in the rain. */
   cursor: pointer;
 }
@@ -1608,7 +1662,7 @@ a.btn {
 }
 
 .go-bag-item[data-checked="true"] {
-  background: transparent;
+  opacity: 0.62;
 }
 
 .go-bag-item[data-checked="true"] .guide-item-title {
@@ -1690,18 +1744,24 @@ a.btn {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  gap: 10px;
+  /* No gap: the rows are separated by their own hairlines now, and a gap as
+     well would reintroduce the stack-of-boxes rhythm this pass removed. */
 }
 
+/* A row, not a card. Same reasoning as the guide: a list of your own reports is
+   a list, and giving each entry its own box made a wall of identical rectangles
+   whose borders carried no meaning. The photo or depth swatch already marks
+   where each one starts. */
 .my-report {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
-  background: var(--raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-card);
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.my-reports li:last-child .my-report {
+  border-bottom: 0;
 }
 
 .my-report-photo,
@@ -2771,12 +2831,13 @@ a.btn {
   font-size: 15px;
 }
 
+/* A queue row rather than a card. Ten boxed rectangles was the same wall the
+   guide and /ako had; the coloured trust band already gives each entry its own
+   identity, which is more use to a moderator scanning them than a border. */
 .signal-card {
   display: block;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-card);
-  padding: 14px 16px;
-  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  padding: 16px 4px;
   text-decoration: none;
   color: inherit;
   background: var(--ground);

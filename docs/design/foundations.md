@@ -101,6 +101,42 @@ English, so allow generous line length - cap at roughly 60 characters.
 
 4px base unit; use 4, 8, 12, 16, 24, 32, 48.
 
+### A card must earn its border
+
+The strongest rule here, added after the interface was fairly described as
+looking generated. Every list item had become a rounded rectangle with a 1px
+border on a grey field — fourteen of them down `/gabay` alone — and that
+repetition is precisely what reads as template output. The boxes carried no
+meaning; they were just the default shape of a container.
+
+**A list is a list.** Rows of advice, of your own reports, of a moderator's
+queue get whitespace and a hairline. A card is reserved for something that is
+genuinely a separate object: the 911 contact, the photo capture panel, a form.
+When the guide dropped from fourteen boxes to one, the survivor — the emergency
+number — became the most prominent thing on the page, which is correct.
+
+The corollary: **every border left in the product now means something**, so
+adding one is a claim that the thing inside is separable. Make that claim
+deliberately.
+
+### The display face is part of the identity
+
+Archivo was loaded from the first commit and used in nine rules, so almost
+everything set in the body font. Page titles and section headings now carry it,
+at 32/21px with tight tracking. A product that never uses its display face has
+no typographic identity, which is half of why one screen looked like any other
+project's screen.
+
+### The ramp belongs on the control, not only on the data
+
+The depth ramp is the one saturated colour in the product, and it lived entirely
+in output — pins, meters, stains — while the control that *produces* that data
+was five identical white boxes turning generic accent blue. Each option now
+carries its own depth on its left edge, and the selected one takes a 20% wash of
+it rather than a full fill, because `ankle` and `knee` are too pale to hold
+white text. Choosing "tuhod" and seeing a pale blue pin appear are now visibly
+the same fact.
+
 - Corner radius: 12px on cards, 8px on controls, full round on the slider thumb
 - Shadow: one level only - `0 1px 3px rgba(15,23,42,.08), 0 4px 12px rgba(15,23,42,.06)`.
   Cards floating over the map need separation; nothing else does
