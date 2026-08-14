@@ -54,6 +54,18 @@ const SURGE_MS = 420;
 const FADE_MS = 320;
 
 /**
+ * The surface, as two drifting waves rather than a ruled edge.
+ *
+ * A straight line reads as a progress bar, which is the one thing this must not
+ * look like. Both paths span 200 units and repeat every 50, so a -100 unit
+ * drift lands exactly two periods along and loops without a seam.
+ */
+const WAVE_BACK =
+  "M0 13 q12.5 -9 25 0 t25 0 t25 0 t25 0 t25 0 t25 0 t25 0 t25 0 L200 24 L0 24 Z";
+const WAVE_FRONT =
+  "M0 17 q12.5 -7 25 0 t25 0 t25 0 t25 0 t25 0 t25 0 t25 0 t25 0 L200 24 L0 24 Z";
+
+/**
  * The splash must be in the server-rendered HTML, or the map paints for a frame
  * before it is covered. That means the "have we already shown this?" check has
  * to run after hydration but before paint, which is `useLayoutEffect` - and
@@ -172,13 +184,20 @@ export function SplashScreen({ ready }: SplashScreenProps) {
         }}
       />
 
-      {/* A sibling of the water, not a child. Inside it the crest was invisible:
-          `multiply` by white is the identity, so a white highlight cannot
-          survive the blend. Out here it tracks the surface on the same timing. */}
-      <span
-        className="splash-crest"
+      {/* The surface rides on top of the water body and tracks it on the same
+          timing. Same colour and same blend mode, so where the two waves cross
+          each other the multiply darkens and the water gains depth for free. */}
+      <svg
+        className="splash-wave"
         style={{ bottom: `${level}%`, ["--rise-ms" as string]: riseMs }}
-      />
+        viewBox="0 0 200 24"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path className="splash-wave-back" d={WAVE_BACK} fill={colour} />
+        <path className="splash-wave-front" d={WAVE_FRONT} fill={colour} />
+      </svg>
     </div>
   );
 }

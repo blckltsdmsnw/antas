@@ -95,12 +95,18 @@ it stamped `data-map-theme="light"` for a frame before consulting the clock —
 the white flash in a dark room the basemap already avoided. Both states are now
 seeded from the clock.
 
-**A real logo, and a loading screen.** The mark is a staff gauge — the graduated
-post used to read a river by eye — drawn as SVG rather than generated, so it is
-exact at every size. It replaces a pixel-art "A" placeholder. The favicon comes
-from `src/app/icon.svg` via the App Router convention; `public/icon-192.png` and
-`icon-512.png` are rasterised from it. The "antas ng tubig" gloss is gone from
-the header.
+**A real logo, and a loading screen.** The mark is the letter A flooded to its
+crossbar — the A's own bar doubles as the waterline, so one shape names the app
+and states the subject. The wordmark repeats that waterline through "Antas"
+using `clip-path` over live text. Drawn as SVG rather than generated, so it is
+exact at every size. The favicon comes from `src/app/icon.svg` via the App
+Router convention; `public/icon-192.png` and `icon-512.png` are rasterised from
+it. The "antas ng tubig" gloss is gone from the header.
+
+The first attempt was a staff gauge — five depth bands in a rounded square. It
+tied neatly to the legend and failed as a logo: no silhouette, and the
+graduations vanished below ~24px, so the icon was stripes in a box. Recorded in
+`foundations.md` §7b, because the reasoning was seductive and wrong.
 
 The splash rises water over the mark while the map loads, stepping through the
 five depth colours in scale order. It is bound to real readiness — basemap

@@ -267,17 +267,23 @@ and typhoon flooding does not stop at 6pm. So:
 
 ## 7b. The mark, and the splash
 
-The mark is a **staff gauge** — the graduated post planted in a river to read its level by
-eye, which is the instrument this app replaces with a crowd. Five bands, in scale order, pale
-at the top and deepest at the foot. The home-screen icon and the map key are therefore the
-same object, and nothing new has to be learned to read it. Not a droplet and not a wave:
-neither can say *how deep*, which is the only question this product answers.
+The mark is the letter **A, flooded to its crossbar**. The A already carries a horizontal
+bar, so the bar is made to do double duty as the waterline — the shape names the app and
+states the subject at once, and that coincidence is what makes it stick. Below the line the
+letter takes a pale depth blue; above it, white on ink. Flat fills only, so the submersion is
+carried by colour rather than by shading or transparency.
 
-It sits on an ink ground rather than bleeding to the edge. Full-bleed, the palest band
-dissolved into a white browser tab and the icon read as though its top had been cropped.
+The wordmark repeats the same waterline through the word "Antas", cut with `clip-path` over
+live text rather than baked into an image, so it stays selectable and resizable. The gloss
+"antas ng tubig" that used to sit beside it is gone.
 
-The wordmark is the mark plus "Antas". The gloss "antas ng tubig" that used to sit beside it
-is gone.
+**A rejected first attempt is worth recording**, because the reasoning was seductive and
+wrong. The mark began as a staff gauge — the graduated post used to read a river by eye —
+drawn as the five depth bands in a rounded square, so that the app icon and the map key would
+be the same object. It was faithful to the system and useless as a logo: a rounded rectangle
+has no silhouette, and the graduations that were supposed to carry the idea stopped resolving
+below about 24px, which is exactly where an icon lives. What reached the user was stripes in a
+box. Semantic justification is not the same as being recognisable.
 
 **The splash is the one animation allowed past §8**, and only on these terms:
 
@@ -291,6 +297,10 @@ is gone.
   before the map is reached and the rise reads as increasing danger
 - It **submerges** the mark rather than floating it. A logo bobbing to safety reads as
   reassurance; this is a warning tool
+- The surface is two drifting waves, not a ruled line. A straight edge reads as a progress
+  bar, which is the one thing a rising flood must not look like. The waves share the water's
+  colour and blend mode, so where they cross each other the multiply darkens and the water
+  gains depth without a gradient
 
 ## 8. What this deliberately avoids
 

@@ -142,10 +142,27 @@ h3 {
   letter-spacing: -0.02em;
 }
 
-/* The mark keeps its own colours in every theme - it is the depth scale, and a
-   depth scale that restyles itself at night is not a scale. */
+/* The mark keeps its own colours in every theme - it states the subject, and a
+   logo that restyles itself at night is not a logo. */
 .wordmark svg {
   flex: none;
+}
+
+.wordmark-word {
+  position: relative;
+  display: inline-block;
+}
+
+/* The submerged half of the word. Clipped rather than faded, and cut at the
+   same height the mark's crossbar sits at, so the header reads as one waterline
+   running through both. Bleeds past the bottom so descenders are not sheared. */
+.wordmark-flood {
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--depth-waist);
+  clip-path: inset(52% 0 -20% 0);
+  pointer-events: none;
 }
 
 .site-nav {
@@ -1451,25 +1468,54 @@ a.btn {
     background-color 450ms linear;
 }
 
-/* A surface, so the water has a top rather than simply ending. Deliberately
-   outside `.splash-water`: multiply by white is the identity, so a highlight
-   placed inside the blended layer can never show. */
-.splash-crest {
+/* The surface. Sits on the water's top edge and rises with it - a ruled line
+   read as a progress bar, which is the one thing a flood must not look like.
+   Twice the container width so the drift has somewhere to travel. */
+.splash-wave {
   position: absolute;
   left: 0;
-  right: 0;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.65);
-  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.18);
+  width: 200%;
+  height: 26px;
+  /* Overlap by a pixel: at fractional device ratios an exact meeting leaves a
+     hairline of background between the surface and the body of water. */
+  margin-bottom: -1px;
+  mix-blend-mode: multiply;
+  pointer-events: none;
   transition: bottom var(--rise-ms, 300ms) cubic-bezier(0.33, 0.1, 0.25, 1);
 }
 
+/* -100 user units is exactly two of the path's 50-unit periods, so the loop
+   has no seam. Two speeds, opposed, so the crests never march in step. */
+@keyframes splash-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100px);
+  }
+}
+
+.splash-wave-back {
+  opacity: 0.55;
+  animation: splash-drift 3.6s linear infinite;
+}
+
+.splash-wave-front {
+  animation: splash-drift 2.2s linear infinite reverse;
+}
+
 /* Reduced motion keeps the covering - it is load state, not decoration - and
-   drops only the travel, so the level steps rather than climbs. */
+   drops only the travel: the level steps rather than climbs, and the surface
+   holds still. The waves stay, because their shape is not motion. */
 @media (prefers-reduced-motion: reduce) {
   .splash-water,
-  .splash-crest {
+  .splash-wave {
     transition: background-color 200ms linear;
+  }
+
+  .splash-wave-back,
+  .splash-wave-front {
+    animation: none;
   }
 }
 

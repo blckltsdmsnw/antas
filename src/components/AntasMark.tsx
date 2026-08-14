@@ -1,43 +1,44 @@
-import { DEPTH_LEVELS } from "@/lib/depth/scale";
 import { DEPTH_HEX } from "@/lib/depth/presentation";
 
 /**
- * The mark: a staff gauge.
+ * The mark: the letter A, flooded to its crossbar.
  *
- * A staff gauge is the graduated post planted in a river to read its level by
- * eye - the physical instrument this app replaces with a crowd. So the mark is
- * that object, rather than the droplet or wave every other flood app reaches
- * for, neither of which can say *how deep*.
+ * The A already has a horizontal bar across it, so the bar is made to do double
+ * duty as the waterline. That is the whole idea, and it is why this works where
+ * the previous mark did not: it names the app and states the subject in one
+ * shape, and the coincidence is the thing anyone remembers.
  *
- * The five bands are the depth scale itself, in scale order, pale at the top
- * and deepest at the foot. The icon on a home screen and the key on the map are
- * then the same object, and nothing new has to be learned to read it.
+ * What it replaces was five colour bands in a rounded square. That was faithful
+ * to the legend and useless as a logo - a rounded rectangle has no silhouette,
+ * the graduations stopped resolving below about 24px, and what reached the user
+ * at icon size was stripes in a box.
  *
- * The post sits on an ink ground rather than bleeding to the edge. The first
- * version was full-bleed, and its palest band vanished into a white browser
- * tab - the icon read as though the top had been cropped off. The ground also
- * makes it an object standing in something, which is what a gauge is.
+ * Flat fills only, per `foundations.md` §8: no gradients anywhere in this
+ * product. The submerged half of the letter takes a pale depth blue rather than
+ * white, which is what reads as "under water" without shading or transparency.
  */
-
-/** Shallowest first, so the bands paint top-down in scale order. */
-const BANDS = [...DEPTH_LEVELS];
 
 const SIZE = 64;
 const GROUND = "#0f172a";
+const WATER = DEPTH_HEX.waist;
+const SUBMERGED = DEPTH_HEX.ankle;
 
-/** The post, inset from the ground. Deliberately broad: at favicon sizes a
- *  slender post collapses to a hairline and the colour signature goes with it. */
-const POST_X = 12;
-const POST_W = 40;
-const POST_Y = 5;
-const POST_H = 54;
-const BAND_H = POST_H / BANDS.length;
+/** Where the crossbar sits, and therefore where the water sits. */
+const WATERLINE = 39;
 
-/** Graduations, cut into the left edge of the post in the ground colour. Below
- *  roughly 24px they stop resolving and read as texture, which is the point:
- *  the silhouette still says "measuring post" without needing to be counted. */
-const TICK_W = 12;
-const TICK_H = 2.4;
+/** The letter, as strokes rather than an outline: a font cannot be relied on
+ *  inside an SVG that ships as a favicon. Butt caps keep the feet flat. */
+const LETTER = `M16 52 L32 14 L48 52`;
+const CROSSBAR = `M21.5 ${WATERLINE} L42.5 ${WATERLINE}`;
+
+/**
+ * The water's surface, waved rather than ruled. A straight edge reads as a
+ * progress bar; this has to read as water. Amplitude is deliberately shallow -
+ * at 16px it flattens to a line anyway, and anything deeper turns the crossbar
+ * into a scribble at the sizes where it still resolves.
+ */
+const SURFACE =
+  `M0 ${WATERLINE} q8 -3.2 16 0 t16 0 t16 0 t16 0 L64 64 L0 64 Z`;
 
 interface AntasMarkProps {
   /** Rendered size in px. The viewBox is fixed, so this only scales. */
@@ -58,39 +59,43 @@ export function AntasMark({ size = 24, title }: AntasMarkProps) {
       aria-label={title}
       focusable="false"
     >
-      <rect width={SIZE} height={SIZE} rx={14} ry={14} fill={GROUND} />
-
-      {/* Clipping rather than a rounded <rect> per band: the corner radius then
-          belongs to the post, not to the top and bottom colours, so the scale
-          reads as one continuous object. */}
-      <clipPath id="antas-mark-post">
-        <rect x={POST_X} y={POST_Y} width={POST_W} height={POST_H} rx={5} ry={5} />
+      <clipPath id="antas-mark-ground">
+        <rect width={SIZE} height={SIZE} rx={14} ry={14} />
       </clipPath>
 
-      <g clipPath="url(#antas-mark-post)">
-        {BANDS.map((level, i) => (
-          <rect
-            key={level}
-            x={POST_X}
-            y={POST_Y + i * BAND_H}
-            width={POST_W}
-            height={BAND_H}
-            fill={DEPTH_HEX[level]}
-          />
-        ))}
+      {/* Above and below the waterline, so the letter can be drawn twice in two
+          colours rather than faded - flat fills only. */}
+      <clipPath id="antas-mark-above">
+        <rect width={SIZE} height={WATERLINE} />
+      </clipPath>
+      <clipPath id="antas-mark-below">
+        <rect y={WATERLINE} width={SIZE} height={SIZE - WATERLINE} />
+      </clipPath>
 
-        {/* One graduation per boundary between levels - four, not five. A tick
-            at the foot of the post would mark a depth with no band below it. */}
-        {BANDS.slice(1).map((level, i) => (
-          <rect
-            key={`tick-${level}`}
-            x={POST_X}
-            y={POST_Y + (i + 1) * BAND_H - TICK_H / 2}
-            width={TICK_W}
-            height={TICK_H}
-            fill={GROUND}
-          />
-        ))}
+      <g clipPath="url(#antas-mark-ground)">
+        <rect width={SIZE} height={SIZE} fill={GROUND} />
+        <path d={SURFACE} fill={WATER} />
+
+        <g
+          fill="none"
+          strokeWidth={8.5}
+          strokeLinecap="butt"
+          strokeLinejoin="miter"
+          clipPath="url(#antas-mark-above)"
+        >
+          <path d={LETTER} stroke="#ffffff" />
+          <path d={CROSSBAR} stroke="#ffffff" strokeWidth={7} />
+        </g>
+
+        <g
+          fill="none"
+          strokeWidth={8.5}
+          strokeLinecap="butt"
+          strokeLinejoin="miter"
+          clipPath="url(#antas-mark-below)"
+        >
+          <path d={LETTER} stroke={SUBMERGED} />
+        </g>
       </g>
     </svg>
   );
