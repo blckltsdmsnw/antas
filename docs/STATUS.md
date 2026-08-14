@@ -95,18 +95,26 @@ it stamped `data-map-theme="light"` for a frame before consulting the clock —
 the white flash in a dark room the basemap already avoided. Both states are now
 seeded from the clock.
 
-**A real logo, and a loading screen.** The mark is the letter A flooded to its
-crossbar — the A's own bar doubles as the waterline, so one shape names the app
-and states the subject. The wordmark repeats that waterline through "Antas"
-using `clip-path` over live text. Drawn as SVG rather than generated, so it is
-exact at every size. The favicon comes from `src/app/icon.svg` via the App
-Router convention; `public/icon-192.png` and `icon-512.png` are rasterised from
-it. The "antas ng tubig" gloss is gone from the header.
+**A real logo, and a loading screen.** The mark is a person standing in water —
+this product's scale is body parts, not centimetres, so the mark is that idea as
+a shape. Two variants: a boxed icon with its own chest-height waterline, and a
+bare figure for the splash, where the rising water does the submerging. Drawn as
+SVG rather than generated, so it is exact at every size. The favicon comes from
+`src/app/icon.svg` via the App Router convention; `public/icon-192.png` and
+`icon-512.png` are rasterised from it. The header word is plain "Antas"; the
+"antas ng tubig" gloss is gone.
 
-The first attempt was a staff gauge — five depth bands in a rounded square. It
-tied neatly to the legend and failed as a logo: no silhouette, and the
-graduations vanished below ~24px, so the icon was stripes in a box. Recorded in
-`foundations.md` §7b, because the reasoning was seductive and wrong.
+It took three marks to get here — a staff gauge, then the letter A flooded to
+its crossbar, then this. `foundations.md` §7b records why the first two failed
+and why a boat was rejected on principle; the short version is that being
+semantically justified is not the same as being recognisable, and naming the
+product is not the same as saying what it does.
+
+**Open question worth a second look on a real phone:** the boxed icon still
+carries some resemblance to an account avatar at 16–24px, which is the hazard of
+any human figure at glyph size. Enlarging the figure in its frame and darkening
+the submerged half below the water's own tone were the two levers that helped
+most. The bare splash figure has no such ambiguity.
 
 The splash rises water over the mark while the map loads, stepping through the
 five depth colours in scale order. It is bound to real readiness — basemap

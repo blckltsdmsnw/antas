@@ -44,16 +44,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <header className="site-header">
           <Link href="/" className="wordmark">
             <AntasMark size={24} />
-            {/* The word carries the same waterline as the mark. The duplicate is
-                the real text clipped to below the line and recoloured, so the
-                letterforms stay live text - selectable, resizable, and readable
-                by assistive tech, which an image of a word would not be. */}
-            <span className="wordmark-word">
-              Antas
-              <span className="wordmark-flood" aria-hidden="true">
-                Antas
-              </span>
-            </span>
+            {/* Plain. The word used to carry the same waterline as the mark,
+                which put the identical idea twice in one lockup. The mark
+                carries the concept; the word only has to say the name. */}
+            Antas
           </Link>
           <nav className="site-nav">
             <Link href="/report" className="nav-link">

@@ -168,8 +168,11 @@ export function SplashScreen({ ready }: SplashScreenProps) {
 
   return (
     <div className="splash" data-stage={stage} role="status" aria-label="Naglo-load">
+      {/* The bare figure, not the boxed icon: here the rising water does the
+          submerging, and a mark carrying its own fixed waterline underneath a
+          moving one shows two contradictory levels at once. */}
       <div className="splash-logo">
-        <AntasMark size={72} />
+        <AntasMark size={104} variant="plain" />
         <span className="splash-word">Antas</span>
       </div>
 

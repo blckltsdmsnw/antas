@@ -267,23 +267,50 @@ and typhoon flooding does not stop at 6pm. So:
 
 ## 7b. The mark, and the splash
 
-The mark is the letter **A, flooded to its crossbar**. The A already carries a horizontal
-bar, so the bar is made to do double duty as the waterline — the shape names the app and
-states the subject at once, and that coincidence is what makes it stick. Below the line the
-letter takes a pale depth blue; above it, white on ink. Flat fills only, so the submersion is
-carried by colour rather than by shading or transparency.
+The mark is **a person standing in water**.
 
-The wordmark repeats the same waterline through the word "Antas", cut with `clip-path` over
-live text rather than baked into an image, so it stays selectable and resizable. The gloss
-"antas ng tubig" that used to sit beside it is gone.
+This product's scale is not centimetres, it is body parts — bukong-bukong, tuhod, baywang,
+dibdib, lampas sa ulo. Measuring a flood against a human being is the distinctive idea in
+Antas, so the mark is that idea as a shape. It states what the app *does*, not merely what it
+is called.
 
-**A rejected first attempt is worth recording**, because the reasoning was seductive and
-wrong. The mark began as a staff gauge — the graduated post used to read a river by eye —
-drawn as the five depth bands in a rounded square, so that the app icon and the map key would
-be the same object. It was faithful to the system and useless as a logo: a rounded rectangle
-has no silhouette, and the graduations that were supposed to carry the idea stopped resolving
-below about 24px, which is exactly where an icon lives. What reached the user was stripes in a
-box. Semantic justification is not the same as being recognisable.
+Two variants, and the split matters:
+
+| | Ground | Waterline |
+|---|---|---|
+| `icon` — favicon, PWA, header | ink, rounded | its own, at the chest |
+| `plain` — splash | none | none; the splash's own water does the work |
+
+A mark carrying a fixed waterline underneath a rising one shows two contradictory levels at
+once, which is why the splash gets the bare figure.
+
+The submerged half is drawn **darker** than the water, not lighter. Under real floodwater a
+body is a shadow — and a bright block below a circle is an account avatar again, whatever the
+water is doing. The figure is also deliberately large in its frame: an avatar glyph always
+sits comfortably inset with air around it.
+
+The wordmark is the mark plus a plain "Antas". It briefly carried the same waterline through
+the word, which put the identical idea twice in one lockup; the mark carries the concept, the
+word only says the name. The gloss "antas ng tubig" is gone.
+
+**Two rejected marks, recorded because the reasoning was seductive both times.**
+
+First, a **staff gauge** — the graduated post used to read a river by eye — drawn as the five
+depth bands in a rounded square, so the app icon and the map key would be the same object. It
+was faithful to the system and useless as a logo: a rounded rectangle has no silhouette, and
+the graduations meant to carry the idea stopped resolving below about 24px, which is exactly
+where an icon lives. What reached the user was stripes in a box.
+
+Second, the letter **A flooded to its crossbar** — the A's own bar doing double duty as the
+waterline. A real piece of craft, and still thin: it named the app and stopped there. Beside
+the word "Antas" it was also simply redundant.
+
+Semantic justification is not the same as being recognisable, and naming the product is not
+the same as saying what it does.
+
+A **boat** was considered and rejected on principle. Antas does not rescue anyone; it reports
+depth. A mark implying rescue or safe passage promises something the product cannot deliver,
+at the worst possible moment, and it inverts the honest image the splash is built on.
 
 **The splash is the one animation allowed past §8**, and only on these terms:
 

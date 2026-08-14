@@ -148,22 +148,6 @@ h3 {
   flex: none;
 }
 
-.wordmark-word {
-  position: relative;
-  display: inline-block;
-}
-
-/* The submerged half of the word. Clipped rather than faded, and cut at the
-   same height the mark's crossbar sits at, so the header reads as one waterline
-   running through both. Bleeds past the bottom so descenders are not sheared. */
-.wordmark-flood {
-  position: absolute;
-  left: 0;
-  top: 0;
-  color: var(--depth-waist);
-  clip-path: inset(52% 0 -20% 0);
-  pointer-events: none;
-}
 
 .site-nav {
   display: flex;
