@@ -267,33 +267,42 @@ and typhoon flooding does not stop at 6pm. So:
 
 ## 7b. The mark, and the splash
 
-The mark is **a person standing in water**.
+The mark is **a map pin holding a flooded street**.
 
-This product's scale is not centimetres, it is body parts — bukong-bukong, tuhod, baywang,
-dibdib, lampas sa ulo. Measuring a flood against a human being is the distinctive idea in
-Antas, so the mark is that idea as a shape. It states what the app *does*, not merely what it
-is called.
+The city is the ruler. One waterline crossing three buildings of different heights gives a
+*reading* — the low block nearly gone, the tall one barely wet — which is the depth idea made
+legible at icon size. The pin frames it as "this place, right here", which is what the app is
+for: not that it is flooding somewhere, but how deep it is **here**.
 
 Two variants, and the split matters:
 
-| | Ground | Waterline |
+| | Ground | Water |
 |---|---|---|
-| `icon` — favicon, PWA, header | ink, rounded | its own, at the chest |
-| `plain` — splash | none | none; the splash's own water does the work |
+| `icon` — favicon, PWA, header | pale blue, rounded | risen up the buildings |
+| `plain` — splash | none | none; the splash's own water does the flooding |
 
 A mark carrying a fixed waterline underneath a rising one shows two contradictory levels at
-once, which is why the splash gets the bare figure.
+once, which is why the splash gets the dry pin.
 
-The submerged half is drawn **darker** than the water, not lighter. Under real floodwater a
-body is a shadow — and a bright block below a circle is an account avatar again, whatever the
-water is doing. The figure is also deliberately large in its frame: an avatar glyph always
-sits comfortably inset with air around it.
+Three constraints learned by rendering it, not by reasoning about it:
+
+- **The ground is pale, not ink.** An ink pin on an ink ground merged: the outline vanished
+  and all that survived at 16px was the white window floating in a dark square
+- **The pin crowds its frame.** A comfortable margin spends most of an icon's pixels on empty
+  ground
+- **The buildings stand on a street**, not on the pin's tip. Running them to the point filled
+  the taper and read as a solid blob rather than a city — visible in `plain`, where no water
+  covers their feet
+
+It carries deliberately less detail than the generated reference it came from: three
+buildings rather than six, two wave bands rather than four, no backdrop panel, no drop
+shadow. The detail was hiding the idea rather than carrying it.
 
 The wordmark is the mark plus a plain "Antas". It briefly carried the same waterline through
 the word, which put the identical idea twice in one lockup; the mark carries the concept, the
 word only says the name. The gloss "antas ng tubig" is gone.
 
-**Two rejected marks, recorded because the reasoning was seductive both times.**
+**Three rejected marks, recorded because the reasoning was seductive every time.**
 
 First, a **staff gauge** — the graduated post used to read a river by eye — drawn as the five
 depth bands in a rounded square, so the app icon and the map key would be the same object. It
@@ -305,8 +314,14 @@ Second, the letter **A flooded to its crossbar** — the A's own bar doing doubl
 waterline. A real piece of craft, and still thin: it named the app and stopped there. Beside
 the word "Antas" it was also simply redundant.
 
-Semantic justification is not the same as being recognisable, and naming the product is not
-the same as saying what it does.
+Third, **a person standing in water** — the body scale as a shape. The right idea on paper and
+unshakeably an account avatar in practice: a head over a rounded torso is that glyph, and
+three rounds of enlarging, raising the waterline and darkening the submerged half never fully
+escaped it.
+
+Semantic justification is not the same as being recognisable; naming the product is not the
+same as saying what it does; and an idea that is right in prose can still be wrong as a
+silhouette.
 
 A **boat** was considered and rejected on principle. Antas does not rescue anyone; it reports
 depth. A mark implying rescue or safe passage promises something the product cannot deliver,

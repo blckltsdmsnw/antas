@@ -1,67 +1,71 @@
 import { DEPTH_HEX } from "@/lib/depth/presentation";
 
 /**
- * The mark: a person standing in water.
+ * The mark: a map pin holding a flooded street.
  *
- * This product's depth scale is not centimetres, it is body parts -
- * bukong-bukong, tuhod, baywang, dibdib, lampas sa ulo. Measuring a flood
- * against a human being is the genuinely distinctive idea in Antas, so the mark
- * is that idea as a shape. It says what the app *does*, which neither of the
- * two attempts before it managed.
+ * The city is the ruler. A waterline crossing buildings of three different
+ * heights gives a *reading* - the low block nearly gone, the tall one barely
+ * wet - which is the same mechanism as the staff gauge this started as, except
+ * legible at icon size. The pin frames it as "this place, right here", which is
+ * what the app is: not that it is flooding somewhere, but how deep it is here.
  *
- * Rejected on the way here, both recorded in `foundations.md` §7b: five depth
- * bands in a rounded square (faithful to the legend, no silhouette, and the
- * graduations dissolved below ~24px), and the letter A flooded to its crossbar
- * (a nice coincidence, but it only ever said the name).
+ * Three marks were tried and discarded before this; `foundations.md` §7b keeps
+ * the reasoning, since each failed for a different and instructive reason.
  *
- * The figure is cropped by the frame rather than floating inside it, and the
- * water crosses it. Both matter: a head-and-shoulders bust centred in a box
- * with space around it is the universal account-avatar glyph, and that is the
- * one thing this must not be mistaken for.
+ * Deliberately fewer shapes than the reference it came from: three buildings
+ * rather than six, two wave bands rather than four, no backdrop panel and no
+ * drop shadow. The detail in the original was hiding the idea, not carrying it.
  */
 
 const SIZE = 64;
-const GROUND = "#0f172a";
-
-/** Waist height. The water takes the accent, which is the waist band, so the
- *  colour and the level it sits at agree. Deeper bands are darker than the ink
- *  ground and would close up at icon sizes. */
-const WATER = DEPTH_HEX.waist;
+const INK = "#0f172a";
+const PAPER = "#ffffff";
 
 /**
- * Darker than the water, not lighter.
+ * A pale ground, not the ink one the earlier marks used.
  *
- * The submerged half was first drawn in pale blue, which made a bright block
- * below the surface - and a bright block under a circle is an account avatar
- * again, whatever the water is doing. Under real floodwater a body is a shadow.
- * Sinking it below the water's own tone leaves the silhouette to the head and
- * shoulders above the line, which is the part that has to read.
+ * The pin is ink, and ink on ink merged: the outline disappeared into the field
+ * and all that survived at 16px was the white window floating in a dark square.
+ * The reference this came from had a pale backdrop for precisely that reason.
+ * `ankle` is the palette's own pale blue, so nothing new is introduced.
  */
-const SUBMERGED = "#0369a1";
+const GROUND = DEPTH_HEX.ankle;
+
+/** The pin, and the same shape inset to make its window. Drawn as two filled
+ *  teardrops rather than one stroked path: a stroke of this weight distorts at
+ *  the tip, where the curve is tightest.
+ *
+ *  Sized to crowd the frame. The first cut left a wide margin, which at icon
+ *  sizes spends most of the pixels on empty ground. */
+const PIN_OUTER =
+  "M32 61 C25 50 13 38 13 24 A19 19 0 1 1 51 24 C51 38 39 50 32 61 Z";
+const PIN_INNER =
+  "M32 51 C28 43 18.5 34 18.5 24 A13.5 13.5 0 1 1 45.5 24 C45.5 34 36 43 32 51 Z";
 
 /**
- * Chest height, and high in the frame on purpose. The first cut put the water
- * at the waist, low down, and the result was unmistakably an account avatar
- * with a blue base - a head-and-shoulders bust is the universal profile glyph.
- * Water crossing the body high, covering most of the field, is what makes it a
- * person standing in a flood instead.
+ * Three heights, because one height cannot express a level. What makes this
+ * read as depth rather than as weather is that the same waterline leaves
+ * different amounts of each building showing.
  */
-const WATERLINE = 31;
+const BUILDINGS = [
+  { x: 22, w: 6, y: 19 },
+  { x: 29, w: 6.5, y: 14 },
+  { x: 36.5, w: 6, y: 21 },
+];
 
-const HEAD = { cx: 32, cy: 13, r: 7 };
+/** Where the water sits inside the pin, and the second band below it. Two
+ *  bands, not four: at 24px the extra ones merge into a single blue mass. */
+const WATERLINE = 29;
+const WATERLINE_DEEP = 36;
 
-/** Head, shoulders and body, running off the bottom edge - a figure standing in
- *  something rather than a portrait framed inside it.
- *
- *  Deliberately large in the frame. An avatar glyph is always comfortably
- *  inset with air around it; a figure that crowds its own edges does not read
- *  that way, and filling the field was the cheapest remaining lever against
- *  the resemblance. */
-const BODY = `M17 ${SIZE} L17 31 Q17 22 32 22 Q47 22 47 31 L47 ${SIZE} Z`;
+/** The street the buildings stand on. Without it they ran to the pin's tip and
+ *  filled the taper, which reads as a solid blob rather than a city - visible
+ *  in the `plain` variant, where no water covers their feet. */
+const STREET = 37;
 
-/** The surface. Shallow on purpose: at 16px it flattens to a line anyway, and
- *  deeper troughs eat into the body at the sizes where it does resolve. */
-const SURFACE = `M0 ${WATERLINE} q8 -3 16 0 t16 0 t16 0 t16 0 L${SIZE} ${SIZE} L0 ${SIZE} Z`;
+function surface(y: number): string {
+  return `M0 ${y} q6 -2.4 12 0 t12 0 t12 0 t12 0 t12 0 L${SIZE} ${SIZE} L0 ${SIZE} Z`;
+}
 
 interface AntasMarkProps {
   /** Rendered size in px. The viewBox is fixed, so this only scales. */
@@ -70,64 +74,60 @@ interface AntasMarkProps {
    *  decorative, and announcing "Antas" twice is noise on a screen reader. */
   title?: string;
   /**
-   * `icon` is the full mark: ink ground, its own waterline at the waist.
+   * `icon` is the full mark: ink ground, water already risen up the buildings.
    *
-   * `plain` is the bare figure with no ground and no water, for the splash -
-   * there the rising water does the submerging, and a mark carrying its own
-   * fixed waterline underneath a moving one reads as two contradictory levels.
+   * `plain` is the pin with the street still dry and no ground, for the splash -
+   * there the rising water does the flooding, and a mark carrying its own fixed
+   * waterline underneath a moving one shows two contradictory levels at once.
    */
   variant?: "icon" | "plain";
 }
 
 export function AntasMark({ size = 24, title, variant = "icon" }: AntasMarkProps) {
-  const shared = {
-    width: size,
-    height: size,
-    viewBox: `0 0 ${SIZE} ${SIZE}`,
-    role: title ? ("img" as const) : ("presentation" as const),
-    "aria-hidden": title ? undefined : true,
-    "aria-label": title,
-    focusable: "false" as const,
-  };
-
-  if (variant === "plain") {
-    return (
-      <svg {...shared}>
-        <g fill={GROUND}>
-          <circle cx={HEAD.cx} cy={HEAD.cy} r={HEAD.r} />
-          <path d={BODY} />
-        </g>
-      </svg>
-    );
-  }
+  // Namespaced per variant so the two marks on screen at once - the header's
+  // and the splash's - cannot resolve each other's clip paths.
+  const clipId = `antas-pin-${variant}`;
 
   return (
-    <svg {...shared}>
-      <clipPath id="antas-mark-ground">
-        <rect width={SIZE} height={SIZE} rx={14} ry={14} />
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${SIZE} ${SIZE}`}
+      role={title ? "img" : "presentation"}
+      aria-hidden={title ? undefined : true}
+      aria-label={title}
+      focusable="false"
+    >
+      <clipPath id={clipId}>
+        <path d={PIN_INNER} />
       </clipPath>
 
-      {/* Above and below, so the figure is drawn twice in two flat colours
-          rather than faded - no gradients and no transparency anywhere. */}
-      <clipPath id="antas-mark-above">
-        <rect width={SIZE} height={WATERLINE} />
-      </clipPath>
-      <clipPath id="antas-mark-below">
-        <rect y={WATERLINE} width={SIZE} height={SIZE - WATERLINE} />
-      </clipPath>
+      {variant === "icon" && (
+        <rect width={SIZE} height={SIZE} rx={14} ry={14} fill={GROUND} />
+      )}
 
-      <g clipPath="url(#antas-mark-ground)">
-        <rect width={SIZE} height={SIZE} fill={GROUND} />
-        <path d={SURFACE} fill={WATER} />
+      <path d={PIN_OUTER} fill={INK} />
+      <path d={PIN_INNER} fill={PAPER} />
 
-        <g fill="#ffffff" clipPath="url(#antas-mark-above)">
-          <circle cx={HEAD.cx} cy={HEAD.cy} r={HEAD.r} />
-          <path d={BODY} />
-        </g>
+      <g clipPath={`url(#${clipId})`}>
+        {BUILDINGS.map((building) => (
+          <rect
+            key={building.x}
+            x={building.x}
+            y={building.y}
+            width={building.w}
+            height={STREET - building.y}
+            fill={INK}
+          />
+        ))}
 
-        <g fill={SUBMERGED} clipPath="url(#antas-mark-below)">
-          <path d={BODY} />
-        </g>
+        {/* Over the buildings, so the water takes their feet. */}
+        {variant === "icon" && (
+          <>
+            <path d={surface(WATERLINE)} fill={DEPTH_HEX.waist} />
+            <path d={surface(WATERLINE_DEEP)} fill={DEPTH_HEX.chest} />
+          </>
+        )}
       </g>
     </svg>
   );

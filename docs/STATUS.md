@@ -95,26 +95,23 @@ it stamped `data-map-theme="light"` for a frame before consulting the clock —
 the white flash in a dark room the basemap already avoided. Both states are now
 seeded from the clock.
 
-**A real logo, and a loading screen.** The mark is a person standing in water —
-this product's scale is body parts, not centimetres, so the mark is that idea as
-a shape. Two variants: a boxed icon with its own chest-height waterline, and a
-bare figure for the splash, where the rising water does the submerging. Drawn as
-SVG rather than generated, so it is exact at every size. The favicon comes from
-`src/app/icon.svg` via the App Router convention; `public/icon-192.png` and
-`icon-512.png` are rasterised from it. The header word is plain "Antas"; the
-"antas ng tubig" gloss is gone.
+**A real logo, and a loading screen.** The mark is a map pin holding a flooded
+street: one waterline crossing three buildings of different heights, so the city
+is the ruler and the pin says "here". Two variants — a boxed icon on pale blue
+with the water already risen, and a dry pin for the splash, where the rising
+water does the flooding. Drawn as SVG rather than generated, so it is exact at
+every size. The favicon comes from `src/app/icon.svg` via the App Router
+convention; `public/icon-192.png` and `icon-512.png` are rasterised from it. The
+header word is plain "Antas"; the "antas ng tubig" gloss is gone.
 
-It took three marks to get here — a staff gauge, then the letter A flooded to
-its crossbar, then this. `foundations.md` §7b records why the first two failed
-and why a boat was rejected on principle; the short version is that being
-semantically justified is not the same as being recognisable, and naming the
-product is not the same as saying what it does.
+It took four marks. A staff gauge, the letter A flooded to its crossbar, a
+person standing in water, and finally this — built from a reference Elijah
+generated, simplified hard on the way in. `foundations.md` §7b records why each
+of the first three failed, and why a boat was rejected on principle.
 
-**Open question worth a second look on a real phone:** the boxed icon still
-carries some resemblance to an account avatar at 16–24px, which is the hazard of
-any human figure at glyph size. Enlarging the figure in its frame and darkening
-the submerged half below the water's own tone were the two levers that helped
-most. The bare splash figure has no such ambiguity.
+Every one of those failures was found by rendering the mark at 16/24/32/64/128px
+and looking, never by reasoning about it. The contact sheet is the only reliable
+test of an icon, because the sizes that break it are the sizes nobody previews.
 
 The splash rises water over the mark while the map loads, stepping through the
 five depth colours in scale order. It is bound to real readiness — basemap
