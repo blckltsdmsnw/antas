@@ -128,6 +128,69 @@ for (const [when, expected] of [
   }
 }
 
+/**
+ * A failed load and a genuinely dry city render identically unless something
+ * says otherwise - and on a flood map, the silent version reads as "no flooding
+ * reported here". That is the most dangerous sentence this application can
+ * imply, so the distinction is asserted rather than trusted.
+ */
+test("a failed load says so instead of showing an empty map", async ({ page }) => {
+  await page.route("**/rpc/reports_near*", (route) =>
+    route.fulfill({
+      status: 500,
+      contentType: "application/json",
+      body: '{"message":"boom"}',
+    }),
+  );
+
+  await page.goto("/");
+
+  const banner = page.locator(".map-error");
+  await expect(banner).toBeVisible({ timeout: 10000 });
+
+  const text = (await banner.innerText()).replace(/\s+/g, " ");
+  expect(text).toContain("Hindi ma-load");
+  // The half that matters: an outage is not an all-clear.
+  expect(text).toContain("walang baha");
+  await expect(page.locator(".map-error-retry")).toBeVisible();
+});
+
+/**
+ * The map opens over the whole of Metro Manila, and the question is "has MY
+ * street flooded". Search is how that question stops beginning with a pinch.
+ */
+test("searching a place closes the list and keeps the choice", async ({ page }) => {
+  await page.route("**/rpc/search_places*", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([
+        { name: "Malanday", city: "Marikina", lat: 14.656, lon: 121.095 },
+        { name: "Tumana", city: "Marikina", lat: 14.662, lon: 121.088 },
+      ]),
+    }),
+  );
+
+  await page.goto("/");
+  await expect(page.locator(".splash")).toBeHidden({ timeout: 6000 });
+
+  await page.fill(".place-search-input", "Mala");
+  await expect(page.locator(".place-search-result")).toHaveCount(2);
+
+  await page.locator(".place-search-result").first().click();
+  await expect(page.locator(".place-search-input")).toHaveValue("Malanday, Marikina");
+
+  // It must STAY closed, which is the whole assertion.
+  //
+  // Choosing writes the label into the field, which re-triggers the search and
+  // springs the list back open over the map you had just asked to be taken to.
+  // That reopen lands only after the debounce, so checking immediately catches
+  // the closed frame and passes against the bug - this test did exactly that
+  // until it was made to wait.
+  await page.waitForTimeout(900);
+  await expect(page.locator(".place-search-result")).toHaveCount(0);
+});
+
 test("sign-in page asks for an email address", async ({ page }) => {
   await page.goto("/login");
   await expect(page.getByLabel("Email")).toBeVisible();

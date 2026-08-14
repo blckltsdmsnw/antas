@@ -8,6 +8,7 @@ import { MapLegend } from "@/components/MapLegend";
 import { WeatherStrip } from "@/components/WeatherStrip";
 import { RainOverlay } from "@/components/RainOverlay";
 import { SplashScreen } from "@/components/SplashScreen";
+import { PlaceSearch, type Place } from "@/components/PlaceSearch";
 import { mapThemeFor, type MapTheme } from "@/lib/map/theme";
 import type { CurrentWeather } from "@/lib/env/current-weather";
 import { createClient } from "@/lib/supabase/client";
@@ -52,6 +53,7 @@ export default function HomePage() {
   // instead of the settled one.
   const [mapTheme, setMapTheme] = useState<MapTheme>(() => mapThemeFor(new Date()));
   const [weather, setWeather] = useState<CurrentWeather | null>(null);
+  const [focus, setFocus] = useState<{ lat: number; lon: number; at: number } | null>(null);
 
   // Two signals, because either alone lies. The basemap can paint before a
   // single pin exists, and the reports can arrive before there is a map to put
@@ -59,28 +61,64 @@ export default function HomePage() {
   const [mapReady, setMapReady] = useState(false);
   const [reportsReady, setReportsReady] = useState(false);
 
+  /**
+   * A map that failed to load and a map with nothing on it look identical, and
+   * on a flood map the second one reads as "no flooding reported here". That is
+   * the most dangerous thing this application can say, so the failure is held
+   * in its own state and shown, rather than collapsing into an empty array.
+   *
+   * `attempt` is the retry trigger: bumping it re-runs this effect.
+   */
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+
   useEffect(() => {
+    let current = true;
+
     createClient()
       .rpc("reports_near", {
         lat: CITY_CENTRE.lat,
         lon: CITY_CENTRE.lon,
         radius_m: CITY_RADIUS_M,
       })
-      .then(({ data }) => {
-        setReportsReady(true);
-        const rows = (data ?? []) as NearbyRow[];
-        setReports(
-          rows.map((row) => ({
-            id: row.id,
-            depth: row.depth,
-            lat: row.lat,
-            lon: row.lon,
-            photoPath: row.photo_path,
-            reportedAt: row.reported_at,
-          })),
-        );
-      });
-  }, []);
+      .then(
+        ({ data, error }) => {
+          if (!current) return;
+          setReportsReady(true);
+
+          // supabase-js resolves with an `error` rather than rejecting, so a
+          // failure here arrives down the success path. Reading only `data`
+          // turned every outage into a convincingly empty map.
+          if (error) {
+            setLoadFailed(true);
+            return;
+          }
+
+          const rows = (data ?? []) as NearbyRow[];
+          setReports(
+            rows.map((row) => ({
+              id: row.id,
+              depth: row.depth,
+              lat: row.lat,
+              lon: row.lon,
+              photoPath: row.photo_path,
+              reportedAt: row.reported_at,
+            })),
+          );
+        },
+        // And a genuine rejection - offline, DNS, a dead fetch - never reaches
+        // the handler above at all.
+        () => {
+          if (!current) return;
+          setReportsReady(true);
+          setLoadFailed(true);
+        },
+      );
+
+    return () => {
+      current = false;
+    };
+  }, [attempt]);
 
   /**
    * Stamped on the document root, not on the shell, because the header is
@@ -122,6 +160,15 @@ export default function HomePage() {
     setPoint({ lat, lon });
   }, []);
 
+  // Choosing a place closes whatever sheet was open: the answer you asked for
+  // is on the map behind it, and leaving a sheet up hides the thing you
+  // travelled to see.
+  const goToPlace = useCallback((place: Place) => {
+    setSelected(null);
+    setPoint(null);
+    setFocus({ lat: place.lat, lon: place.lon, at: Date.now() });
+  }, []);
+
   return (
     <main className="map-shell">
       <h1 className="sr-only">Antas</h1>
@@ -133,9 +180,34 @@ export default function HomePage() {
           selectedId={selected?.id ?? null}
           onTheme={setMapTheme}
           onReady={markMapReady}
+          focus={focus}
         />
       </div>
       <SplashScreen ready={mapReady && reportsReady} />
+      <PlaceSearch onPick={goToPlace} />
+
+      {/* Stated, never implied. An empty map is a claim about the world. */}
+      {loadFailed && (
+        <div className="map-error" role="alert">
+          <p className="map-error-text">
+            <strong>Hindi ma-load ang mga report.</strong> Hindi ibig sabihin nito
+            na walang baha - hindi lang namin makuha ang datos ngayon.
+          </p>
+          <button
+            type="button"
+            className="map-error-retry"
+            // Cleared here rather than at the top of the effect: resetting it
+            // there is a synchronous setState in an effect body, and the retry
+            // is the moment the previous failure actually stops being true.
+            onClick={() => {
+              setLoadFailed(false);
+              setAttempt((n) => n + 1);
+            }}
+          >
+            Subukan ulit
+          </button>
+        </div>
+      )}
       <RainOverlay weather={weather} />
       <WeatherStrip onWeather={setWeather} />
       <MapLegend />

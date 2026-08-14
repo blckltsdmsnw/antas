@@ -120,6 +120,27 @@ a failed request cannot strand anyone behind a logo. Once per session. This is
 the only animation permitted past `foundations.md` §8; the terms it has to meet
 are written down in §7b.
 
+**Search, your own reports, a preparedness guide, and a tab bar.** Five changes,
+taken from Google Stitch mockups and filtered hard:
+
+- **Search by place or barangay** (`search_places`, migration `0014`). The map
+  opened over Metro Manila and the premise is "has *my* street flooded" — the
+  answer used to begin with a pinch across the region.
+- **`/ako` — Aking mga Report** (`my_reports`, migration `0015`). A report used
+  to vanish into the map. The status shown is the database's real `status`
+  column, not an invented review pipeline; depth reports are not moderated.
+- **A failed map load now says so**, with a retry, instead of rendering empty.
+- **`/gabay`** — preparedness, with the hotline section first. Antas cannot
+  dispatch anyone; this turns that from a disclaimer into an action.
+- **Bottom tab bar** — Mapa, Gabay, Mag-report, Ako. Tulong stays a standing
+  chip in the header and is hidden along with the bar on `/sos`.
+
+Refused from the same mockups, and why, in `docs/design/design.md` §12: authority
+alert broadcasts and evacuation orders (no feed, and an evacuation order is an
+authority instruction), live evacuation-centre capacity (being wrong sends a
+family through floodwater to a full centre), "VERIFIED AUTHORITY" LGU badges
+(impersonation), and a "Ligtas" label on ankle-deep water.
+
 **Pins are reachable everywhere on the map.** The legend and the weather strip
 were opaque panels that painted over the pins and swallowed taps aimed at them,
 so a cluster landing in a corner could be neither seen nor opened. The whole
@@ -130,6 +151,35 @@ and the chrome is `pointer-events: none` except the one weather-strip state that
 is a real button.
 
 ---
+
+## Needs you: two things before this is fully live
+
+### Apply the new migrations to hosted Supabase
+
+`0014_search_places.sql` and `0015_my_reports.sql` were written but **could not
+be applied locally** — Docker Desktop was not running, so `supabase migration up`
+could not connect. They are unapplied everywhere.
+
+Until they are pushed to the hosted project, **search returns nothing and
+`/ako` shows its failure state**, because the functions they call do not exist
+yet. The pages themselves are deployed and correct.
+
+```
+npx supabase db push          # hosted
+npx supabase migration up     # local, once Docker is running
+```
+
+The integration suite (48 tests) also could not be run for the same reason.
+
+### Add your local emergency numbers
+
+`src/lib/emergency/contacts.ts` ships with **only the national 911 hotline**.
+`LOCAL_CONTACTS` is deliberately empty and the guide says so out loud rather
+than implying the national line is the whole answer.
+
+Copy the Marikina and Taguig DRRMO numbers from the LGU's own current
+publication. I did not fill these in from memory on purpose: a wrong number
+here is a person dialling into nothing during a flood.
 
 ## Known issues, not fixed
 

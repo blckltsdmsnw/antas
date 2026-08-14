@@ -152,11 +152,28 @@ states which one it is before offering the shutter.
 
 | Route | Audience | Notes |
 |---|---|---|
-| `/` | Anyone, no sign-in | Map, street history, report detail |
+| `/` | Anyone, no sign-in | Map, search, street history, report detail |
+| `/gabay` | Anyone, no sign-in | Preparedness, and the numbers that reach a person |
 | `/report` | Signed in | Body-height slider, three taps, no typing |
+| `/ako` | Signed in | Your own reports, and whether each is still on the map |
 | `/sos` | Signed in, in danger | Live photo, three-second hold |
 | `/console`, `/console/[id]` | Barangay moderators | Triage queue |
 | `/login`, `/auth/confirm` | — | Email OTP |
+
+Navigation is a **bottom tab bar** — Mapa, Gabay, Mag-report, Ako — because a phone
+held one-handed in the rain reaches the bottom of the screen and not the top.
+
+**Tulong is deliberately not a tab.** A tab is one of four equal things, and this
+is not equal to the others; it stays a standing red chip in the header on every
+screen. The tab bar is hidden entirely on `/sos`, which is a single task under
+duress — offering four ways to leave at the moment concentration matters most is
+the wrong trade.
+
+`/gabay` is the only screen that is useful with no signal, no data and no
+reports, which is the condition it is most likely to be read in. So it is a
+server component with no fetch: no spinner, no failure state to design. The
+hotline section is first, not last, because Antas cannot dispatch anyone — that
+fact used to be only a disclaimer, and here it becomes an action.
 
 Moderator rights are granted by script, not by a UI:
 
@@ -205,11 +222,15 @@ offer the gallery instead.
 
 ## 9. Failure behaviour
 
-- **A blank map must never be mistaken for a safe one.** This is the sharpest
-  failure mode in the design, and it is **currently a known gap**: the reports
-  fetch on `/` has no error branch, so a failed request renders an empty map —
-  which on a flood map reads as "no flooding reported here". Tracked in
-  [`../STATUS.md`](../STATUS.md).
+- **A blank map must never be mistaken for a safe one.** The sharpest failure
+  mode in the design, and now handled: a failed `reports_near` shows a stated
+  error with a retry, never an empty map. The wording matters as much as the
+  banner — *"hindi ibig sabihin nito na walang baha"* — because an outage is not
+  an all-clear. Note that supabase-js **resolves with an `error` rather than
+  rejecting**, so the failure arrives down the success path; reading only `data`
+  is what turned every outage into a convincingly empty map.
+- **`/ako` refuses the same trap.** "You have filed nothing" and "we could not
+  check" are different sentences and only one of them is true.
 - **A broken photo thumbnail degrades to an ordinary coloured pin**, not to a
   torn-image icon sitting on the map.
 - **MapLibre errors are listened for.** Without a listener, style, tile and glyph
@@ -225,7 +246,7 @@ offer the gallery instead.
 ```bash
 npm test                            # unit (171)
 npx vitest run tests/integration    # integration (48) - needs local Supabase
-npx playwright test                 # end-to-end (16)
+npx playwright test                 # end-to-end (28)
 npm run build
 ```
 
@@ -249,6 +270,11 @@ application; the suite was green through all of them. The recorded cases:
 - A guard *written to catch a theme bug* passed against the unfixed code, because
   `toHaveAttribute` retries until the **first** match and the page briefly
   stamped the wrong value on mount.
+- And again, in the same shape, on search: choosing a result reopened the
+  dropdown ~250ms later, after the debounce. `toHaveCount(0)` matched the closed
+  frame and passed against the bug. Retrying assertions verify that a state was
+  *reached*, never that it was **kept** — when the defect is a state that comes
+  back, the test has to wait and look twice.
 
 So: drive it, screenshot it, count the network requests, read the database. And
 prove every new regression guard fails against the unfixed code before trusting
@@ -272,6 +298,26 @@ it — a test that cannot go red is not a test.
 
 - Dispatch, responder routing, or anything that implies rescue
 - Push notification of nearby flooding — it invites reliance the project cannot
-  honour
+  honour. Proximity scoping makes an alert *relevant*; it does not fix the real
+  problem, which is that **silence is ambiguous**. On a crowdsourced map a flood
+  with no reporter produces no alert, so the system is weakest exactly when it
+  matters most, while feeling most trustworthy because you opted in. An honest
+  version would subscribe to **areas**, fire only on deep reports, and be worded
+  as *"may nag-report malapit sa'yo"* — a person's report, never the water
 - Offline caching. Genuinely wanted, and honest only if stale data is labelled
   stale; see [`../STATUS.md`](../STATUS.md)
+
+Refused from generated design mockups, for the same reason each time — they need
+an authority relationship or live operational data the project does not have:
+
+- **Official alert broadcasts** with river levels and forced-evacuation orders.
+  An evacuation order is an instruction only an authority can issue
+- **Evacuation centre capacity** ("60% Puno"). Being wrong sends a family through
+  floodwater to a centre that is full. Centre *locations* are public and static
+  and would be honest; capacity is not ours to know
+- **"VERIFIED AUTHORITY" badges** on LGU posts — impersonating an institution we
+  have no relationship with
+- **"Buhong-buhong (Ligtas)"** — no flood depth is *safe*. Ankle-deep water hides
+  open drains and moves fast
+- **A satellite basemap with filled heat zones**, which claims continuous area
+  knowledge from sparse point reports

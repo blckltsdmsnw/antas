@@ -112,7 +112,22 @@ interface FloodMapProps {
    * rather than on a timer, so it covers real latency instead of inventing it.
    */
   onReady?: () => void;
+  /**
+   * Where search wants the camera. Carries an `at` stamp so choosing the same
+   * place twice still flies there - without it, picking Malanday, panning away
+   * and picking Malanday again would change no prop and do nothing.
+   */
+  focus?: { lat: number; lon: number; at: number } | null;
 }
+
+/**
+ * Close enough to read street names, wide enough to show a whole barangay.
+ *
+ * The centroids behind search are approximate, so flying to maximum zoom would
+ * claim a precision the data does not have - it would put someone confidently
+ * on the wrong street corner.
+ */
+const FOCUS_ZOOM = 14.5;
 
 /**
  * A pin, as a real button rather than MapLibre's default teardrop.
@@ -184,6 +199,7 @@ export function FloodMap({
   selectedId,
   onTheme,
   onReady,
+  focus,
 }: FloodMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
@@ -279,6 +295,21 @@ export function FloodMap({
     }
     onTheme?.(theme);
   }, [theme, onTheme]);
+
+  // Fly, rather than jump. A cut leaves no sense of where the new view sits
+  // relative to the old one, and the whole point of searching your barangay is
+  // to know where you have arrived.
+  useEffect(() => {
+    const instance = map.current;
+    if (!instance || !focus) return;
+
+    instance.flyTo({
+      center: [focus.lon, focus.lat],
+      zoom: Math.max(instance.getZoom(), FOCUS_ZOOM),
+      duration: 900,
+      essential: true,
+    });
+  }, [focus]);
 
   useEffect(() => {
     const instance = map.current;

@@ -39,6 +39,11 @@
 
   --header-h: 56px;
 
+  /* The tab bar's own height, before the phone's home-indicator inset. Every
+     full-height surface subtracts this, or it sits underneath the bar. */
+  --tabbar-h: 60px;
+  --tabbar-total: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+
   /* Stacking order over the map, in one place because it was previously spread
      across five rules and the ordering was impossible to see - which is how the
      legend ended up painting over the pins it exists to explain.
@@ -54,8 +59,18 @@
   --z-rain: 5;
   --z-map-chrome: 6;
   --z-pin: 8;
+  /* Above the pins, because its results list must not be covered by one, and
+     because it is a control rather than chrome - it has to take taps. */
+  --z-search: 12;
   --z-sheet: 14;
   --z-sheet-detail: 16;
+  /* Above the sheets. A failure notice hidden behind an open sheet is a failure
+     notice that did not happen. */
+  --z-error: 18;
+
+  /* The search field, and the gap the chrome below it has to clear. */
+  --search-h: 44px;
+  --chrome-top: calc(12px + var(--search-h) + 12px);
 }
 
 *,
@@ -187,9 +202,13 @@ h3 {
    Map screen - the map is the product, chrome recedes
    -------------------------------------------------------------------------- */
 
+/* The map fills what is left between the header and the tab bar. Sheets and
+   map chrome are anchored inside this box, so subtracting the bar here is what
+   keeps every one of them clear of it - rather than each adding its own offset
+   and drifting apart later. */
 .map-shell {
   position: relative;
-  height: calc(100dvh - var(--header-h));
+  height: calc(100dvh - var(--header-h) - var(--tabbar-total));
   width: 100%;
   overflow: hidden;
 }
@@ -343,7 +362,9 @@ h3 {
 .task-page {
   max-width: 480px;
   margin: 0 auto;
-  padding: 24px 16px 48px;
+  /* The bottom padding clears the tab bar. Without it the last control on a
+     scrolling page sits under the bar and cannot be reached at all. */
+  padding: 24px 16px calc(48px + var(--tabbar-total));
 }
 
 .task-title {
@@ -682,7 +703,8 @@ button.quiet-link {
 
 .legend {
   position: absolute;
-  top: 12px;
+  /* Clears the search field, which now owns the top strip. */
+  top: var(--chrome-top);
   right: 12px;
   z-index: var(--z-map-chrome);
   /* Nothing in here is clickable - it is a key, not a control. Leaving it
@@ -1315,7 +1337,8 @@ a.btn {
 
 .weather-strip {
   position: absolute;
-  top: 12px;
+  /* Clears the search field, which now owns the top strip. */
+  top: var(--chrome-top);
   left: 12px;
   /* Stops short of the legend, which is pinned top-right and measures ~142px.
      Without this the rain figure - the one number on the strip that matters -
@@ -1394,6 +1417,437 @@ a.btn {
   /* Never wraps. Broken across two lines it stops reading as one figure. */
   white-space: nowrap;
   flex: none;
+}
+
+/* --------------------------------------------------------------------------
+   Guide - preparedness, and the numbers that reach a person
+   -------------------------------------------------------------------------- */
+
+.guide-section {
+  margin: 0 0 32px;
+}
+
+.guide-heading {
+  font-size: 18px;
+  line-height: 1.3;
+  margin: 0 0 12px;
+}
+
+.guide-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.guide-item {
+  padding: 14px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.guide-item-title {
+  margin: 0 0 4px;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.guide-item-body {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.guide-note {
+  margin: 0 0 28px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+/* The call rows. Given the accent rather than the danger red: this is the way
+   out, not the emergency itself, and a wall of red stops reading as urgent. */
+.contact-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.contact {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.contact-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.contact-name {
+  margin: 0 0 2px;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.contact-role {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink-muted);
+}
+
+.contact-call {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: var(--radius-control);
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+}
+
+.contact-call:hover {
+  background: var(--accent-hover);
+}
+
+/* --------------------------------------------------------------------------
+   Aking mga Report - what you filed, and whether it is still on the map
+   -------------------------------------------------------------------------- */
+
+.my-reports-title {
+  font-size: 18px;
+  line-height: 1.3;
+  margin: 24px 0 12px;
+}
+
+.my-reports {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.my-report {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.my-report-photo,
+.my-report-swatch {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-control);
+  object-fit: cover;
+}
+
+.my-report-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.my-report-depth {
+  margin: 0;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.my-report-where,
+.my-report-when {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+
+.my-report-status {
+  flex: none;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--success-tint);
+  color: var(--success);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Not on the map is not a neutral fact - it is the one state worth noticing,
+   because it means the thing you reported is not helping anyone. */
+.my-report-status[data-status="hidden"],
+.my-report-status[data-status="flagged"] {
+  background: var(--danger-tint);
+  color: var(--danger);
+}
+
+/* --------------------------------------------------------------------------
+   Tab bar - navigation where a thumb actually reaches
+
+   Tulong is not here on purpose; it stays a standing chip in the header. See
+   TabBar for why.
+   -------------------------------------------------------------------------- */
+
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  height: var(--tabbar-total);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--ground);
+  border-top: 1px solid var(--line);
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  text-decoration: none;
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 500;
+  /* The whole cell is the target, not the label inside it. */
+  min-height: var(--tabbar-h);
+}
+
+.tab-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.tab[data-active="true"] {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* The map turns dark at night and the bar sits directly against it - a white
+   strip under a night map is the same mismatch the header already avoids. */
+[data-map-theme="dark"] .tabbar {
+  background: var(--panel);
+  border-top-color: var(--panel-line);
+}
+
+[data-map-theme="dark"] .tab {
+  color: var(--panel-ink-muted);
+}
+
+[data-map-theme="dark"] .tab[data-active="true"] {
+  color: var(--depth-knee);
+}
+
+/* --------------------------------------------------------------------------
+   Place search - finding your own barangay without panning the region
+   -------------------------------------------------------------------------- */
+
+.place-search {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: var(--z-search);
+  max-width: 460px;
+}
+
+.place-search-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 44px;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow);
+}
+
+.place-search-icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--ink-muted);
+}
+
+.place-search-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  font-family: inherit;
+  font-size: 16px; /* Below 16px iOS zooms the whole page on focus. */
+  color: var(--ink);
+}
+
+.place-search-input::placeholder {
+  color: var(--ink-muted);
+}
+
+/* The browser's own clear affordance is a 10px cross - unusable with a thumb. */
+.place-search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.place-search-clear {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--raised);
+  color: var(--ink-muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.place-search-results {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 4px;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-lifted);
+  max-height: 46vh;
+  overflow-y: auto;
+}
+
+.place-search-result {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  /* A row is a touch target before it is a list item. */
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font-family: inherit;
+  font-size: 16px;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.place-search-result:hover,
+.place-search-result[data-active="true"] {
+  background: var(--raised);
+}
+
+.place-search-name {
+  font-weight: 600;
+}
+
+.place-search-city {
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+
+.place-search-empty {
+  padding: 12px;
+  font-size: 15px;
+  color: var(--ink-muted);
+}
+
+[data-map-theme="dark"] .place-search-field,
+[data-map-theme="dark"] .place-search-results {
+  background: var(--panel);
+  border-color: var(--panel-line);
+}
+
+[data-map-theme="dark"] .place-search-input,
+[data-map-theme="dark"] .place-search-name,
+[data-map-theme="dark"] .place-search-result {
+  color: var(--panel-ink);
+}
+
+[data-map-theme="dark"] .place-search-city,
+[data-map-theme="dark"] .place-search-empty,
+[data-map-theme="dark"] .place-search-icon {
+  color: var(--panel-ink-muted);
+}
+
+[data-map-theme="dark"] .place-search-result:hover,
+[data-map-theme="dark"] .place-search-result[data-active="true"] {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* --------------------------------------------------------------------------
+   Load failure - an empty map is a claim about the world
+
+   A failed fetch and a genuinely dry city render identically, and on a flood
+   map the second reads as "nothing to worry about here". This says which one it
+   is, in words, in the language the rest of the interface uses.
+   -------------------------------------------------------------------------- */
+
+.map-error {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: var(--z-error);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  background: var(--danger-tint);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-lifted);
+}
+
+.map-error-text {
+  flex: 1;
+  min-width: 200px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.map-error-retry {
+  flex: none;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-control);
+  background: var(--ground);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--danger);
+  cursor: pointer;
 }
 
 /* --------------------------------------------------------------------------

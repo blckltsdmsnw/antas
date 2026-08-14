@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Archivo, Public_Sans } from "next/font/google";
 import { ModeratorLink } from "@/components/ModeratorLink";
 import { AntasMark } from "@/components/AntasMark";
+import { TabBar } from "@/components/TabBar";
 import "./globals.css";
 
 /** Headings. A grotesque with signage DNA — it should read like something
@@ -57,13 +58,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             Antas
           </Link>
           <nav className="site-nav">
-            <Link href="/report" className="nav-link">
-              Mag-report
-            </Link>
-            {/* Prominent by design. The accidental-press risk lives in the
-                submit - which needs a live photo and a three-second hold -
-                not in navigating to the page. Someone in a flood should not
-                have to hunt for this. */}
+            {/* Everything you navigate to moved to the tab bar. Tulong did not:
+                a tab is one of four equal things and this is not equal to the
+                others. The accidental-press risk lives in the submit - a live
+                photo and a three-second hold - not in reaching the page, so it
+                stays a standing chip on every screen. Someone in a flood should
+                not have to hunt for this. */}
             <Link href="/sos" className="nav-link nav-link-sos">
               Tulong
             </Link>
@@ -71,6 +71,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </nav>
         </header>
         {children}
+        <TabBar />
       </body>
     </html>
   );

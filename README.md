@@ -40,6 +40,8 @@ designed in the specification but deliberately unbuilt — see
 |---|---|
 | `/` | Anyone. The map and street history, no sign-in required |
 | `/report` | Signed-in users. Log how deep the water is |
+| `/gabay` | Anyone. Preparedness, and the numbers that reach a person |
+| `/ako` | Signed-in users. Your own reports |
 | `/sos` | Signed-in users in danger. Live photo, three-second hold |
 | `/console` | Barangay moderators. Triage queue, live |
 
@@ -98,7 +100,7 @@ Sign-in emails are captured by Mailpit at http://127.0.0.1:54324 rather than bei
 ```bash
 npm test                            # 171 unit tests
 npx vitest run tests/integration    # 48 integration tests, needs the local stack
-npm run test:e2e                    # 16 Playwright tests
+npm run test:e2e                    # 28 Playwright tests
 ```
 
 `vitest run src/` covers only the unit tests. `tests/integration/` is a separate
