@@ -141,6 +141,12 @@ merely documented — a privacy claim without a test is a comment.
   catalog table (`spatial_ref_sys`); in `public`, PostgREST would expose it to
   anonymous callers with DELETE and no row-level security, letting anyone drop
   the SRID definition every geography column depends on.
+- **`revoke execute … from anon` does nothing** — it has to say `from public`.
+  PostgreSQL grants EXECUTE on every new function to PUBLIC, and `anon` inherits
+  it, so revoking a privilege that was never granted directly leaves the
+  inherited one in place. `0007`, `0010` and `0015` all had this; `0016` fixes
+  them. Nothing was exposed, because each function guards itself on `auth.uid()`
+  — but the second barrier this document claims was, until then, absent.
 
 ### The two photo buckets are asymmetric on purpose
 

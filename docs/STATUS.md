@@ -154,22 +154,27 @@ is a real button.
 
 ## Needs you: two things before this is fully live
 
-### Apply the new migrations to hosted Supabase
+### Push the new migrations to hosted Supabase
 
-`0014_search_places.sql` and `0015_my_reports.sql` were written but **could not
-be applied locally** — Docker Desktop was not running, so `supabase migration up`
-could not connect. They are unapplied everywhere.
-
-Until they are pushed to the hosted project, **search returns nothing and
-`/ako` shows its failure state**, because the functions they call do not exist
-yet. The pages themselves are deployed and correct.
+`0014_search_places.sql`, `0015_my_reports.sql` and `0016_revoke_from_public.sql`
+are **applied locally and verified**, but the CLI is not linked to the hosted
+project (`supabase migration list` reports "Cannot find project ref"), so they
+have not been pushed. That needs your Supabase login.
 
 ```
-npx supabase db push          # hosted
-npx supabase migration up     # local, once Docker is running
+npx supabase link --project-ref <ref>
+npx supabase db push
 ```
 
-The integration suite (48 tests) also could not be run for the same reason.
+Until then, on production **search returns nothing and `/ako` shows its failure
+state**, because the functions do not exist there yet. The pages themselves are
+deployed and correct.
+
+Local state, for reference: the migration history had drifted — `0013` was fully
+applied in the database (bucket, policy, widened `reports_near`, grant all
+present) but never recorded, so `migration up` tried to re-run it and failed on a
+duplicate policy. It is now recorded rather than re-run, which avoided a
+`db reset` that would have wiped the local users and the 680 seeded reports.
 
 ### Add your local emergency numbers
 
