@@ -408,15 +408,19 @@ The trust score already docks brand-new accounts, so an anonymous SOS is **ranke
 lower for a moderator, never refused**. Ranking is the honest response to knowing
 less about a signal; refusing it is not.
 
-> **⚠ One thing only you can do.** This needs **anonymous sign-ins enabled on the
-> hosted project**: Supabase dashboard → Authentication → Sign In / Providers →
-> *Allow anonymous sign-ins*. It is one toggle. I did not run
-> `supabase config push`, because that would push the entire local config — site
-> URL, redirect allow-list, email templates, every rate limit — to production for
-> the sake of one boolean.
->
-> Until it is on, a signed-out SOS falls back to the old behaviour: it asks for a
-> sign-in and offers the button. Never a dead end, but never as good either.
+**Enabled on the hosted project on 2026-08-15**, and verified against it: an
+anonymous sign-in succeeds, the `handle_new_user` trigger creates the profile
+row, and the account is flagged `is_anonymous`. The throwaway account that check
+created was deleted afterwards.
+
+The toggle lives at Supabase dashboard → Authentication → Sign In / Providers →
+*Allow anonymous sign-ins*, if it ever needs turning off. `supabase config push`
+would also do it and should still be avoided: it pushes the entire local config
+— site URL, redirect allow-list, email templates, every rate limit — to
+production for the sake of one boolean.
+
+Where anonymous sign-ins are *not* enabled the page degrades to asking for a
+sign-in exactly as it used to, so this is never a dead end.
 
 Note that anonymous users count toward Supabase's monthly-active-user billing
 tier, which is worth knowing before this ever sees real traffic.
