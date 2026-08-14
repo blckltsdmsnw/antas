@@ -158,6 +158,16 @@ merely documented — a privacy claim without a test is a comment.
   to forge rather than a forged name to reject.
 - **Profiles are denied to anonymous callers at the grant layer as well as by
   RLS** — two independent barriers, because that table now holds phone numbers.
+- **An SOS requires no account, via an anonymous session rather than an
+  unauthenticated write.** That distinction is the design: `reporter_id` stays
+  non-null, so `profiles`, `reputation`, the one-active-signal index, every RLS
+  policy and the audit trail keep working untouched. Removing the sign-in
+  requirement any other way would have meant loosening all of them. The trust
+  score already docks brand-new accounts, so such a signal is **ranked lower for
+  a moderator, never refused** — ranking is the honest answer to knowing less
+  about a signal; refusing is not. Requires anonymous sign-ins enabled on the
+  project; where they are not, the page degrades to asking for a sign-in exactly
+  as it used to.
 - **A reporter's phone number (`0022`) leaves the database through exactly one
   door.** `profiles` stays scoped to `id = auth.uid()`, so no user can read
   another's; the only other path is `sos_detail`, which already refuses anyone
@@ -222,7 +232,7 @@ states which one it is before offering the shutter.
 | `/gabay` | Anyone, no sign-in | Preparedness, a packable go bag, and the numbers that reach a person |
 | `/report` | Signed in | Body-height slider, three taps, no typing |
 | `/ako` | Signed in | Your own reports, whether each is still on the map, and removing one |
-| `/sos` | Signed in, in danger | Live photo, three-second hold |
+| `/sos` | **Anyone**, in danger | Live photo, three-second hold. No account needed |
 | `/console`, `/console/[id]` | Barangay moderators | Triage queue |
 | `/login`, `/auth/confirm` | — | Email OTP |
 
@@ -382,7 +392,7 @@ offer the gallery instead.
 ## 10. Testing
 
 ```bash
-npm test                            # unit + integration (296)
+npm test                            # unit + integration (303)
 npx vitest run tests/integration    # integration only - needs local Supabase
 npx playwright test                 # end-to-end (35)
 npm run build

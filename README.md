@@ -26,13 +26,26 @@ designed in the specification but deliberately unbuilt — see
 
 ## What it does
 
-- **Public map** — flood reports plotted over Marikina, colour-coded by depth. No sign-in
-  required; a visitor who has never registered can use it, which is the point.
+- **Public map** — flood reports plotted over Metro Manila, colour-coded by depth. No
+  sign-in required; a visitor who has never registered can use it, which is the point.
 - **Street history** — tap anywhere to see what was reported nearby and how deep it got.
   The question people actually ask is *"has this street flooded before?"*, not *"is it
   flooding right now?"*
 - **Report submission** — a body-height slider, three taps, no typing. Signed-in users
   only, and the database enforces that you can only file in your own name.
+- **"Kumusta na?"** — three buttons under a report saying whether the water is gone, the
+  same, or higher. The most *recent* answer leads, not the most numerous: water moves, and
+  an older consensus only describes an earlier moment.
+- **Reporter standing** — whether somebody's past readings held up, shown as one quiet line
+  and never as a name. It answers what "show me who reported this" was really asking,
+  without publishing that a named person stood somewhere during a disaster.
+- **Remove your own report** — hidden, never deleted; the row is evidence that somebody
+  reported something.
+- **A go bag you can tick off**, stored locally so it survives with no signal and no login.
+- **SOS with no account** — an anonymous session opens silently, because asking somebody in
+  rising water to complete an email round trip is a barrier at the worst possible moment.
+- **A moderator can reach the person** — a call button and Google Maps directions on the
+  signal, once a reporter has chosen to leave a number.
 
 ## Screens
 
@@ -118,10 +131,19 @@ Access control is enforced by the database, not by the application:
   `with check (reporter_id = auth.uid())`, so a signed-in user cannot file a report in
   somebody else's name — the server action derives the reporter from the session and never
   from the request body.
-- **No UPDATE or DELETE policy exists on reports**, and no grant either. Those operations
-  are denied at both layers rather than relying on the absence of a policy alone.
+- **A reporter may change exactly one column of their own report, to exactly one value.**
+  `0018` grants `update (status)` — column-scoped — with a policy pinning the new value to
+  `'hidden'`, so "remove my report" can never become "rewrite the depth I claimed an hour
+  ago". DELETE is granted nowhere.
 - **Profiles are denied to anonymous callers at the grant layer as well as by RLS.** That
-  table gains verified phone numbers in a later phase, so it has two independent barriers.
+  table now holds phone numbers, so it has two independent barriers.
+- **A reporter's phone number leaves the database through one door only** — `sos_detail`,
+  which already refuses anyone who may not see that signal. It is optional, and **not**
+  verified: the console says so rather than implying a check that never happened.
+- **An SOS needs no account.** `/sos` opens an anonymous session silently rather than asking
+  somebody in rising water to complete an email round trip. It is a real session, so every
+  policy, index and audit row applies unchanged — the trust score ranks a brand-new account
+  lower rather than refusing it.
 - **PostGIS is installed into the `extensions` schema, not `public`.** It ships a writable
   catalog table (`spatial_ref_sys`); in `public`, PostgREST would expose it to anonymous
   callers with DELETE and no row-level security, allowing anyone to drop the SRID

@@ -23,8 +23,11 @@ Both real accounts now moderate **South Signal Village**:
 
 | Account | Role |
 |---|---|
-| `elijaholores@gmail.com` | moderator, `South Signal Village` (was `New Lower Bicutan`) |
-| `olores2216305@ceu.edu.ph` | moderator, `South Signal Village` (added; also made the one real photo report) |
+| `elijaholores@gmail.com` | **admin**, based at `South Signal Village` (was moderator for `New Lower Bicutan`) |
+| `olores2216305@ceu.edu.ph` | **admin**, based at `South Signal Village` (added; also made the one real photo report) |
+
+Both were made admins later the same day (`0020`), so each sees *every* barangay's
+queue rather than only the one they are based at.
 
 **This section used to say the role was on the wrong account, and that was not
 the reason `/console` looked empty.** The one pending SOS signal on production
@@ -381,6 +384,42 @@ That file configures the **local** stack only. At 2 per hour the third test
 account of an afternoon cannot sign in, and it surfaces as "Hindi naipadala ang
 link" — indistinguishable from a broken sign-in flow, which is how it wasted
 time before being recognised for what it was.
+
+### An SOS no longer needs an account
+
+`/sos` used to answer a call for help with *"Mag-sign in muna."* Sign-in here is a
+magic link: type an email, wait for it, open the mail app, click, come back.
+Anywhere else that is minor friction; on that screen it is minutes, needing
+signal and a working inbox, from somebody standing in rising water.
+
+Now the page opens an **anonymous session** silently when there is none. Verified
+in a browser with no stored session: no prompt, photo, three-second hold,
+*"Naipadala na ang SOS mo."* — signal written, reporter an anonymous account,
+trust score 71.
+
+It is an anonymous **session**, not an unauthenticated write, and the difference
+is the whole design. `reporter_id` stays non-null, so `profiles`, `reputation`,
+the one-active-signal index, every RLS policy and the audit trail keep working
+untouched. An anonymous sender still cannot file in somebody else's name, read
+anybody else's signal, or reach the moderator queue —
+`tests/integration/anonymous-sos.test.ts` pins all of that.
+
+The trust score already docks brand-new accounts, so an anonymous SOS is **ranked
+lower for a moderator, never refused**. Ranking is the honest response to knowing
+less about a signal; refusing it is not.
+
+> **⚠ One thing only you can do.** This needs **anonymous sign-ins enabled on the
+> hosted project**: Supabase dashboard → Authentication → Sign In / Providers →
+> *Allow anonymous sign-ins*. It is one toggle. I did not run
+> `supabase config push`, because that would push the entire local config — site
+> URL, redirect allow-list, email templates, every rate limit — to production for
+> the sake of one boolean.
+>
+> Until it is on, a signed-out SOS falls back to the old behaviour: it asks for a
+> sign-in and offers the button. Never a dead end, but never as good either.
+
+Note that anonymous users count toward Supabase's monthly-active-user billing
+tier, which is worth knowing before this ever sees real traffic.
 
 ---
 

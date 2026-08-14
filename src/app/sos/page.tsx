@@ -16,7 +16,15 @@ type PageErrorCode = SosErrorCode | "no_location" | "upload_failed";
 const ERROR_MESSAGES: Record<PageErrorCode, string> = {
   invalid_coordinates: "Hindi mabasa ang lokasyon mo.",
   outside_pilot_area: "Sa ngayon, Metro Manila lang ang saklaw ng Antas.",
-  not_signed_in: "Mag-sign in muna bago humingi ng tulong.",
+  // An SOS no longer requires an account, so this code no longer means "sign in
+  // first". It means the silent anonymous sign-in itself failed - the project
+  // has anonymous sign-ins switched off, or the per-IP limit was hit.
+  //
+  // The wording still points at signing in because that is the only route left
+  // when it happens, so a project without anonymous sign-ins enabled degrades
+  // to exactly the behaviour it had before rather than to a dead end.
+  not_signed_in:
+    "Hindi nakagawa ng pansamantalang account. Mag-sign in para makapagpadala ng SOS.",
   already_active: "May aktibo ka nang SOS. Hinihintay pa itong suriin.",
   insert_failed: "May problema sa pagpapadala. Subukan ulit.",
   upload_failed: "Hindi naipadala ang larawan. Subukan ulit.",
@@ -51,14 +59,37 @@ export default function SosPage() {
     }
 
     const supabase = createClient();
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      setErrors(["not_signed_in"]);
-      setStatus("idle");
-      return;
+    const { data: existing } = await supabase.auth.getUser();
+    let user = existing.user;
+
+    /**
+     * No account required, and none asked for.
+     *
+     * Sign-in everywhere else here is a magic link: type an email, wait for it,
+     * open the mail app, click the link, come back. Anywhere else that is minor
+     * friction. On this screen it is minutes, needing signal and a working
+     * inbox, from somebody standing in rising water - so the product would be
+     * refusing a call for help over paperwork, at the exact moment it exists to
+     * avoid doing that.
+     *
+     * An anonymous session is still a real account as far as the database is
+     * concerned, so reporter_id stays non-null and every policy, index and
+     * audit row keeps working unchanged. It costs one silent round trip and no
+     * typing. The trust score already docks brand-new accounts, so a signal
+     * sent this way is ranked lower for a moderator rather than refused -
+     * ranking is the honest answer to knowing less; refusing is not.
+     */
+    if (!user) {
+      const anon = await supabase.auth.signInAnonymously();
+      if (anon.error || !anon.data.user) {
+        setErrors(["not_signed_in"]);
+        setStatus("idle");
+        return;
+      }
+      user = anon.data.user;
     }
 
-    const path = `${userData.user.id}/${Date.now()}.jpg`;
+    const path = `${user.id}/${Date.now()}.jpg`;
     const upload = await supabase.storage
       .from("sos-photos")
       .upload(path, photo, { contentType: "image/jpeg" });
