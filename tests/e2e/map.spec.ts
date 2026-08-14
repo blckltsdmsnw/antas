@@ -101,8 +101,15 @@ test("the legend cannot intercept a tap meant for the map", async ({ page }) => 
   );
   expect(hit).not.toContain("legend");
 
-  // And a pin must paint above it, or the tap that now gets through is aimed at
-  // something the user cannot see.
+  // And the legend paints ABOVE the pins, which is the reverse of what this
+  // asserted at first.
+  //
+  // The original argument was that a pin must paint over the legend, or the tap
+  // that now gets through is aimed at something invisible. Half of it was
+  // wrong: the legend is pointer-transparent - proved one assertion above - so
+  // a pin beneath it is occluded rather than unreachable. Meanwhile a pin drawn
+  // across the key made the key unreadable, and there are hundreds of pins to
+  // one legend, so that damage is constant while the hidden pin is one pan away.
   const layers = await page.evaluate(() => {
     const root = getComputedStyle(document.documentElement);
     return {
@@ -110,7 +117,39 @@ test("the legend cannot intercept a tap meant for the map", async ({ page }) => 
       chrome: Number(root.getPropertyValue("--z-map-chrome")),
     };
   });
-  expect(layers.pin).toBeGreaterThan(layers.chrome);
+  expect(layers.chrome).toBeGreaterThan(layers.pin);
+});
+
+/**
+ * Every page has to end above the tab bar.
+ *
+ * `.console-page` carried a flat 48px of bottom padding while the bar is 60px
+ * plus the home-indicator inset, so its last control sat underneath it. On the
+ * signal detail that control is "I-dismiss" - half of what a moderator is there
+ * to do, unreachable on a phone, and invisible to every test because none of
+ * them ever measured a page against the bar.
+ */
+test("no page hides its last control under the tab bar", async ({ page }) => {
+  for (const path of ["/gabay", "/report", "/ako", "/console"]) {
+    await page.goto(path);
+    await expect(page.locator(".tabbar")).toBeVisible();
+
+    const clear = await page.evaluate(() => {
+      const main = document.querySelector("main");
+      const bar = document.querySelector(".tabbar");
+      if (!main || !bar) return null;
+
+      // The page's own bottom padding must reach past the height of the bar, so
+      // content laid out at the very end of it still lands above.
+      const style = getComputedStyle(main);
+      return (
+        Math.round(parseFloat(style.paddingBottom)) >=
+        Math.round(bar.getBoundingClientRect().height)
+      );
+    });
+
+    expect(clear, `${path} must pad past the tab bar`).toBe(true);
+  }
 });
 
 /**

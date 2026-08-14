@@ -322,6 +322,13 @@ them again.
   Where zooming cannot separate them — two reports metres apart stay inside one
   touch target even at maximum zoom — it opens the list for that spot instead,
   so the tap always does something.
+- **The chrome paints above the pins, and takes no taps.** This was the other
+  way round, argued as "a pin hidden under an opaque panel is a report nobody
+  can reach; a legend with a pin drawn across it is merely untidy". Half of that
+  was wrong — the chrome is `pointer-events: none`, so a pin beneath it is
+  occluded, not unreachable — and the untidiness was not minor: there are
+  hundreds of pins to one legend, so every pin drifting into that corner damaged
+  the key, while the pin itself is one pan away from view.
 - **Age is shown as opacity, and also stated in words** on the detail card, which
   is what someone who cannot perceive the fade relies on.
 - **An ageing pin can be asked whether it is still true.** *Kumusta na?* under

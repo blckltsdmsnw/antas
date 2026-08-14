@@ -48,17 +48,21 @@
      across five rules and the ordering was impossible to see - which is how the
      legend ended up painting over the pins it exists to explain.
 
-     Pins sit ABOVE the informational chrome deliberately. A pin hidden under an
-     opaque panel is a report nobody can reach; a legend with a pin drawn across
-     one of its rows is merely untidy, and panning moves it. The chrome is also
-     pointer-transparent, so it can never swallow a tap meant for the map.
+     Chrome sits ABOVE the pins. This was the other way round, on the argument
+     that a pin hidden under an opaque panel is a report nobody can reach and a
+     legend with a pin drawn across it is "merely untidy". Half of that was
+     wrong: the chrome is pointer-transparent, so a pin beneath it is still
+     perfectly tappable - it is occluded, not unreachable. And the untidiness is
+     not minor. There are hundreds of pins and one legend, so every pin that
+     drifts into that corner damages the key the map depends on being readable,
+     while the pin itself is one pan away from view.
 
      `.map-shell` is position:relative with z-index:auto, so it does NOT open a
      stacking context and these values compete directly with the header's 20.
      Everything here must stay below that. */
   --z-rain: 5;
-  --z-map-chrome: 6;
   --z-pin: 8;
+  --z-map-chrome: 10;
   /* Above the pins, because its results list must not be covered by one, and
      because it is a control rather than chrome - it has to take taps. */
   --z-search: 12;
@@ -2628,10 +2632,15 @@ a.btn {
   line-height: 1.4;
 }
 
+/* The bottom padding clears the tab bar, which `.task-page` has done since the
+   bar was added and this page was missed. A flat 48px is less than the bar's
+   60px plus the home-indicator inset, so the last control on the page sat
+   underneath it - and on the signal detail that control is "I-dismiss", which
+   is half of what a moderator is here to do. */
 .console-page {
   max-width: 760px;
   margin: 0 auto;
-  padding: 20px 16px 48px;
+  padding: 20px 16px calc(48px + var(--tabbar-total));
 }
 
 .reason-list {
