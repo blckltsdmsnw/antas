@@ -628,6 +628,24 @@ here is a person dialling into nothing during a flood.
 
 ---
 
+## Asked for, not built yet
+
+Distinct from `design.md` §12, which lists things refused on purpose. These were
+wanted and simply have not been done.
+
+- **An English / Tagalog toggle.** Requested on 2026-08-14 alongside the
+  freshness answers and reporter names, ranked last at the time, and never
+  picked up. The product is Filipino-first with English glosses already present
+  in places — `depthLabel` returns both `tl` and `en`, and the report detail
+  shows them side by side — so the groundwork is partly there. The hard part is
+  not the switch: it is that every safety-critical string (the SOS notices, the
+  guide, `lib/sos/progress.ts`) would need a second version that carries exactly
+  the same meaning, and a mistranslation there is the same class of harm as the
+  notifications that were refused.
+
+- **Local DRRMO numbers** — see "Needs you" above. Owner action, not a coding
+  task.
+
 ## Things worth remembering about this codebase
 
 Four of the bugs that mattered most this session were found by *looking at the
