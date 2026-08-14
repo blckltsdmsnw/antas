@@ -124,6 +124,7 @@ Eighteen migrations, `supabase/migrations/0001` … `0018`. The significant ones
 | `0021` | Manila split from one city-wide bucket into its 16 districts |
 | `0022` | `profiles.phone`, reachable only through `sos_detail` |
 | `0023` | Suspension enforced, and `profiles` UPDATE narrowed to the columns a user owns |
+| `0024` | Moderators can finally open the SOS photograph they are asked to judge |
 
 `reports_near(lat, lon, radius_m)` is a PostGIS function rather than a filtered
 select: proximity is a spatial question, and answering it in the client means
@@ -228,6 +229,28 @@ merely documented — a privacy claim without a test is a comment.
   inherited one in place. `0007`, `0010` and `0015` all had this; `0016` fixes
   them. Nothing was exposed, because each function guards itself on `auth.uid()`
   — but the second barrier this document claims was, until then, absent.
+
+### Storage has policies too, and they were the blind spot
+
+`sos-photos` is private, and `0008` gave it one SELECT policy: your own folder.
+The console was then built to fetch through a signed URL — and the policy
+letting a **moderator** read somebody else's photo was never written, so from
+Phase 2B until `0024` **no moderator ever saw an SOS photograph**.
+
+Two things let it hide. Storage reports a policy denial as `Object not found`,
+which reads like a missing file; and the console rendered `{photoUrl && <img>}`,
+so a denial produced a card with no image — indistinguishable from a signal that
+had no photo, except an SOS *cannot* have no photo, because the live capture is
+mandatory. Both are fixed: the console now says so out loud.
+
+The policy cannot ask `sos_signals` directly. Inline, its subquery runs as the
+moderator, and RLS confines them to their own signals, so it would deny every
+photo including the ones they are entitled to. `can_view_sos_photo(path)` is
+`security definer` for that reason, and still narrows through `moderates()`.
+
+The wider lesson: **nothing in the test suite touched storage**, so a bucket no
+moderator could read passed every check for two phases. `tests/integration/
+sos-photo-access.test.ts` closes that, and it is as much the point as the policy.
 
 ### The two photo buckets are asymmetric on purpose
 
@@ -420,7 +443,7 @@ offer the gallery instead.
 ## 10. Testing
 
 ```bash
-npm test                            # unit + integration (315)
+npm test                            # unit + integration (321)
 npx vitest run tests/integration    # integration only - needs local Supabase
 npx playwright test                 # end-to-end (35)
 npm run build

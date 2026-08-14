@@ -58,6 +58,7 @@ export default function SignalDetailPage({
   const router = useRouter();
   const [detail, setDetail] = useState<Detail | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [reason, setReason] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,10 +72,17 @@ export default function SignalDetailPage({
     if (row) {
       // The bucket is private; a distressed person's photograph must never sit
       // behind a guessable public URL.
-      const { data: signed } = await supabase.storage
+      const { data: signed, error } = await supabase.storage
         .from("sos-photos")
         .createSignedUrl(row.photo_path, 300);
+
+      // An SOS cannot exist without a photo - the live capture is mandatory -
+      // so a missing URL here is always a failure, never an absence. Rendering
+      // the image only when a URL came back is how a policy that denied every
+      // photo to every moderator went unnoticed: the card simply appeared
+      // without one, and looked like a signal that had none.
       setPhotoUrl(signed?.signedUrl ?? null);
+      setPhotoError(error ? error.message : signed?.signedUrl ? null : "walang URL");
     }
   }, [id]);
 
@@ -178,12 +186,23 @@ export default function SignalDetailPage({
           </p>
         )}
 
-        {photoUrl && (
+        {photoUrl ? (
           <img
             src={photoUrl}
             alt="Larawan ng tubig mula sa nag-report"
             style={{ width: "100%", borderRadius: 12, marginTop: 20 }}
           />
+        ) : (
+          // Said out loud. The photograph is the only part of a signal that a
+          // slider drag cannot fake, so a moderator judging one without it
+          // needs to know that is what is happening rather than assuming the
+          // sender simply did not send one - which they cannot.
+          <p className="alert" style={{ marginTop: 20 }}>
+            <strong>Hindi mabuksan ang larawan.</strong> Laging may larawan ang
+            SOS, kaya ibig sabihin nito ay may problema sa pagkuha nito - hindi
+            ito nangangahulugang walang ipinadalang larawan.
+            {photoError ? ` (${photoError})` : ""}
+          </p>
         )}
 
         <h2 className="sheet-count" style={{ marginTop: 28 }}>Desisyon</h2>

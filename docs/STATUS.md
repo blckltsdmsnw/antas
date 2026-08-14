@@ -462,6 +462,36 @@ Not fixed, and small: `display_name` is dead schema (written `'Anonymous'` by a
 trigger, read by nothing), an unused `DepthLevel` import in `submit-sos.ts`, and
 `_map.png` is still an untracked debug screenshot.
 
+### No moderator could open an SOS photo — since Phase 2B (migration `0024`)
+
+Noticed while testing the anonymous SOS flow, but **not anonymous-specific**: it
+affected every SOS ever sent.
+
+`0008` made `sos-photos` private with one SELECT policy — *your own folder* — and
+noted that the console would fetch through a signed URL. The console does. The
+policy letting a moderator read somebody else's photo was never written, so the
+signing request was refused every time.
+
+It hid because storage reports a policy denial as **"Object not found"**, which
+reads like a missing file, and because the console rendered the image only when
+a URL came back — so a denial produced a card with no photo, indistinguishable
+from a signal that had none. Except an SOS *cannot* have none: the live capture
+is mandatory.
+
+That is not a cosmetic gap. The photograph is the only part of a signal a slider
+drag cannot fake, `hasLivePhoto` feeds the trust score, and the console was
+asking a moderator to judge a stranger's emergency while withholding the only
+evidence in it.
+
+Fixed, and scoped: a moderator for that barangay can open it, a moderator for
+another cannot, an ordinary user cannot, an anonymous visitor cannot, and the
+object is still not served from a public URL. The console now says plainly when
+a photo cannot be opened rather than rendering nothing.
+
+**The wider miss:** nothing in the test suite touched storage at all, so a bucket
+no moderator could read passed every check for two phases.
+`tests/integration/sos-photo-access.test.ts` closes that.
+
 ---
 
 ## Needs you: your local emergency numbers
