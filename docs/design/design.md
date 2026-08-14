@@ -122,6 +122,7 @@ Eighteen migrations, `supabase/migrations/0001` … `0018`. The significant ones
 | `0019` | `reporter_standing` — a credibility signal that names nobody |
 | `0020` | The `admin` role made real, and the barangay check reduced to one predicate |
 | `0021` | Manila split from one city-wide bucket into its 16 districts |
+| `0022` | `profiles.phone`, reachable only through `sos_detail` |
 
 `reports_near(lat, lon, radius_m)` is a PostGIS function rather than a filtered
 select: proximity is a spatial question, and answering it in the client means
@@ -156,8 +157,19 @@ merely documented — a privacy claim without a test is a comment.
   the write takes no `reporter_id` — it writes `auth.uid()`, so there is no name
   to forge rather than a forged name to reject.
 - **Profiles are denied to anonymous callers at the grant layer as well as by
-  RLS** — two independent barriers, because that table gains verified phone
-  numbers in a later phase.
+  RLS** — two independent barriers, because that table now holds phone numbers.
+- **A reporter's phone number (`0022`) leaves the database through exactly one
+  door.** `profiles` stays scoped to `id = auth.uid()`, so no user can read
+  another's; the only other path is `sos_detail`, which already refuses anyone
+  who may not see that signal — so the number reaches whoever may act on an SOS
+  and nobody else. It never touches the map, the depth reports or
+  `report_updates`. Stored E.164 (`+639171234567`) and constrained to it in the
+  column, because a number kept in a shape that will not dial is discovered by
+  somebody failing to reach a person in a flood. It is **optional** — a required
+  phone number on a flood map is a reason not to report at all — and **not
+  verified**, which the console says out loud rather than implying a check that
+  never happened; real verification needs an SMS provider this project has no
+  budget for.
 - **The moderator queue is scoped by `auth.uid()` inside the database.** The
   console link in the header is discoverability, not access control: typing the
   URL gets a non-moderator nothing.
@@ -370,7 +382,7 @@ offer the gallery instead.
 ## 10. Testing
 
 ```bash
-npm test                            # unit + integration (275)
+npm test                            # unit + integration (296)
 npx vitest run tests/integration    # integration only - needs local Supabase
 npx playwright test                 # end-to-end (35)
 npm run build

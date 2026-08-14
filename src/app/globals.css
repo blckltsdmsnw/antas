@@ -1791,6 +1791,93 @@ a.btn {
   color: var(--danger);
 }
 
+/* The emergency number, on your own account page. Quiet, because it is
+   optional - a phone field styled like a demand is a reason to close the app. */
+.phone-card {
+  margin: 24px 0 8px;
+  padding: 16px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.phone-note {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.phone-card .field {
+  margin-bottom: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   Reaching the person - the console's call and route links
+
+   Above the assessment, because both are useful before a decision is made, and
+   a moderator may want to call precisely because a signal is ambiguous.
+   -------------------------------------------------------------------------- */
+
+.reach {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  /* The bottom margin belongs here rather than on the caveat, because the
+     caveat only renders when a number exists - hanging the spacing off it left
+     the heading below sitting against the buttons whenever it did not. */
+  margin: 20px 0 24px;
+}
+
+.reach-call,
+.reach-route {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: var(--radius-control);
+  font-weight: 700;
+  font-size: 16px;
+  text-decoration: none;
+}
+
+/* The call carries the danger red: it is the one control in the product that
+   puts a moderator in touch with somebody who may be standing in water. */
+.reach-call {
+  background: var(--danger);
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.reach-route {
+  background: var(--ground);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.reach-route:hover {
+  border-color: var(--ink-muted);
+}
+
+.reach-none {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 15px;
+  color: var(--ink-muted);
+}
+
+/* Full width, so it drops onto its own line under the two buttons rather than
+   competing with them for space in the flex row. */
+.reach-caveat {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-muted);
+}
+
 /* --------------------------------------------------------------------------
    Tab bar - navigation where a thumb actually reaches
 

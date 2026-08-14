@@ -349,6 +349,39 @@ If you ever do want names, the honest shape is opt-in first-name-only set on
 `/ako`, defaulting to empty, with a blocklist on authority words — but it still
 publishes name + place + time, which is why it is not the default.
 
+### Reaching the person: phone, call, directions (migration `0022`)
+
+A moderator opening a signal now gets two things they did not have: a **call
+button** and a **directions link**.
+
+- **Phone number** is set by the reporter on `/ako`, optional, normalised to
+  E.164 on the way in (`0917 123 4567` is stored as `+639171234567`). A landline
+  is refused — this number is for reaching somebody who may be standing in
+  water, and a landline rings in the house they have left.
+- **It is readable through `sos_detail` and nowhere else.** `profiles` stays
+  scoped to `id = auth.uid()`, so no user can read another's number, and the
+  definer function already refuses anyone who may not see that signal. It never
+  touches the map or the depth reports.
+- **It is not verified**, and the console says so. Real verification means
+  sending an SMS code, which needs a paid provider. A number labelled verified
+  that was only typed is a moderator trusting the wrong thing.
+- **Directions** open Google Maps routing to the signal's exact coordinates,
+  handing off to the Maps app on a phone.
+
+Note on the wider request this came from: **"a rescuer will arrive in 10-20
+minutes" was deliberately not built.** Antas dispatches nobody, and `/sos` says
+so twice on the very screen that notification would appear on. A person in
+rising water who is told help is coming waits instead of climbing or calling
+911. The honest version — telling the sender when a moderator has actually
+*opened* their signal — is still available to build, since `sos_signals` already
+carries the statuses and realtime is already enabled on the table.
+
+Also raised `auth.rate_limit.email_sent` from 2 to 100 in `supabase/config.toml`.
+That file configures the **local** stack only. At 2 per hour the third test
+account of an afternoon cannot sign in, and it surfaces as "Hindi naipadala ang
+link" — indistinguishable from a broken sign-in flow, which is how it wasted
+time before being recognised for what it was.
+
 ---
 
 ## Needs you: your local emergency numbers

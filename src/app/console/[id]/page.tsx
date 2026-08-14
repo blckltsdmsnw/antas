@@ -12,6 +12,7 @@ import {
   needsLocationConfirmation,
 } from "@/lib/reports/accuracy";
 import { depthLabel, type DepthLevel } from "@/lib/depth/scale";
+import { formatPhone } from "@/lib/profile/phone";
 import type { Reason } from "@/lib/scoring/types";
 
 interface Detail {
@@ -33,6 +34,19 @@ interface Detail {
   surrounding_elevation_m: number | null;
   corroborating_reports: number | null;
   provider_ok: boolean | null;
+  reporter_phone: string | null;
+}
+
+/**
+ * Directions to the pin, not a map of it.
+ *
+ * The console already says where the signal is; what a moderator lacks is the
+ * route from wherever they are. `dir/?api=1&destination=` is the documented
+ * Google Maps URL form and hands off to the installed app on a phone, which is
+ * the device this would actually be used from.
+ */
+function directionsUrl(lat: number, lon: number): string {
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
 }
 
 export default function SignalDetailPage({
@@ -119,6 +133,41 @@ export default function SignalDetailPage({
             puwedeng pagkakamali. Maaaring hindi ito ang tamang kalye.
           </p>
         )}
+
+        {/* Above the assessment on purpose. Reaching the person and getting to
+            them are the two things that are useful before a decision is made -
+            and a moderator may want to call precisely because the signal is
+            ambiguous. */}
+        <div className="reach">
+          {detail.reporter_phone ? (
+            <a className="reach-call" href={`tel:${detail.reporter_phone}`}>
+              Tawagan {formatPhone(detail.reporter_phone)}
+            </a>
+          ) : (
+            // Said out loud rather than left as a missing button. "No number"
+            // and "the button did not render" look identical otherwise.
+            <p className="reach-none">Walang naibigay na numero ang nag-report.</p>
+          )}
+
+          <a
+            className="reach-route"
+            href={directionsUrl(detail.lat, detail.lon)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Direksyon papunta rito
+          </a>
+
+          {detail.reporter_phone && (
+            // Labelled unverified because it is. No SMS provider means no code
+            // was ever sent, and a number presented as checked when it was
+            // merely typed is a moderator trusting the wrong thing.
+            <p className="reach-caveat">
+              Hindi pa na-verify ang numerong ito — ito ang ibinigay mismo ng
+              nag-report.
+            </p>
+          )}
+        </div>
 
         <h2 className="sheet-count">Pagsusuri</h2>
         <ReasonList reasons={detail.reasons ?? []} />
