@@ -1275,6 +1275,12 @@ a.btn {
  * a night screen, which is the exact glare the dark map exists to avoid. Same
  * for the buttons, which paint `--ground`. Both are washes over the panel here,
  * with the state colour carried by the text instead of the fill. */
+/* `--success` is #15803d, chosen for contrast against white. On the night panel
+   it goes nearly black, which would hide the line rather than soften it. */
+[data-map-theme="dark"] .standing {
+  color: #86efac;
+}
+
 [data-map-theme="dark"] .fresh {
   border-top-color: var(--panel-line);
 }
@@ -2406,6 +2412,31 @@ a.btn {
   flex: 1;
   border-radius: 3px;
   background: var(--line);
+}
+
+/* Reporter standing. Quiet on purpose: it is a reason to believe the depth
+   above it, not a claim competing with it. Green rather than the depth blue,
+   because it is the one thing on this card that is not a water measurement. */
+.standing {
+  display: flex;
+  /* Not centred: the line wraps on a narrow phone, and centring drops the dot
+     into the gap between the two lines instead of marking where they start. */
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--success);
+}
+
+.standing-mark {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  /* Half a line down, so it sits on the first line's optical centre. */
+  margin-top: 6px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 /* --------------------------------------------------------------------------

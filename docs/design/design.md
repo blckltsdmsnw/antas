@@ -119,6 +119,7 @@ Eighteen migrations, `supabase/migrations/0001` … `0018`. The significant ones
 | `0016` | Revokes EXECUTE from `public` where earlier migrations wrongly revoked it from `anon` |
 | `0017` | Depth becomes optional on an SOS signal |
 | `0018` | `report_updates` — "kumusta na?" — and hiding your own report |
+| `0019` | `reporter_standing` — a credibility signal that names nobody |
 
 `reports_near(lat, lon, radius_m)` is a PostGIS function rather than a filtered
 select: proximity is a spatial question, and answering it in the client means
@@ -240,6 +241,16 @@ A moderator is a vetted person at a barangay desk, not somebody who signed up.
   because being wrong in the direction of caution is the survivable mistake.
   This is also the only thing a reporter gets back: filing used to be something
   you did into silence.
+- **A reporter's standing is shown; their identity is not.** `reporter_standing`
+  (`0019`) reads whether that author's *earlier* reports held up — measured only
+  by answers arriving within the hour after each one, because floodwater recedes
+  on its own and "wala na" four hours later describes the weather rather than a
+  bad report. It returns `'reliable'` or `'none'` and **never a count**: exact
+  tallies would fingerprint each author, letting anyone group reports by writer
+  and work out which street somebody reports from every morning. There is no
+  negative value and will not be one — a public "often wrong" mark, computed
+  from a handful of taps with no appeal on an unmoderated tool, is a punishment
+  mechanism. Absence means "not established", which is also every new reporter.
 - **The basemap follows the Manila clock and nothing else.** See
   [`foundations.md`](foundations.md) §7a for why `prefers-color-scheme` is
   deliberately ignored.
@@ -325,7 +336,7 @@ offer the gallery instead.
 ## 10. Testing
 
 ```bash
-npm test                            # unit + integration (251)
+npm test                            # unit + integration (260)
 npx vitest run tests/integration    # integration only - needs local Supabase
 npx playwright test                 # end-to-end (35)
 npm run build
@@ -423,9 +434,20 @@ an authority relationship or live operational data the project does not have:
   still chest-deep — the same class of harm as a "Ligtas" label. Three states
   carry what the comment carried, need no moderation because there is no prose
   to moderate, and can be counted, which a thread cannot
-- **Reporter names on reports.** Also asked for, and deliberately still open
-  rather than quietly shipped: `profiles` is locked at the grant layer because
-  it gains verified phone numbers later, and attaching a name to a location and
-  a timestamp is a different privacy decision from anything already made. It
-  needs an explicit choice — anonymous by default with opt-in, or not at all —
-  not a default chosen by whoever implements it
+- **Reporter names on reports.** Asked for directly, and answered with
+  `reporter_standing` (§7) instead. Three reasons, and the order matters. A name
+  beside a location and a timestamp turns every report into a public record that
+  a named person was standing somewhere during a disaster, when their house may
+  be empty. A free-text `display_name` shown publicly is the *same* impersonation
+  hole as the "VERIFIED AUTHORITY" badge two entries above — the first abuse is
+  somebody naming themselves "Barangay Malanday DRRMO". And a stranger's name is
+  not evidence anyway: it cannot answer "can I trust this depth", which is the
+  question the request was really making.
+
+  Worth recording that there was never any name data to show. `display_name` is
+  `not null` and set by the `handle_new_user` trigger from
+  `raw_user_meta_data.display_name`, which nothing writes — sign-in is email OTP
+  with no name field — so every profile in both databases reads the literal
+  string `Anonymous`. Shipping names was never "expose a column"; it was build a
+  name-collection flow, then open a public read path through the one table
+  deliberately locked because it gains verified phone numbers later

@@ -242,6 +242,39 @@ both are worth remembering:
   `reporter_id` at all, and the table grants nothing to `anon` or
   `authenticated` — there is no name to forge and no row to read.
 
+### Reporter names: answered without names (migration `0019`)
+
+You asked for the reporter's name on each report. It shipped as
+**`reporter_standing`** instead — one quiet green line on the detail card,
+*"Madalas tumutugma ang mga naunang report ng nag-report nito"*, shown only when
+that author's earlier readings actually held up.
+
+Three reasons, decided together:
+
+- A name next to a location and a timestamp is a public record that a named
+  person was standing somewhere during a flood, when their house may be empty.
+- A public free-text name is the same impersonation hole as the "VERIFIED
+  AUTHORITY" badge already refused — the first abuse is somebody calling
+  themselves "Barangay Malanday DRRMO".
+- A stranger's name is not evidence. It cannot answer *"can I trust this
+  depth?"*, which is what the request was really for. A track record can.
+
+There was also **no name data to show**. `display_name` is set by the
+`handle_new_user` trigger from `raw_user_meta_data.display_name`, which nothing
+writes — sign-in is email OTP with no name field — so every profile in both
+databases reads the literal string `Anonymous`.
+
+The signal returns `'reliable'` or `'none'` and deliberately **never a count**:
+exact tallies would fingerprint each author, letting anyone group reports by
+writer and work out which street somebody reports from every morning. There is
+no "often wrong" counterpart, and there should not be one — a public negative
+mark computed from a handful of taps, with no appeal, on a tool nobody
+moderates, is a punishment mechanism.
+
+If you ever do want names, the honest shape is opt-in first-name-only set on
+`/ako`, defaulting to empty, with a blocklist on authority words — but it still
+publishes name + place + time, which is why it is not the default.
+
 ---
 
 ## Needs you: your local emergency numbers

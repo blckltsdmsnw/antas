@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { MapReport } from "@/components/FloodMap";
 import { PhotoLightbox } from "@/components/PhotoLightbox";
 import { ReportFreshness } from "@/components/ReportFreshness";
+import { ReporterStanding } from "@/components/ReporterStanding";
 import { depthLabel, depthRank, DEPTH_LEVELS } from "@/lib/depth/scale";
 import { DEPTH_VAR, depthRangeLabel } from "@/lib/depth/presentation";
 import { reportPhotoUrl } from "@/lib/reports/photo";
@@ -90,6 +91,11 @@ export function ReportDetail({ report, onClose }: ReportDetailProps) {
         <p className="detail-sub">
           {label.en} · {depthRangeLabel(report.depth)}
         </p>
+
+        {/* Sits with the reading it qualifies, not down beside the timestamp:
+            it is a reason to believe the number above it. Renders nothing at
+            all unless the standing was earned. */}
+        <ReporterStanding reportId={report.id} />
 
         {/* Both readings. Someone choosing a route right now needs to know how
             stale this is; someone judging whether the photo still describes the
