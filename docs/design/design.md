@@ -121,6 +121,7 @@ Eighteen migrations, `supabase/migrations/0001` … `0018`. The significant ones
 | `0018` | `report_updates` — "kumusta na?" — and hiding your own report |
 | `0019` | `reporter_standing` — a credibility signal that names nobody |
 | `0020` | The `admin` role made real, and the barangay check reduced to one predicate |
+| `0021` | Manila split from one city-wide bucket into its 16 districts |
 
 `reports_near(lat, lon, radius_m)` is a PostGIS function rather than a filtered
 select: proximity is a spatial question, and answering it in the client means
@@ -160,6 +161,16 @@ merely documented — a privacy claim without a test is a comment.
 - **The moderator queue is scoped by `auth.uid()` inside the database.** The
   console link in the header is discoverability, not access control: typing the
   URL gets a non-moderator nothing.
+- **Routing granularity is uneven, and that is the honest choice.** A signal's
+  barangay is assigned by a trigger taking the nearest centroid in `barangays`.
+  Marikina has its 16, Taguig its 26, Manila its 16 **districts** (`0021`) —
+  and every other NCR city is a single placeholder at the city centre. Manila
+  is districts rather than its 896 barangays because those are a few blocks
+  across: invented centroids at that spacing would carry more error than the
+  distance between neighbours, so the result would look precise and be wrong.
+  A real deployment needs official boundary polygons and `st_contains`; until
+  then the table stores "the smallest area we can honestly route to", which is
+  not always a barangay despite the name.
 - **Scope lives in one predicate, `moderates(barangay)` (`0020`).** It was four
   copies of the same `exists` clause — once in `moderator_queue`, twice in
   `sos_detail`, once in `decide_sos` — and four copies of a security rule is
@@ -359,7 +370,7 @@ offer the gallery instead.
 ## 10. Testing
 
 ```bash
-npm test                            # unit + integration (272)
+npm test                            # unit + integration (275)
 npx vitest run tests/integration    # integration only - needs local Supabase
 npx playwright test                 # end-to-end (35)
 npm run build

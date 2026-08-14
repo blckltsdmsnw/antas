@@ -69,11 +69,21 @@ There is no "responder" role. `moderators.role` allows `moderator` and `admin`
 only, and the product never dispatches anyone — a moderator triages a signal,
 they do not answer it.
 
-One caveat about Manila. `barangays` holds 16 real Marikina barangays and 26
-Taguig ones; **every other city is a single placeholder centroid**. A signal
-near CEU Mendiola resolves to the one `Manila` row, so "Manila" behaves as a
-whole-city bucket rather than a barangay. Fine for a demo, wrong for a pilot
-there — that city would need its own barangays seeded first.
+**Manila is now seeded at district level** (migration `0021`) — Tondo, Sampaloc,
+San Miguel, Ermita, Malate and the rest, 16 rows. A signal near CEU Mendiola
+resolves to **San Miguel** instead of to the whole city, and the old city-wide
+`Manila` bucket has been deleted so nothing can land in it.
+
+Districts rather than barangays on purpose. Manila has 896 barangays, most a few
+blocks across; writing those centroids from memory would be inventing the data
+that decides which desk an emergency reaches, and at that spacing the error
+would exceed the distance between neighbours — precise-looking and wrong. A real
+deployment there needs official boundary polygons and `st_contains`, not this.
+
+Granularity is therefore uneven and deliberately so: Marikina 16, Taguig 26,
+Manila 16 districts, and **every other NCR city is still one placeholder
+centroid**. Adding ~1,700 invented barangays would be false precision, not
+progress.
 
 ### 2. Seeded demo data on production — what is there, and how to remove it
 

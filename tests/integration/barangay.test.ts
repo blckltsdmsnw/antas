@@ -76,10 +76,36 @@ describe("barangay assignment", () => {
     expect(await makeSignal(121.064, 14.503)).toBe("Lower Bicutan");
   });
 
-  it("falls back to a city name outside the barangay-level areas", async () => {
-    // Only Marikina and Taguig are seeded per-barangay; the rest of NCR is
-    // seeded at city level, so a Manila point resolves to "Manila".
-    expect(await makeSignal(120.9842, 14.5995)).toBe("Manila");
+  it("resolves a Manila point to a district, not to the whole city", async () => {
+    // 0021 replaced the single "Manila" bucket - 1.8 million people - with the
+    // city's 16 districts. CEU Mendiola is the case that prompted it.
+    expect(await makeSignal(120.9942, 14.5992)).toBe("San Miguel");
+  });
+
+  it("tells Manila's districts apart from each other", async () => {
+    // Otherwise the districts are a rename of the bucket rather than a
+    // division of it, and every Manila signal still lands in one place.
+    expect(await makeSignal(120.967, 14.615)).toBe("Tondo");
+    expect(await makeSignal(120.987, 14.57)).toBe("Malate");
+    expect(await makeSignal(121.011, 14.599)).toBe("Santa Mesa");
+  });
+
+  it("no longer has a bucket named after the whole of Manila", async () => {
+    // The placeholder must be gone, not merely outvoted. Left in place it would
+    // still win for points near the city centre, so some Manila signals would
+    // be district-scoped and others city-scoped, with nothing to say which.
+    const { data } = await admin
+      .from("barangays")
+      .select("name")
+      .eq("name", "Manila");
+    expect(data ?? []).toEqual([]);
+  });
+
+  it("falls back to a city name where only a placeholder is seeded", async () => {
+    // Marikina, Taguig and now Manila are seeded finely; the rest of NCR is
+    // still one centroid per city, and that is deliberate rather than pending -
+    // inventing centroids for ~1,700 more barangays would be false precision.
+    expect(await makeSignal(121.0851, 14.5764)).toBe("Pasig");
   });
 
   it("leaves an explicitly supplied barangay alone", async () => {
