@@ -20,6 +20,19 @@ export interface ScoringSnapshot {
   claimedDepth: DepthLevel | null;
   gpsAccuracyM: number | null;
   hasLivePhoto: boolean;
+  /**
+   * How many EARLIER signals carry a byte-identical photograph.
+   *
+   * Zero is the ordinary case. Anything above it means the same image has been
+   * sent before, which is the clearest evidence of fabrication a moderator can
+   * be handed - a live capture of moving water is never byte-identical twice.
+   *
+   * `null` means the check could not run: the photo could not be fetched, or
+   * the signal predates the fingerprint column. That is not evidence against
+   * the sender and must never be scored as though it were - the same rule the
+   * environmental fields follow.
+   */
+  photoReusedCount: number | null;
   accountAgeMinutes: number;
   reporterConfirmedCount: number;
   reporterFalseReportCount: number;

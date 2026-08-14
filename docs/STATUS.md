@@ -381,6 +381,29 @@ ring, and does not appear for somebody who already has one saved. The field
 itself is shared with `/ako` (`PhoneField`), so there is one definition of which
 numbers are acceptable rather than two.
 
+### Photo abuse checks — the honest half (migration `0026`)
+
+Every SOS photograph is now hashed during enrichment and compared against
+earlier signals. A repeat costs 30 points and says so in words a moderator
+reads. A live capture of moving water is never byte-identical twice, so a match
+is not weak evidence — it says the picture is not of what is happening now.
+
+**Half of what you asked for is not built, and that is the finding.** The plan
+included reading camera metadata to spot screenshots. The SOS photo is produced
+by `canvas.toBlob`, and **canvas output carries no EXIF at all** — so that check
+would have flagged *every genuine SOS photo* as suspicious. A check that fires on
+everybody is worse than none, because a moderator learns to ignore it. Caught
+before writing it rather than after.
+
+The other limit: this catches **identical bytes**. Re-encoding, resizing or
+cropping changes every byte and sails straight through. Catching those needs a
+perceptual hash, which needs decoding the image, which needs an image library
+this project does not carry — a real dependency decision, not an oversight.
+
+An unknown result is silence, never suspicion: a photo that could not be fetched
+scores exactly like a unique one, the same rule the rainfall and elevation checks
+follow.
+
 **The sender now hears back (migration `0025`).** Sending used to end in
 silence. When a moderator opens the signal it moves `pending → under_review`,
 and the sender's screen changes **without a reload** — verified with two actors:

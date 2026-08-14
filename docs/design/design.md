@@ -126,6 +126,7 @@ Eighteen migrations, `supabase/migrations/0001` … `0018`. The significant ones
 | `0023` | Suspension enforced, and `profiles` UPDATE narrowed to the columns a user owns |
 | `0024` | Moderators can finally open the SOS photograph they are asked to judge |
 | `0025` | Opening a signal moves it to `under_review`, so the sender learns somebody read it |
+| `0026` | `sos_signals.photo_sha256`, so a photograph sent twice is visible to a moderator |
 
 `reports_near(lat, lon, radius_m)` is a PostGIS function rather than a filtered
 select: proximity is a spatial question, and answering it in the client means
@@ -404,6 +405,25 @@ not apply. Treating silence as a weak claim would have sunk the people who asked
 for help fastest to the bottom of a moderator's queue, over a field they were
 deliberately never shown.
 
+**The same photograph, sent twice, is now visible (`0026`).** Every SOS photo is
+hashed during enrichment and compared against earlier signals; a repeat costs
+30 points and states itself in words. A live capture of moving water is never
+byte-identical twice, so a match is not weak evidence to weigh — it says the
+picture is not of what is happening now.
+
+Two things it deliberately does **not** do, both worth knowing before trusting
+it. It catches identical bytes only: re-encoding, resizing or cropping changes
+every byte, and catching those needs a perceptual hash, which needs decoding the
+image, which needs a dependency this project does not carry. And it does **not**
+read camera metadata to spot screenshots — the SOS photo is produced by
+`canvas.toBlob`, which writes no EXIF at all, so that check would flag every
+honest signal. A check that fires on everybody is worse than no check, because
+a moderator learns to ignore it.
+
+An unknown result is silence, not suspicion: a photo that could not be fetched
+scores exactly like a unique one, which is the same rule the rainfall and
+elevation checks follow.
+
 **The sender is told what happened, and only what happened (`0025`).** Sending
 used to end in silence — the same gap *kumusta na* closed on depth reports, and
 worse here, because the person waiting may be in the water. Opening a signal now
@@ -469,7 +489,7 @@ offer the gallery instead.
 ## 10. Testing
 
 ```bash
-npm test                            # unit + integration (336)
+npm test                            # unit + integration (347)
 npx vitest run tests/integration    # integration only - needs local Supabase
 npx playwright test                 # end-to-end (35)
 npm run build

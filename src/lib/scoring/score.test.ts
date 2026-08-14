@@ -7,6 +7,7 @@ const baseline: ScoringSnapshot = {
   claimedDepth: "chest",
   gpsAccuracyM: 8,
   hasLivePhoto: true,
+  photoReusedCount: 0,
   accountAgeMinutes: 60 * 24 * 30,
   reporterConfirmedCount: 0,
   reporterFalseReportCount: 0,
@@ -182,5 +183,58 @@ describe("scoreSignal", () => {
 
   it("always produces at least one reason", () => {
     expect(scoreSignal(baseline).reasons.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * A photograph that has been sent before.
+ *
+ * A live capture of moving water is never byte-identical twice, so a repeat is
+ * not weak evidence to weigh - it says the picture is not of what is happening
+ * now. The other half of this block matters just as much: a check that could
+ * not run must score exactly like a clean one.
+ */
+describe("scoreSignal with a reused photo", () => {
+  it("penalises a photo that came with an earlier signal", () => {
+    const fresh = scoreSignal(baseline);
+    const reused = scoreSignal({ ...baseline, photoReusedCount: 1 });
+
+    expect(reused.score).toBeLessThan(fresh.score);
+    expect(reused.reasons).toContainEqual({
+      kind: "concerning",
+      text: "This exact photo was sent with an earlier signal.",
+    });
+  });
+
+  it("counts how many earlier signals shared it", () => {
+    const reused = scoreSignal({ ...baseline, photoReusedCount: 4 });
+    expect(reused.reasons).toContainEqual({
+      kind: "concerning",
+      text: "This exact photo was sent with 4 earlier signals.",
+    });
+  });
+
+  it("treats an unknown result as silence, not as suspicion", () => {
+    // THE HALF THAT MATTERS MOST. null means the photo could not be fetched or
+    // the signal predates the fingerprint - a gap in the system, never evidence
+    // against the person who sent it. Scoring it like a repeat would let a
+    // storage hiccup bury a real call for help.
+    const unknown = scoreSignal({ ...baseline, photoReusedCount: null });
+    const clean = scoreSignal({ ...baseline, photoReusedCount: 0 });
+
+    expect(unknown.score).toBe(clean.score);
+    expect(unknown.reasons).toEqual(clean.reasons);
+  });
+
+  it("says nothing at all when the photo is unique", () => {
+    const clean = scoreSignal({ ...baseline, photoReusedCount: 0 });
+    expect(clean.reasons.map((r) => r.text).join(" ")).not.toMatch(/exact photo/i);
+  });
+
+  it("still leaves a reused signal in the queue rather than refusing it", () => {
+    // The governing rule: scoring orders a queue, it never discards. Even the
+    // heaviest penalty in the scorer must not floor a signal out of sight.
+    const reused = scoreSignal({ ...baseline, photoReusedCount: 3 });
+    expect(reused.score).toBeGreaterThanOrEqual(0);
   });
 });

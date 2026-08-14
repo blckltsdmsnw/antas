@@ -1,5 +1,6 @@
 "use server";
 
+import { createHash } from "node:crypto";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -91,6 +92,51 @@ export async function submitSos(input: SosInput): Promise<SosResult> {
   return { ok: true, signalId: inserted.id };
 }
 
+/**
+ * Fingerprint the photograph and count how many earlier signals share it.
+ *
+ * Returns `null` whenever the answer is not knowable - the object could not be
+ * downloaded, or the fingerprint could not be written. The scorer treats null
+ * as silence rather than suspicion, so a storage hiccup can never become
+ * evidence against somebody asking for help.
+ *
+ * Only EARLIER signals count. The row being scored has its own fingerprint
+ * written first, so without excluding itself every photo would look reused.
+ *
+ * SHA-256 of the bytes, which catches an identical file being sent again. It
+ * does not catch the same picture re-encoded or resized - that needs a
+ * perceptual hash and an image library this project does not carry. See 0026.
+ */
+async function fingerprintPhoto(
+  supabase: ReturnType<typeof createAdminClient>,
+  signalId: string,
+  photoPath: string,
+): Promise<number | null> {
+  if (photoPath.length === 0) return null;
+
+  const { data: file, error } = await supabase.storage
+    .from("sos-photos")
+    .download(photoPath);
+  if (error || !file) return null;
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const digest = createHash("sha256").update(bytes).digest("hex");
+
+  const { error: writeError } = await supabase
+    .from("sos_signals")
+    .update({ photo_sha256: digest })
+    .eq("id", signalId);
+  if (writeError) return null;
+
+  const { count, error: countError } = await supabase
+    .from("sos_signals")
+    .select("id", { count: "exact", head: true })
+    .eq("photo_sha256", digest)
+    .neq("id", signalId);
+
+  return countError ? null : (count ?? 0);
+}
+
 function minutesSince(iso: string | undefined): number {
   if (!iso) return Number.MAX_SAFE_INTEGER;
   const created = new Date(iso).getTime();
@@ -134,6 +180,12 @@ async function enrichAndScore(
     const corroboratingReports =
       typeof corroboration.data === "number" ? corroboration.data : 0;
 
+    const photoReusedCount = await fingerprintPhoto(
+      supabase,
+      signalId,
+      input.photoPath,
+    );
+
     // Absent history reads as none, never as bad history. A first-time reporter
     // and a reporter whose row simply failed to load must not be scored as
     // though they had a record of fabricating.
@@ -149,6 +201,7 @@ async function enrichAndScore(
       gpsAccuracyM: input.gpsAccuracyM,
       hasLivePhoto: input.photoPath.length > 0,
       accountAgeMinutes: minutesSince(accountCreatedAt),
+      photoReusedCount,
       reporterConfirmedCount: confirmedCount,
       reporterFalseReportCount: falseReportCount,
       corroboratingReports,

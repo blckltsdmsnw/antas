@@ -124,6 +124,31 @@ export function scoreSignal(snapshot: ScoringSnapshot): ScoreResult {
     reasons.push({ kind: "concerning", text: "No live photo attached." });
   }
 
+  /**
+   * The same photograph, sent before.
+   *
+   * The heaviest single penalty in the scorer, and it earns that: a live
+   * capture of moving water is never byte-identical twice, so a repeat is not
+   * a coincidence to weigh against other evidence - it is the sender showing
+   * that the photo is not of what is happening now.
+   *
+   * `null` is silence, not suspicion. A photo that could not be fetched, or a
+   * signal older than the fingerprint column, must score exactly like one whose
+   * image is unique - the same rule the rainfall and elevation checks follow,
+   * for the same reason: the system must never turn its own gaps into evidence
+   * against somebody asking for help.
+   */
+  if (snapshot.photoReusedCount !== null && snapshot.photoReusedCount > 0) {
+    score -= 30;
+    reasons.push({
+      kind: "concerning",
+      text:
+        snapshot.photoReusedCount === 1
+          ? "This exact photo was sent with an earlier signal."
+          : `This exact photo was sent with ${snapshot.photoReusedCount} earlier signals.`,
+    });
+  }
+
   if (snapshot.gpsAccuracyM === null) {
     score -= 3;
   } else if (snapshot.gpsAccuracyM <= 25) {
