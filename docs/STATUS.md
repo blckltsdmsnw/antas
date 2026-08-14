@@ -611,6 +611,20 @@ here is a person dialling into nothing during a flood.
   safe to delete.
 - **Hydration warning on `/report`** from a `caret-color` style Chromium injects
   under automation. Dev-only, pre-existing, appears to be a tooling artifact.
+- **A stale `.next` cache can break the build with Google Fonts 404s.**
+  `next build` failed twice with `Received response with status 404 when
+  requesting …publicsans…woff2` and a pile of module-not-found errors — which
+  reads exactly like a broken deploy. Nothing was wrong with the code: deleting
+  `.next` and rebuilding succeeded immediately. `next/font/google` fetches the
+  font files at build time and caches them, and the cached URLs go stale when
+  Google rotates them. **Vercel builds from scratch, so this is local only** —
+  do not go hunting for a real fault, and do not assume production is broken.
+- **`display_name` is dead schema.** Populated as the literal string
+  `'Anonymous'` by the `handle_new_user` trigger and read by nothing; sign-in is
+  email OTP with no name field. Left in place deliberately — see `design.md` §12
+  for why reporter names were not built — but nothing depends on it.
+- **Unused `DepthLevel` import** in `src/app/actions/submit-sos.ts`, flagged by
+  the linter. Harmless, one line.
 
 ---
 
