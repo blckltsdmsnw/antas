@@ -120,6 +120,7 @@ Eighteen migrations, `supabase/migrations/0001` … `0018`. The significant ones
 | `0017` | Depth becomes optional on an SOS signal |
 | `0018` | `report_updates` — "kumusta na?" — and hiding your own report |
 | `0019` | `reporter_standing` — a credibility signal that names nobody |
+| `0020` | The `admin` role made real, and the barangay check reduced to one predicate |
 
 `reports_near(lat, lon, radius_m)` is a PostGIS function rather than a filtered
 select: proximity is a spatial question, and answering it in the client means
@@ -159,6 +160,20 @@ merely documented — a privacy claim without a test is a comment.
 - **The moderator queue is scoped by `auth.uid()` inside the database.** The
   console link in the header is discoverability, not access control: typing the
   URL gets a non-moderator nothing.
+- **Scope lives in one predicate, `moderates(barangay)` (`0020`).** It was four
+  copies of the same `exists` clause — once in `moderator_queue`, twice in
+  `sos_detail`, once in `decide_sos` — and four copies of a security rule is
+  three chances to update it incompletely. An `admin` passes it for every
+  barangay; a `moderator` for exactly one.
+- **Scope is never self-service, and never geographic.** `admin` is granted by
+  the same script as `moderator`, by whoever holds the service key, and cannot
+  be changed from inside the application. If it could, one account would reach
+  every SOS in the country — each carrying a distressed person's exact location
+  and photograph — by typing a different barangay. Physical presence does not
+  grant it either: browser geolocation is trivially forged, so "I am standing
+  here" can never be an access claim. What makes the wider scope acceptable is
+  that `sos_detail` still writes a `viewed` event for every look, which is why
+  it is `volatile` rather than the cheaper `stable`.
 - **PostGIS is installed into `extensions`, not `public`.** It ships a writable
   catalog table (`spatial_ref_sys`); in `public`, PostgREST would expose it to
   anonymous callers with DELETE and no row-level security, letting anyone drop
@@ -216,9 +231,17 @@ Moderator rights are granted by script, not by a UI:
 
 ```bash
 npm run make-moderator -- someone@example.com Malanday
+npm run make-moderator -- someone@example.com Malanday --admin
 ```
 
 A moderator is a vetted person at a barangay desk, not somebody who signed up.
+
+`--admin` grants the wider role: every barangay's queue rather than one. It is
+the same act of vetting one level up, and it stays in a script for the reason
+the script exists at all. A barangay is still required — an admin is a person at
+a desk who can also cover others, not a floating permission, and it is where
+they land when the wider role is withdrawn. Re-running without the flag narrows
+them again.
 
 ## 7. The map
 
@@ -336,7 +359,7 @@ offer the gallery instead.
 ## 10. Testing
 
 ```bash
-npm test                            # unit + integration (260)
+npm test                            # unit + integration (272)
 npx vitest run tests/integration    # integration only - needs local Supabase
 npx playwright test                 # end-to-end (35)
 npm run build

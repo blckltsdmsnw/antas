@@ -40,14 +40,40 @@ before assuming the moderator row is wrong.
 npx tsx --env-file=.env.hosted scripts/make-moderator.ts you@example.com "South Signal Village"
 ```
 
-Scope is one **barangay** per moderator — `moderators` is keyed on `user_id`
-with a single `barangay` column, and Taguig has 26. Covering a whole city would
-need a schema change touching `moderator_queue`, `sos_detail` and `decide_sos`,
-all of which join on a single barangay today.
+Both accounts are now **admins** (migration `0020`), so they see *every*
+barangay's queue rather than one. That is what makes it possible to open a
+signal anywhere — Manila included — without editing the database each time:
 
-There is no "responder" role, deliberately. `moderators.role` allows
-`moderator` and `admin` only, and the product never dispatches anyone — a
-moderator triages a signal, they do not answer it.
+```
+npx tsx --env-file=.env.hosted scripts/make-moderator.ts you@example.com "South Signal Village" --admin
+```
+
+Re-running **without** `--admin` narrows that account back to one barangay. A
+barangay is required either way: an admin is a person at a desk who can also
+cover others, not a floating permission.
+
+An ordinary moderator is still confined to their single barangay —
+`moderators` is keyed on `user_id` with one `barangay` column — and
+`tests/integration/admin-role.test.ts` pins both halves, because `0020` reduced
+four copies of the scope check to one predicate and a mistake there would widen
+every path at once.
+
+**Scope is deliberately not self-service and not geographic.** It cannot be
+changed from inside the app, and being physically somewhere does not grant it:
+browser geolocation is trivially forged, so "I am standing here" can never be an
+access claim. An SOS carries a distressed person's exact location and their
+photograph. What keeps the wider admin scope honest is that `sos_detail` still
+records a `viewed` event for every look.
+
+There is no "responder" role. `moderators.role` allows `moderator` and `admin`
+only, and the product never dispatches anyone — a moderator triages a signal,
+they do not answer it.
+
+One caveat about Manila. `barangays` holds 16 real Marikina barangays and 26
+Taguig ones; **every other city is a single placeholder centroid**. A signal
+near CEU Mendiola resolves to the one `Manila` row, so "Manila" behaves as a
+whole-city bucket rather than a barangay. Fine for a demo, wrong for a pilot
+there — that city would need its own barangays seeded first.
 
 ### 2. Seeded demo data on production — what is there, and how to remove it
 

@@ -54,7 +54,11 @@ Grant the role with:
 
 ```bash
 npm run make-moderator -- someone@example.com Malanday
+npm run make-moderator -- someone@example.com Malanday --admin
 ```
+
+`--admin` widens the role to every barangay instead of one; re-running without
+the flag narrows it again.
 
 Deliberately a script rather than a UI: a moderator is a vetted person at a
 barangay desk, not somebody who signed up.
