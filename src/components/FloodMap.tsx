@@ -5,11 +5,10 @@ import {
   LngLatBounds,
   MapLibreMap,
   Marker,
-  type ExpressionSpecification,
   type MapMouseEvent,
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { DEPTH_LEVELS, depthLabel, type DepthLevel } from "@/lib/depth/scale";
+import { depthLabel, type DepthLevel } from "@/lib/depth/scale";
 import { DEPTH_HEX } from "@/lib/depth/presentation";
 import { clusterByProximity, CLUSTER_RADIUS_PX } from "@/lib/map/cluster";
 import { mapThemeFor, type MapTheme } from "@/lib/map/theme";
@@ -145,6 +144,23 @@ const AREA_MARGIN_PX = 30;
 const AREA_MIN_PX = 34;
 const AREA_MAX_PX = 190;
 
+/**
+ * Set for the STACKED case, not the single one.
+ *
+ * Alpha compounds: ten overlapping discs at 0.3 each reach past 97% between
+ * them and bury the street names, which inverts the point - the stains are
+ * context for the pins, not a replacement for the map. At these values a lone
+ * report is a tint and a dense block is still unmistakable.
+ *
+ * Higher at night. The same alpha over a charcoal basemap is very nearly
+ * invisible, and a feature that quietly stops existing after sunset is worse
+ * than one that was never built - flooding does not stop at 6pm.
+ */
+const AREA_OPACITY: Record<MapTheme, number> = {
+  light: 0.1,
+  dark: 0.22,
+};
+
 function areaElement(depth: DepthLevel, diameter: number): HTMLDivElement {
   const el = document.createElement("div");
   el.className = "report-area";
@@ -224,9 +240,11 @@ function singlePinElement(
   el.className = `pin${photo ? " pin--photo" : ""}${isSelected ? " pin--selected" : ""}`;
   el.style.setProperty("--pin-color", colorForDepth(report.depth));
 
-  // Age as opacity. Secondary only: the detail card states it in words, which
-  // is what someone who cannot perceive the fade relies on.
-  el.style.opacity = String(freshnessOpacity(freshnessOf(report.reportedAt)));
+  // Age as opacity is set on the Marker, NOT here - see `draw`. MapLibre's
+  // Marker writes `style.opacity` onto whatever element it is given, on every
+  // update, to handle terrain occlusion. Setting it on the element first meant
+  // it was overwritten with "1" before anyone saw it, so the age fade this
+  // product documents had in fact never once worked.
 
   if (photo) {
     const img = document.createElement("img");
@@ -460,7 +478,12 @@ export function FloodMap({
           Math.max(AREA_MIN_PX, (spread + AREA_MARGIN_PX) * 2),
         );
 
-        return new Marker({ element: areaElement(cluster.depth, diameter) })
+        return new Marker({
+          element: areaElement(cluster.depth, diameter),
+          // Set here for the same reason as the pins: MapLibre overwrites
+          // `style.opacity` on the element, so a CSS value never survives.
+          opacity: String(AREA_OPACITY[theme]),
+        })
           .setLngLat(instance!.unproject([cluster.x, cluster.y]))
           .addTo(instance!);
       });
@@ -525,7 +548,15 @@ export function FloodMap({
           }
         });
 
-        return new Marker({ element })
+        // Age as opacity, via the Marker rather than the element. MapLibre
+        // rewrites `style.opacity` on the element it is handed, so anything set
+        // there is erased; this is the supported way in, and the only one that
+        // survives. A cluster carries no single age, so it stays solid.
+        const opacity = single
+          ? String(freshnessOpacity(freshnessOf(single.reportedAt)))
+          : "1";
+
+        return new Marker({ element, opacity })
           .setLngLat(instance!.unproject([cluster.x, cluster.y]))
           .addTo(instance!);
       });
@@ -542,7 +573,9 @@ export function FloodMap({
       instance.off("moveend", draw);
       markers.forEach((marker) => marker.remove());
     };
-  }, [reports, onSelect, onPick, selectedId]);
+  //  is a dependency because the stains are dimmer by day than by night;
+  // without it they would keep the wrong alpha until the next pan.
+  }, [reports, onSelect, onPick, selectedId, theme]);
 
   // Fills whatever the parent gives it — the map page makes that the full
   // viewport below the header, so the map is the product rather than a panel.

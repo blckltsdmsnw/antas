@@ -912,10 +912,14 @@ a.btn {
   height: var(--area-size);
   border-radius: 50%;
   background: var(--area-color);
-  opacity: 0.3;
+  /* NO `opacity` here. MapLibre's Marker writes `style.opacity` onto the
+     element it is given, on every update, so a value set in CSS is overwritten
+     before anyone sees it. It is passed as a Marker option instead - see
+     AREA_OPACITY in FloodMap. */
   /* Scaled to the disc: a fixed blur turns a large stain into a hard-edged
-     blob and a small one into nothing at all. */
-  filter: blur(calc(var(--area-size) * 0.16));
+     blob and a small one into nothing at all. Softer than it was, so the edge
+     never suggests a boundary anybody surveyed. */
+  filter: blur(calc(var(--area-size) * 0.22));
   pointer-events: none;
 }
 
