@@ -5,6 +5,7 @@ import Link from "next/link";
 import { HoldToConfirm } from "@/components/HoldToConfirm";
 import { PhotoCapture } from "@/components/PhotoCapture";
 import { PhoneField } from "@/components/PhoneField";
+import { SignalStatus } from "@/components/SignalStatus";
 import { createClient } from "@/lib/supabase/client";
 import { submitSos, type SosErrorCode } from "@/app/actions/submit-sos";
 import {
@@ -40,6 +41,7 @@ export default function SosPage() {
   /** Accuracy of the fix that was actually sent, so the confirmation screen can
    *  be honest about how well the map found them. */
   const [sentAccuracyM, setSentAccuracyM] = useState<number | null>(null);
+  const [signalId, setSignalId] = useState<string | null>(null);
   const [storedPhone, setStoredPhone] = useState<string | null>(null);
   // Whether the lookup has happened at all. Without it the field would flash on
   // for a moment for somebody who already has a number saved.
@@ -122,6 +124,9 @@ export default function SosPage() {
     // not going to walk outside for a better fix, and a signal placed one
     // barangay off is still worth far more than no signal. We send, then say so.
     setSentAccuracyM(position.coords.accuracy ?? null);
+    // Kept rather than discarded: it is what lets the sender watch their own
+    // signal instead of being told "naipadala na" and never hearing again.
+    setSignalId(result.signalId);
     setStatus("sent");
 
     /**
@@ -159,6 +164,11 @@ export default function SosPage() {
             makakausap ka, sabihin mo ang eksaktong kalye o palatandaan.
           </p>
         )}
+
+        {/* Directly under the confirmation, because it is the answer to the
+            question the sender now has. It shows nothing until there is
+            something true to say. */}
+        {signalId && <SignalStatus signalId={signalId} />}
 
         {/* Only when they have none. Most senders are anonymous - no email, no
             number - so without this the barangay has no way to reach them at

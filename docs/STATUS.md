@@ -381,6 +381,25 @@ ring, and does not appear for somebody who already has one saved. The field
 itself is shared with `/ako` (`PhoneField`), so there is one definition of which
 numbers are acceptable rather than two.
 
+**The sender now hears back (migration `0025`).** Sending used to end in
+silence. When a moderator opens the signal it moves `pending → under_review`,
+and the sender's screen changes **without a reload** — verified with two actors:
+an anonymous sender watching *"Naipadala na, hindi pa nabubuksan"* turn into
+*"Binuksan na ito ng barangay"* the moment a moderator opened it.
+
+That transition has existed in the enum since `0005` and nothing ever performed
+it, so every signal sat at `pending` until it was confirmed or dismissed.
+
+**This is the honest form of the notification that was refused.** It reports a
+completed act — a person read this — and never a promise. Even `confirmed` says
+outright that it does not mean anybody is coming. The wording lives in
+`src/lib/sos/progress.ts` and is tested there against the sentences it must
+never produce, because on that screen the failure mode is not a crash, it is a
+line that makes somebody wait instead of climbing.
+
+The sender learns *that* somebody looked, never *who*: `signal_events` stays
+unreadable to them, which is exactly why the status has to carry the news.
+
 Note on the wider request this came from: **"a rescuer will arrive in 10-20
 minutes" was deliberately not built.** Antas dispatches nobody, and `/sos` says
 so twice on the very screen that notification would appear on. A person in

@@ -125,6 +125,7 @@ Eighteen migrations, `supabase/migrations/0001` … `0018`. The significant ones
 | `0022` | `profiles.phone`, reachable only through `sos_detail` |
 | `0023` | Suspension enforced, and `profiles` UPDATE narrowed to the columns a user owns |
 | `0024` | Moderators can finally open the SOS photograph they are asked to judge |
+| `0025` | Opening a signal moves it to `under_review`, so the sender learns somebody read it |
 
 `reports_near(lat, lon, radius_m)` is a PostGIS function rather than a filtered
 select: proximity is a spatial question, and answering it in the client means
@@ -403,6 +404,24 @@ not apply. Treating silence as a weak claim would have sunk the people who asked
 for help fastest to the bottom of a moderator's queue, over a field they were
 deliberately never shown.
 
+**The sender is told what happened, and only what happened (`0025`).** Sending
+used to end in silence — the same gap *kumusta na* closed on depth reports, and
+worse here, because the person waiting may be in the water. Opening a signal now
+moves it `pending → under_review`, a transition the enum has modelled since
+`0005` and which **nothing ever performed**; the sender watches their own row
+over realtime, which `0010` already published.
+
+The wording is the dangerous part, so it lives in `lib/sos/progress.ts` and is
+tested there against the sentences it must never produce. Every line reports a
+completed act: *"Binuksan na ito ng barangay"* says a person read something.
+Even `confirmed` explicitly disowns the reading it invites — a moderator judging
+a signal credible is a statement about the signal, never a dispatch. This is the
+honest form of the "a rescuer will arrive in 10-20 minutes" notification that
+was refused: it reports, it does not promise.
+
+The sender learns *that* somebody looked, never *who*. `signal_events` stays
+unreadable to them, which is why the status has to carry the news at all.
+
 **A suspended account can still send an SOS**, and that follows from the same
 principle rather than being an oversight. Suspension (`0023`) blocks depth
 reports, because filing one is a contribution to a shared map and somebody who
@@ -450,7 +469,7 @@ offer the gallery instead.
 ## 10. Testing
 
 ```bash
-npm test                            # unit + integration (322)
+npm test                            # unit + integration (336)
 npx vitest run tests/integration    # integration only - needs local Supabase
 npx playwright test                 # end-to-end (35)
 npm run build
