@@ -90,6 +90,17 @@ raining on you. Neither asks for location on load.
 **Night map** — light 06:00–18:00 Manila time, dark after. Task pages stay light
 in every condition. See `docs/design/foundations.md` §7a.
 
+**The clock is now the only input to the night map.** `prefers-color-scheme`
+used to override it, which meant a phone left in dark mode — most phones — got a
+dark basemap at 1:41pm, the exact daylight-readability case the design keeps
+every other surface light for. The setting is a taste; the sun is a fact.
+`mapThemeFor` lost its second parameter and `preferredScheme` is gone.
+
+The page also seeded `useState<MapTheme>("light")` and corrected after mount, so
+it stamped `data-map-theme="light"` for a frame before consulting the clock —
+the white flash in a dark room the basemap already avoided. Both states are now
+seeded from the clock.
+
 **Pins are reachable everywhere on the map.** The legend and the weather strip
 were opaque panels that painted over the pins and swallowed taps aimed at them,
 so a cluster landing in a corner could be neither seen nor opened. The whole
@@ -127,6 +138,15 @@ running thing*, not by tests — the suite was green through all of them:
 
 The recurring shape: **green tests are not evidence the thing works.** Drive it,
 screenshot it, count the network requests, read the database.
+
+A fifth, found later and worth its own note because it is the failure mode *of
+the fix for the failure mode*: an e2e assertion for the map theme passed against
+the old, broken code. `toHaveAttribute` retries until the **first** match, and
+the page briefly stamped `data-map-theme="light"` on mount before the clock was
+consulted — so the assertion kept catching the transient rather than the settled
+value. A test that cannot go red is not a test. Always confirm a new guard fails
+against the unfixed code before trusting it, and for anything that settles
+asynchronously, assert the value twice and require both reads to agree.
 
 ---
 

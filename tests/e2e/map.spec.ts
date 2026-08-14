@@ -61,6 +61,44 @@ test("the legend cannot intercept a tap meant for the map", async ({ page }) => 
   expect(layers.pin).toBeGreaterThan(layers.chrome);
 });
 
+/**
+ * The basemap follows the Manila clock and nothing else.
+ *
+ * Both theme bugs so far lived in the browser adapter, not in `mapThemeFor` -
+ * the pure function was correct and unit-tested through each of them. So this
+ * drives the real page with a faked clock and a faked device preference, which
+ * is the only combination that would have caught either one.
+ */
+for (const [when, expected] of [
+  ["2026-08-14T04:15:00+08:00", "dark"], // the map used to be bright at 4am
+  ["2026-08-14T13:41:00+08:00", "light"], // and dark at lunchtime on a dark phone
+  ["2026-08-14T19:30:00+08:00", "dark"],
+] as const) {
+  for (const colorScheme of ["light", "dark"] as const) {
+    const clock = when.slice(11, 16);
+    test(`basemap is ${expected} at ${clock} Manila on a ${colorScheme} device`, async ({
+      page,
+    }) => {
+      await page.emulateMedia({ colorScheme });
+      await page.clock.setFixedTime(new Date(when));
+      await page.goto("/");
+      await expect(page.locator("canvas")).toBeVisible();
+
+      // Read twice, half a second apart, and require both to be `expected`.
+      // `toHaveAttribute` alone retries until the first match, so it happily
+      // passed against the transient "light" the page used to stamp before the
+      // clock was consulted - a green test for a map that was visibly wrong.
+      const read = () =>
+        page.evaluate(() => document.documentElement.dataset.mapTheme);
+      const first = await read();
+      await page.waitForTimeout(500);
+      const settled = await read();
+
+      expect({ first, settled }).toEqual({ first: expected, settled: expected });
+    });
+  }
+}
+
 test("sign-in page asks for an email address", async ({ page }) => {
   await page.goto("/login");
   await expect(page.getByLabel("Email")).toBeVisible();

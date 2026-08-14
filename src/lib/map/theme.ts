@@ -40,46 +40,25 @@ function manilaMinutes(date: Date): number {
 }
 
 /**
- * `prefersDark` is the user's stated colour-scheme preference, or null where
- * they have not stated one.
+ * The clock decides, and nothing else does.
  *
- * A stated preference wins. Someone who set their phone to dark mode meant it,
- * and a clock reading has no business overruling a deliberate choice.
+ * `prefers-color-scheme` used to override this, on the reasoning that someone
+ * who set their phone to dark mode meant it. That reasoning does not survive
+ * contact with how people actually use dark mode: most who turn it on leave it
+ * on permanently, so the setting says nothing about the light they are standing
+ * in right now. The result was a dark basemap at 1:41pm - the precise condition
+ * every other surface in this product stays light for, because dark UI is
+ * harder to read outdoors in daylight, which is when floods happen.
+ *
+ * The two failures were mirror images. First the map stayed bright at 4am,
+ * because a device reporting "light" was misread as a deliberate choice. Then,
+ * once only dark counted, the map went dark at lunchtime. Both came from
+ * treating a colour-scheme setting as evidence about ambient light. It is not,
+ * so it is no longer consulted: the sun is the only thing this tracks.
  */
-export function mapThemeFor(now: Date, prefersDark: boolean | null): MapTheme {
-  if (prefersDark !== null) return prefersDark ? "dark" : "light";
-
+export function mapThemeFor(now: Date): MapTheme {
   const minutes = manilaMinutes(now);
   return minutes >= DAY_START_HOUR * 60 && minutes <= DAY_END_HOUR * 60
     ? "light"
     : "dark";
-}
-
-/**
- * What the browser says the user prefers - `true` for dark, `null` for "no
- * stated choice". It never returns `false`, and that asymmetry is the point.
- *
- * `prefers-color-scheme: no-preference` was removed from the specification and
- * matches nothing: a browser reports `light` both for someone who chose light
- * and for someone who chose nothing at all. Treating that `light` as a stated
- * preference meant the clock was never consulted, and the map stayed bright at
- * four in the morning.
- *
- * So only a dark preference overrides. Light is indistinguishable from the
- * default, and the default should defer to the time of day.
- */
-export function preferredScheme(
-  matchMedia?: (query: string) => { matches: boolean },
-): boolean | null {
-  // Checking for the function, not just for `window`: an old webview can have
-  // a window and no matchMedia at all, and calling .bind on undefined there
-  // throws inside the component and takes the whole map down with it.
-  const match =
-    matchMedia ??
-    (typeof window !== "undefined" && typeof window.matchMedia === "function"
-      ? window.matchMedia.bind(window)
-      : undefined);
-
-  if (!match) return null;
-  return match("(prefers-color-scheme: dark)").matches ? true : null;
 }

@@ -7,7 +7,7 @@ import { ReportDetail } from "@/components/ReportDetail";
 import { MapLegend } from "@/components/MapLegend";
 import { WeatherStrip } from "@/components/WeatherStrip";
 import { RainOverlay } from "@/components/RainOverlay";
-import type { MapTheme } from "@/lib/map/theme";
+import { mapThemeFor, type MapTheme } from "@/lib/map/theme";
 import type { CurrentWeather } from "@/lib/env/current-weather";
 import { createClient } from "@/lib/supabase/client";
 import type { DepthLevel } from "@/lib/depth/scale";
@@ -39,7 +39,12 @@ export default function HomePage() {
   const [reports, setReports] = useState<MapReport[]>([]);
   const [point, setPoint] = useState<{ lat: number; lon: number } | null>(null);
   const [selected, setSelected] = useState<MapReport | null>(null);
-  const [mapTheme, setMapTheme] = useState<MapTheme>("light");
+  // Seeded from the clock rather than hardcoded to "light". Starting light and
+  // correcting after mount stamped data-map-theme="light" for a frame, which is
+  // the white flash in a dark room that the basemap already goes out of its way
+  // to avoid - and it made an e2e assertion pass against the transient value
+  // instead of the settled one.
+  const [mapTheme, setMapTheme] = useState<MapTheme>(() => mapThemeFor(new Date()));
   const [weather, setWeather] = useState<CurrentWeather | null>(null);
 
   useEffect(() => {

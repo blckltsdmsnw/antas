@@ -256,8 +256,10 @@ and typhoon flooding does not stop at 6pm. So:
 
 - Light 06:00–18:00 Manila time, dark from 18:01. The hour is read in `Asia/Manila`, never the
   device's zone - a phone left on another region's clock must not darken the map at midday
-- An explicit `prefers-color-scheme` **always wins** over the clock. Someone who set their
-  phone to dark meant it
+- The clock is the **only** input. `prefers-color-scheme` is deliberately ignored: a device
+  left in dark mode says nothing about the light the user is standing in, and letting it win
+  produced a dark basemap at 1:41pm — exactly the daylight-readability case this section's
+  own reasoning exists to protect. The setting is a taste; the sun is a fact
 - The theme is decided *before* the map is built. Deciding afterwards meant the first paint
   was always light and then swapped, which at night is a white flash in a dark room
 - The SOS link keeps a red at night, lightened for contrast. Greying out the emergency entry

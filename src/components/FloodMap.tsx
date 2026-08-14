@@ -11,7 +11,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { depthLabel, type DepthLevel } from "@/lib/depth/scale";
 import { DEPTH_HEX } from "@/lib/depth/presentation";
 import { clusterByProximity, CLUSTER_RADIUS_PX } from "@/lib/map/cluster";
-import { mapThemeFor, preferredScheme, type MapTheme } from "@/lib/map/theme";
+import { mapThemeFor, type MapTheme } from "@/lib/map/theme";
 import { freshnessOf, freshnessOpacity } from "@/lib/reports/freshness";
 import { reportPhotoUrl } from "@/lib/reports/photo";
 
@@ -89,7 +89,7 @@ const RASTER_PAINT: Record<MapTheme, RasterPaint> = {
  * then swapped, which at night is a white flash in a dark room.
  */
 function currentTheme(): MapTheme {
-  return mapThemeFor(new Date(), preferredScheme());
+  return mapThemeFor(new Date());
 }
 
 const BASEMAP_ATTRIBUTION =
@@ -181,25 +181,27 @@ export function FloodMap({
 }: FloodMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
-  const [theme, setTheme] = useState<MapTheme>("light");
+  // Seeded from the clock for the same reason the map is *built* with
+  // currentTheme(): starting light and correcting on the first effect is a
+  // visible flash at night.
+  const [theme, setTheme] = useState<MapTheme>(currentTheme);
 
   /**
    * Follows the clock, and re-checks periodically so a map left open through
    * dusk changes with it rather than staying bright until the tab is reloaded.
-   * An explicit prefers-color-scheme always wins - see `mapThemeFor`.
+   *
+   * No longer watches `prefers-color-scheme`: the device setting is not
+   * evidence about the light the user is standing in, and letting it win made
+   * the map dark at lunchtime. See `mapThemeFor`. Dropping the media query also
+   * removes a `window.matchMedia` call that old webviews do not always provide.
    */
   useEffect(() => {
-    const query = window.matchMedia("(prefers-color-scheme: dark)");
     const decide = () => setTheme(currentTheme());
 
     decide();
     const timer = window.setInterval(decide, 5 * 60_000);
-    query.addEventListener("change", decide);
 
-    return () => {
-      window.clearInterval(timer);
-      query.removeEventListener("change", decide);
-    };
+    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
