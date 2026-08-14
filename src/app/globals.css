@@ -68,9 +68,13 @@
      notice that did not happen. */
   --z-error: 18;
 
-  /* The search field, and the gap the chrome below it has to clear. */
+  /* The search field, and the gap the chrome below it has to clear.
+     `safe-area-inset-top` matters here now that the map page has no header of
+     its own: the search field is the topmost element, so it is the one that
+     would otherwise sit under a notch. */
   --search-h: 44px;
-  --chrome-top: calc(12px + var(--search-h) + 12px);
+  --search-top: calc(12px + env(safe-area-inset-top));
+  --chrome-top: calc(var(--search-top) + var(--search-h) + 12px);
 }
 
 *,
@@ -206,9 +210,14 @@ h3 {
    map chrome are anchored inside this box, so subtracting the bar here is what
    keeps every one of them clear of it - rather than each adding its own offset
    and drifting apart later. */
+/* The map fills everything above the tab bar. It no longer subtracts a header,
+   because this page no longer has one - search is the top element. Sheets and
+   map chrome are anchored inside this box, so subtracting the bar here is what
+   keeps every one of them clear of it, rather than each carrying its own offset
+   and drifting apart later. */
 .map-shell {
   position: relative;
-  height: calc(100dvh - var(--header-h) - var(--tabbar-total));
+  height: calc(100dvh - var(--tabbar-total));
   width: 100%;
   overflow: hidden;
 }
@@ -1662,7 +1671,7 @@ a.btn {
 
 .place-search {
   position: absolute;
-  top: 12px;
+  top: var(--search-top);
   left: 12px;
   right: 12px;
   z-index: var(--z-search);

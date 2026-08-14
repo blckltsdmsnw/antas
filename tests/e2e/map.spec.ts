@@ -2,10 +2,39 @@ import { test, expect } from "@playwright/test";
 
 test("public map loads without signing in", async ({ page }) => {
   await page.goto("/");
-  // The brand lives in the header; the map page's h1 is screen-reader only, so
-  // assert on what a sighted visitor actually sees plus the map itself.
-  await expect(page.getByRole("link", { name: /Antas/ })).toBeVisible();
+  // The map page has no header - search is its top element, so that is what a
+  // visitor actually sees first. The wordmark used to be asserted here; it now
+  // exists only on the task pages, and asserting it on the map was asserting
+  // chrome rather than that the product had loaded.
+  await expect(page.locator(".place-search-input")).toBeVisible();
   await expect(page.locator("canvas")).toBeVisible();
+  await expect(page.locator(".tabbar")).toBeVisible();
+});
+
+test("the map page spends no height on a header", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("canvas")).toBeVisible();
+
+  // Three bands of chrome stacked before any map appeared - header, search,
+  // then the weather chip and the legend. The header earned its space least:
+  // the app icon, the splash and the tab bar already say what this is, and its
+  // link pointed at the page you were already on.
+  await expect(page.locator(".site-header")).toHaveCount(0);
+
+  const top = await page.evaluate(() =>
+    Math.round(document.querySelector(".map-shell")!.getBoundingClientRect().top),
+  );
+  expect(top).toBe(0);
+});
+
+test("the task pages keep their header", async ({ page }) => {
+  for (const path of ["/gabay", "/report", "/ako"]) {
+    await page.goto(path);
+    // Nothing competes for the space there, and a way back to the map is worth
+    // having when the page is not itself the map.
+    await expect(page.locator(".site-header")).toBeVisible();
+    await expect(page.getByRole("link", { name: /Antas/ })).toBeVisible();
+  }
 });
 
 test("clicking the map shows street history", async ({ page }) => {

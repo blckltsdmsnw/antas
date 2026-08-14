@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Archivo, Public_Sans } from "next/font/google";
-import { ModeratorLink } from "@/components/ModeratorLink";
-import { AntasMark } from "@/components/AntasMark";
+import { SiteHeader } from "@/components/SiteHeader";
 import { TabBar } from "@/components/TabBar";
 import "./globals.css";
 
@@ -49,24 +47,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${archivo.variable} ${publicSans.variable}`}
     >
       <body>
-        <header className="site-header">
-          <Link href="/" className="wordmark">
-            <AntasMark size={24} />
-            {/* Plain. The word used to carry the same waterline as the mark,
-                which put the identical idea twice in one lockup. The mark
-                carries the concept; the word only has to say the name. */}
-            Antas
-          </Link>
-          <nav className="site-nav">
-            {/* Tulong moved to the tab bar. It was a chip here on the argument
-                that an emergency control is not a peer of ordinary navigation -
-                which held while navigation was also up here. Once navigation
-                went to the bottom, the most reachable place on a one-handed
-                phone was down there, so the emergency control went where the
-                thumb already is. It stays visually unlike its neighbours. */}
-            <ModeratorLink />
-          </nav>
-        </header>
+        {/* Absent on the map, where search is the top element instead - see
+            SiteHeader. Tulong is no longer here either: it moved to the tab bar
+            when navigation did, to sit where a thumb reaches. */}
+        <SiteHeader />
         {children}
         <TabBar />
       </body>

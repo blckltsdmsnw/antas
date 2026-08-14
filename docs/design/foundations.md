@@ -406,6 +406,20 @@ finding it.
 **There is no Abiso tab.** A tab named for notifications promises alerts nobody
 is sending; see §12 of `design.md`.
 
+**The map page has no header at all.** It used to stack three bands of chrome
+before any map appeared — header, search, then the weather chip and the legend —
+roughly a fifth of a phone screen spent before the product started. Search is
+now the top element, which is honest: it is the primary way in.
+
+The alternative was a transparent header. Rejected: over a basemap a transparent
+bar needs a scrim or a shadow to stay legible, so it costs the same height and
+only makes it harder to read. The wordmark was decoration on that page in any
+case — the app icon, the splash and the tab bar already say what this is, and
+its link pointed at the page you were already on.
+
+The header stays on the task pages, where nothing competes for the space and a
+way back to the map is worth having.
+
 ## 8. What this deliberately avoids
 
 - Dark UI **on task pages** - worse outdoors in daylight, which is when floods happen. The
