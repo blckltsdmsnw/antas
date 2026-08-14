@@ -443,7 +443,7 @@ offer the gallery instead.
 ## 10. Testing
 
 ```bash
-npm test                            # unit + integration (321)
+npm test                            # unit + integration (322)
 npx vitest run tests/integration    # integration only - needs local Supabase
 npx playwright test                 # end-to-end (35)
 npm run build

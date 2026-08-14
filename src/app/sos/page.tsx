@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { HoldToConfirm } from "@/components/HoldToConfirm";
 import { PhotoCapture } from "@/components/PhotoCapture";
+import { PhoneField } from "@/components/PhoneField";
 import { createClient } from "@/lib/supabase/client";
 import { submitSos, type SosErrorCode } from "@/app/actions/submit-sos";
 import {
@@ -39,6 +40,10 @@ export default function SosPage() {
   /** Accuracy of the fix that was actually sent, so the confirmation screen can
    *  be honest about how well the map found them. */
   const [sentAccuracyM, setSentAccuracyM] = useState<number | null>(null);
+  const [storedPhone, setStoredPhone] = useState<string | null>(null);
+  // Whether the lookup has happened at all. Without it the field would flash on
+  // for a moment for somebody who already has a number saved.
+  const [knowsPhone, setKnowsPhone] = useState(false);
 
   async function handleConfirm() {
     if (!photo) return;
@@ -118,6 +123,22 @@ export default function SosPage() {
     // barangay off is still worth far more than no signal. We send, then say so.
     setSentAccuracyM(position.coords.accuracy ?? null);
     setStatus("sent");
+
+    /**
+     * Only now, and never before.
+     *
+     * The number is worth asking for - most senders are anonymous, so there is
+     * otherwise no way to ring them back at all - but not at the cost of a
+     * single second before the signal goes out. So the lookup happens after
+     * "sent" is on screen, and the field appears underneath it.
+     */
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("phone")
+      .eq("id", user.id)
+      .maybeSingle();
+    setStoredPhone((profile?.phone as string | null) ?? null);
+    setKnowsPhone(true);
   }
 
   if (status === "sent") {
@@ -137,6 +158,21 @@ export default function SosPage() {
             puwedeng pagkakamali. Naipadala pa rin ang SOS mo. Kung may
             makakausap ka, sabihin mo ang eksaktong kalye o palatandaan.
           </p>
+        )}
+
+        {/* Only when they have none. Most senders are anonymous - no email, no
+            number - so without this the barangay has no way to reach them at
+            all, and the call button in the console reads "walang numero" on
+            almost every signal.
+
+            The wording promises nothing. It says what the number is FOR, not
+            that anybody will ring. */}
+        {knowsPhone && !storedPhone && (
+          <PhoneField
+            title="Mag-iwan ng numero (opsyonal)"
+            note="Kung may kailangang linawin tungkol sa lokasyon mo, ito ang gagamitin. Hindi ito nakikita sa mapa at walang ibang user ang makakakita nito. Puwede mo ring laktawan ito."
+            saveLabel="I-save ang numero ko"
+          />
         )}
 
         <p className="notice" style={{ marginTop: 24 }}>

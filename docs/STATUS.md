@@ -371,6 +371,16 @@ button** and a **directions link**.
 - **Directions** open Google Maps routing to the signal's exact coordinates,
   handing off to the Maps app on a phone.
 
+**The number is now asked for after an SOS, not only on `/ako`.** Most senders
+are anonymous — no email, no number — so without this the call button above
+would read *"walang naibigay na numero"* on almost every signal, and the
+barangay would have no way to reach them at all. The prompt appears on the
+confirmation screen, **after** the signal has gone out; nothing may delay that.
+It is optional, says what the number is for rather than promising anybody will
+ring, and does not appear for somebody who already has one saved. The field
+itself is shared with `/ako` (`PhoneField`), so there is one definition of which
+numbers are acceptable rather than two.
+
 Note on the wider request this came from: **"a rescuer will arrive in 10-20
 minutes" was deliberately not built.** Antas dispatches nobody, and `/sos` says
 so twice on the very screen that notification would appear on. A person in

@@ -8,7 +8,7 @@ import { DEPTH_VAR } from "@/lib/depth/presentation";
 import { reportPhotoUrl } from "@/lib/reports/photo";
 import { timestampLabel } from "@/lib/time/relative";
 import { hideReport } from "@/app/actions/submit-update";
-import { formatPhone, normalizePhone } from "@/lib/profile/phone";
+import { PhoneField } from "@/components/PhoneField";
 
 /**
  * Your own reports.
@@ -50,11 +50,7 @@ export default function AkoPage() {
   const [email, setEmail] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
-  const [phone, setPhone] = useState("");
   const [savedPhone, setSavedPhone] = useState<string | null>(null);
-  const [phoneStage, setPhoneStage] = useState<
-    "idle" | "saving" | "saved" | "invalid" | "failed"
-  >("idle");
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -74,10 +70,7 @@ export default function AkoPage() {
       .eq("id", auth.user.id)
       .maybeSingle();
 
-    if (profile?.phone) {
-      setSavedPhone(profile.phone as string);
-      setPhone(formatPhone(profile.phone as string));
-    }
+    if (profile?.phone) setSavedPhone(profile.phone as string);
 
     const { data, error } = await supabase.rpc("my_reports");
     if (error) {
@@ -125,43 +118,6 @@ export default function AkoPage() {
     [confirming, load],
   );
 
-  /**
-   * The number, saved normalised.
-   *
-   * Validated here and again by a check constraint on the column, because a
-   * number stored in a shape that will not dial is discovered by somebody
-   * failing to reach a person in a flood - far too late to be a bug report.
-   */
-  const savePhone = useCallback(async () => {
-    const normalized = normalizePhone(phone);
-    if (!normalized) {
-      setPhoneStage("invalid");
-      return;
-    }
-
-    setPhoneStage("saving");
-    const supabase = createClient();
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) {
-      setPhoneStage("failed");
-      return;
-    }
-
-    const { error } = await supabase
-      .from("profiles")
-      .update({ phone: normalized })
-      .eq("id", auth.user.id);
-
-    if (error) {
-      setPhoneStage("failed");
-      return;
-    }
-
-    setSavedPhone(normalized);
-    setPhone(formatPhone(normalized));
-    setPhoneStage("saved");
-  }, [phone]);
-
   return (
     <main className="task-page">
       <h1 className="task-title">Ako</h1>
@@ -206,61 +162,11 @@ export default function AkoPage() {
               map is a reason not to report at all, and most people using this
               are only looking at the water - the number matters to the one
               person in a hundred who sends an SOS. */}
-          <section className="phone-card">
-            <h2 className="my-reports-title" style={{ marginTop: 0 }}>
-              Numero para sa emergency
-            </h2>
-            <p className="phone-note">
-              Kung magpapadala ka ng SOS, ito ang tatawagan ng barangay.
-              Hindi ito nakikita sa mapa at walang ibang user ang makakakita
-              nito. Puwede mo ring iwanang blangko.
-            </p>
-
-            <label className="field">
-              <span className="field-label">Mobile number</span>
-              <input
-                className="field-input"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder="0917 123 4567"
-                value={phone}
-                onChange={(event) => {
-                  setPhone(event.target.value);
-                  setPhoneStage("idle");
-                }}
-              />
-            </label>
-
-            <button
-              type="button"
-              className="btn btn-quiet"
-              disabled={phoneStage === "saving" || phone.trim() === ""}
-              onClick={() => void savePhone()}
-            >
-              {phoneStage === "saving" ? "Sine-save..." : "I-save ang numero"}
-            </button>
-
-            {phoneStage === "invalid" && (
-              <p className="alert" role="alert">
-                Hindi mukhang Philippine mobile number iyan. Subukan ang
-                anyong <strong>0917 123 4567</strong>.
-              </p>
-            )}
-            {phoneStage === "failed" && (
-              <p className="alert" role="alert">
-                Hindi na-save ang numero. Subukan ulit.
-              </p>
-            )}
-            {phoneStage === "saved" && (
-              <p className="phone-note">Naka-save na ang numero mo.</p>
-            )}
-            {phoneStage === "idle" && savedPhone && (
-              <p className="phone-note">
-                Naka-save: {formatPhone(savedPhone)}
-              </p>
-            )}
-          </section>
+          <PhoneField
+            title="Numero para sa emergency"
+            note="Kung magpapadala ka ng SOS, ito ang gagamitin kung may kailangang linawin. Hindi ito nakikita sa mapa at walang ibang user ang makakakita nito. Puwede mo ring iwanang blangko."
+            initial={savedPhone}
+          />
 
           <h2 className="my-reports-title">Aking mga Report</h2>
 
