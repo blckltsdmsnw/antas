@@ -120,6 +120,23 @@ a failed request cannot strand anyone behind a logo. Once per session. This is
 the only animation permitted past `foundations.md` §8; the terms it has to meet
 are written down in §7b.
 
+**All migrations are applied on hosted Supabase**, verified against the live
+database: `search_places` answers as anon, `reports_near` still does, and
+`my_reports` and `moderator_queue` now return `401 permission denied` to anon
+instead of being reachable.
+
+Getting there needed a repair rather than a push. **Hosted had every migration
+applied in the database and none of them recorded** — `migration list` showed
+sixteen locals against sixteen blanks. A plain `db push` would have tried to run
+`0001` onward against a live database with real reports in it. The schema was
+probed first (`reports_near` returning `photo_path`, both storage buckets present
+with the right visibility), then `0001`–`0013` were marked applied with
+`supabase migration repair`, and only `0014`–`0016` actually ran. The same drift
+existed locally, for `0013` alone.
+
+If a future push ever fails on something "already exists", that is this: repair
+the history, never `db reset` a database with real rows in it.
+
 **Search, your own reports, a preparedness guide, and a tab bar.** Five changes,
 taken from Google Stitch mockups and filtered hard:
 
@@ -152,31 +169,7 @@ is a real button.
 
 ---
 
-## Needs you: two things before this is fully live
-
-### Push the new migrations to hosted Supabase
-
-`0014_search_places.sql`, `0015_my_reports.sql` and `0016_revoke_from_public.sql`
-are **applied locally and verified**, but the CLI is not linked to the hosted
-project (`supabase migration list` reports "Cannot find project ref"), so they
-have not been pushed. That needs your Supabase login.
-
-```
-npx supabase link --project-ref <ref>
-npx supabase db push
-```
-
-Until then, on production **search returns nothing and `/ako` shows its failure
-state**, because the functions do not exist there yet. The pages themselves are
-deployed and correct.
-
-Local state, for reference: the migration history had drifted — `0013` was fully
-applied in the database (bucket, policy, widened `reports_near`, grant all
-present) but never recorded, so `migration up` tried to re-run it and failed on a
-duplicate policy. It is now recorded rather than re-run, which avoided a
-`db reset` that would have wiped the local users and the 680 seeded reports.
-
-### Add your local emergency numbers
+## Needs you: your local emergency numbers
 
 `src/lib/emergency/contacts.ts` ships with **only the national 911 hotline**.
 `LOCAL_CONTACTS` is deliberately empty and the guide says so out loud rather
