@@ -28,8 +28,21 @@ export const guide = dict(
       "Pambansang emergency hotline - pulis, bumbero, medikal, rescue. Ito ang tawagan kung may nanganganib ngayon.",
     roleNdrrmc:
       "Pambansang tanggapan sa sakuna - nagko-koordina ng tugon at nagbibigay ng impormasyon. Hindi ito ang pinakamabilis na daan sa rescue; mas mabilis ang 911 at ang inyong barangay.",
-    noLocalNumbers:
-      "Pambansa ang mga numerong nasa itaas. Wala pang naidagdag na numero ng barangay o lokal na DRRMO dito. Hanapin at itago ang numero ng inyong barangay bago pa mangailangan.",
+    /**
+     * Advice, not a TODO.
+     *
+     * This used to read "wala pang naidagdag" - not added yet - which was a
+     * note to ourselves wearing a reader's clothes. Elijah closed that item on
+     * 2026-08-15: the national numbers are what this ships with.
+     *
+     * The sentence stays, because its *reason* was never the backlog. A
+     * national operations centre cannot say which street is passable, so
+     * knowing your own barangay's number is worth having whether or not this
+     * app ever lists it. It is now phrased as the standing advice it always
+     * was.
+     */
+    keepLocalNumber:
+      "Pambansa ang mga numerong nasa itaas. Hanapin at itago rin ang numero ng sarili ninyong barangay — sila ang pinakamalapit, at sila ang nakakaalam ng lagay ng inyong kalye.",
 
     goBagHeading: "Go bag - ihanda bago pa mangyari",
     goBagComplete: "Kumpleto ang go bag mo.",
@@ -98,8 +111,8 @@ export const guide = dict(
     // below 911 and is drawn quietly for the same reason - see `emphasis`.
     roleNdrrmc:
       "National disaster office - coordinates the response and gives information. It is not the fastest route to rescue; 911 and your barangay are faster.",
-    noLocalNumbers:
-      "The numbers above are national. No barangay or local DRRMO number has been added here yet. Find your barangay's number and keep it before you need it.",
+    keepLocalNumber:
+      "The numbers above are national. Find and keep your own barangay's number too — they are nearest, and they know the state of your street.",
 
     goBagHeading: "Go bag - pack it before anything happens",
     goBagComplete: "Your go bag is complete.",

@@ -50,20 +50,24 @@ test.describe("the preparedness guide", () => {
     }
   });
 
-  test("admits when local numbers are missing", async ({ page }) => {
+  test("never lets the national numbers read as the whole answer", async ({
+    page,
+  }) => {
     await page.goto("/gabay");
     const body = await page.locator("main").innerText();
 
-    // A short list that looks complete is worse than an incomplete one that
-    // says so - someone would stop looking for their own barangay's number.
+    // This used to assert the placeholder - "wala pang naidagdag" - back when an
+    // empty local list was an open task. That item is closed: the national
+    // numbers are what the product ships with.
     //
-    // Asks the local list directly. This used to count `.contact` and treat
-    // "more than one" as proof a local desk was listed, which stopped being
-    // true the moment a second NATIONAL desk was added: the count went to two,
-    // the branch went quiet, and the test passed without checking anything.
-    const hasLocal =
-      (await page.locator('[data-scope="local"] .contact').count()) > 0;
-    if (!hasLocal) expect(body).toContain("Wala pang naidagdag");
+    // What survives is the property that actually mattered underneath it. A
+    // list that looks complete is worse than one that says otherwise, because a
+    // reader stops looking for their own barangay's number - and a national
+    // operations centre cannot tell them which street is passable. So the page
+    // must always say the numbers above are national, and always send them to
+    // find their own.
+    expect(body).toMatch(/[Pp]ambansa/);
+    expect(body).toMatch(/numero ng sarili ninyong barangay/i);
   });
 });
 

@@ -1,6 +1,6 @@
 # Antas — where things stand
 
-Last updated: 2026-08-15, ~20:30 PHT.
+Last updated: 2026-08-15, ~21:00 PHT.
 
 Everything described here is committed and pushed to
 `github.com/blckltsdmsnw/antas`. Vercel auto-deploys `main`; a push takes about
@@ -770,21 +770,28 @@ and failed four language tests that pass against a fresh server and against
 production. If e2e fails in a way production does not reproduce, restart the dev
 server before believing it.
 
-## Needs you: your local emergency numbers
+## Emergency numbers — settled
 
-`src/lib/emergency/contacts.ts` now carries **911 and the NDRRMC Operations
-Center**. Both are national. `LOCAL_CONTACTS` is still deliberately empty and
-the guide says so out loud — the note now states plainly that the numbers above
-it are national, because a national operations centre cannot tell a Marikina
-resident which street is passable.
+`src/lib/emergency/contacts.ts` carries **911 and the NDRRMC Operations
+Center**. Both are national, and that is the whole list: Elijah closed the local
+DRRMO item on 2026-08-15, having decided the numbers he supplied are enough.
+**Nothing here is waiting on anybody.**
 
-Copy the Marikina and Taguig DRRMO numbers from the LGU's own current
-publication. I did not fill these in from memory on purpose: a wrong number
-here is a person dialling into nothing during a flood.
+`LOCAL_CONTACTS` stays as an empty list rather than being deleted, because the
+shape of the answer has not changed — a verified LGU desk, if one is ever added,
+belongs beside 911 and costs a row. The bar for adding one has not moved either:
+from the LGU's own current publication, never from memory.
 
-The NDRRMC numbers were supplied rather than checked against the agency's own
-publication here — `contacts.ts` records that in its `source` field, and they
-should be re-verified before this ever sees real traffic.
+**The guide still tells readers to find and keep their own barangay's number**,
+and that line is no longer conditional on the local list being empty. It was
+never a placeholder for this backlog item — a national operations centre cannot
+say which street is passable, so the advice stands whether or not the list is
+ever filled. `guide.spec.ts` and `language.spec.ts` pin it in both languages.
+
+One caveat outlives the decision: the NDRRMC numbers were **supplied rather than
+checked** against the agency's own publication. `contacts.ts` records that in
+its `source` field, and they are worth re-verifying before this ever sees real
+traffic.
 
 ## Known issues, not fixed
 
@@ -810,9 +817,10 @@ should be re-verified before this ever sees real traffic.
 Distinct from `design.md` §12, which lists things refused on purpose. These were
 wanted and simply have not been done.
 
-- **Local DRRMO numbers** — see "Needs you" above. Owner action, not a coding
-  task. The national NDRRMC lines added on 2026-08-15 do not close this: they
-  are a different desk answering a different question.
+**Nothing is currently open.** The last two items both closed on 2026-08-15 —
+the English / Tagalog toggle was built, and the local DRRMO numbers were closed
+by the owner rather than by code. This section is kept because it is where the
+next one goes.
 
 ## Things worth remembering about this codebase
 

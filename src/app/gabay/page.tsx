@@ -173,20 +173,22 @@ export default async function GabayPage() {
           copy={copy.guide}
         />
 
-        {LOCAL_CONTACTS.length === 0 ? (
-          // Said out loud rather than left as a short list that looks complete.
-          // Someone scanning this needs to know the local desk is missing here,
-          // so they go and find it now instead of assuming it is covered. The
-          // national desks above do not cover it: they cannot say which street
-          // in Malanday is passable.
-          <p className="guide-note">{copy.guide.noLocalNumbers}</p>
-        ) : (
+        {LOCAL_CONTACTS.length > 0 && (
           <ContactList
             contacts={LOCAL_CONTACTS}
             scope="local"
             copy={copy.guide}
           />
         )}
+
+        {/* Shown either way, and no longer conditional on the list being empty.
+            It used to be a placeholder confessing that local numbers had not
+            been added; that item is closed, and the sentence outlives it -
+            because its reason was never the backlog. The national desks above
+            cannot say which street in Malanday is passable, so keeping your own
+            barangay's number is worth doing whether or not this page ever lists
+            one. */}
+        <p className="guide-note">{copy.guide.keepLocalNumber}</p>
       </section>
 
       {/* The only interactive part of this page, and the only one that should

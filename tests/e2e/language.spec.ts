@@ -155,20 +155,16 @@ test.describe("the safety wording survives translation", () => {
     expect(body).toContain("911");
   });
 
-  test("the guide still admits the local numbers are missing, in English", async ({
-    page,
-  }) => {
+  test("still sends an English reader to their own barangay", async ({ page }) => {
     await setLang(page, "en");
     await page.goto("/gabay");
     const body = await page.locator("main").innerText();
 
-    const hasLocal =
-      (await page.locator('[data-scope="local"] .contact').count()) > 0;
-    if (!hasLocal) {
-      // And says the ones above it are national, so nobody reads a national
-      // operations centre as their barangay desk.
-      expect(body).toMatch(/national/i);
-      expect(body).toMatch(/no barangay or local DRRMO number/i);
-    }
+    // Says the numbers above are national, so nobody reads a national
+    // operations centre as their barangay desk - and still tells them to go and
+    // find the desk that knows their street. Both halves have to survive
+    // translation; the second is the one a fluent-sounding rewrite would drop.
+    expect(body).toMatch(/national/i);
+    expect(body).toMatch(/your own barangay's number/i);
   });
 });

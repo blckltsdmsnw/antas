@@ -104,13 +104,23 @@ export const NATIONAL_CONTACTS: readonly EmergencyContact[] = [
 ];
 
 /**
- * Barangay and city disaster desks for the pilot areas.
+ * Barangay and city disaster desks.
  *
- * Still empty, and still on purpose. The NDRRMC numbers above are national and
- * do not fill this gap: a Marikina resident needs the Marikina DRRMO desk, and
- * a national operations centre cannot tell them which street is passable. These
- * must be copied from the LGU's current published list by someone who can
- * verify them; tracked in `docs/STATUS.md`. Until then the guide says so
- * plainly instead of implying the national lines are the whole list.
+ * Empty, and no longer an open task: Elijah closed it on 2026-08-15 - the
+ * national numbers above are what this ships with.
+ *
+ * Kept as a real list rather than deleted, because the shape of the answer has
+ * not changed. A national operations centre cannot say which street is
+ * passable, so if a verified LGU desk is ever added it belongs here, beside
+ * 911, drawn `secondary` like the NDRRMC. Adding one costs a row.
+ *
+ * THE BAR FOR ADDING ONE HAS NOT MOVED. Numbers go in from the LGU's own
+ * current publication, never from memory - a wrong number here is somebody
+ * dialling into nothing during a flood - and `source` records where each came
+ * from so it can be re-checked.
+ *
+ * The guide still tells readers to find and keep their own barangay's number.
+ * That was never a placeholder for this list; it is advice that stands whether
+ * or not the list is ever filled.
  */
 export const LOCAL_CONTACTS: readonly EmergencyContact[] = [];
