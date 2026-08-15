@@ -1,6 +1,6 @@
 # Antas — where things stand
 
-Last updated: 2026-08-15, ~20:00 PHT.
+Last updated: 2026-08-15, ~20:30 PHT.
 
 Everything described here is committed and pushed to
 `github.com/blckltsdmsnw/antas`. Vercel auto-deploys `main`; a push takes about
@@ -719,6 +719,57 @@ its own surface, and grey bars would misrepresent it. A full-screen tinted
 field would also risk a light flash at night — the exact failure `mapThemeFor`
 exists to prevent — because `data-map-theme` is cleared when the map unmounts.
 
+### A shared link said the app was for Marikina
+
+Elijah pasted a link and got the bare title plus *"Antas ng tubig - crowdsourced
+flood depth reporting for Marikina."* Two problems, one of them a real error.
+
+**It was factually wrong.** The pilot area widened to Metro Manila a while ago —
+`/report` has said `Metro Manila lang ang saklaw ng Antas` since then — but the
+description never moved with it. Someone in Taguig reading that preview would
+reasonably decide the app was not for them and never open it. The same stale
+line was duplicated in `manifest.json`, where it is what an installed PWA shows.
+
+**And there was no card at all** — no `openGraph`, no `twitter`, no
+`metadataBase`, no image anywhere in the project.
+
+Now: `generateMetadata` in the root layout, an `opengraph-image.tsx` that draws
+the real `AntasMark`, and both descriptions corrected. Three things worth
+keeping:
+
+- **The preview says what Antas does *not* do.** It is read before the guide
+  and before `/sos`, both of which state the boundary — so a stranger meeting
+  the link in a group chat during a storm learns it reports water and summons
+  nobody, without having to open it. It is on the card image too.
+- **Always Filipino, deliberately.** A preview is generated per URL, not per
+  reader: a crawler sends no cookie and there is no recipient to consult. So it
+  gets the product's own language rather than whichever one the sharer was
+  reading in, and `opengraph-image.tsx` stays prerendered by never touching the
+  cookie.
+- **`metadataBase` is not optional.** A crawler has no page context to resolve
+  a relative path against, so without it the card arrives with no image and
+  nothing reports an error anywhere. `src/lib/site.ts` resolves it, preferring
+  Vercel's *production* host over `VERCEL_URL` — a link shared from a preview
+  deployment would otherwise advertise a hostname that dies with the branch.
+
+The card draws `AntasMark` rather than embedding `icon.svg`; the first attempt
+did the latter and the rasteriser refused it outright. Reusing the component is
+the better answer anyway — a hand-copied skyline drifts the first time either is
+touched. Note the wordmark is **not** Archivo: `@vercel/og` ships one regular
+face and satori cannot read the `.woff2` that `next/font` caches, so size and
+tracking carry the hierarchy instead of weight.
+
+`tests/e2e/sharing.spec.ts` pins all of it, and is the first test in the suite
+to read `<head>` — which is exactly why the stale description survived so long.
+Confirmed red against the old text.
+
+**Also worth knowing:** `playwright.config.ts` sets `reuseExistingServer: true`,
+so a long-lived `next dev` gets reused across runs. One that had been up through
+hundreds of edits served a stale `/gabay` — correct `<html lang>`, Tagalog body —
+and failed four language tests that pass against a fresh server and against
+production. If e2e fails in a way production does not reproduce, restart the dev
+server before believing it.
+
 ## Needs you: your local emergency numbers
 
 `src/lib/emergency/contacts.ts` now carries **911 and the NDRRMC Operations
@@ -796,7 +847,7 @@ asynchronously, assert the value twice and require both reads to agree.
 
 ```
 npx vitest run src/                 # unit (260)
-npx playwright test                 # e2e (54)
+npx playwright test                 # e2e (60)
 npx vitest run tests/integration    # integration (48) - needs local Supabase
 npm run build
 ```

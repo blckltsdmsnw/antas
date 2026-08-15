@@ -6,6 +6,8 @@ import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistratio
 import { LanguageProvider } from "@/lib/i18n/context";
 import { getLang } from "@/lib/i18n/server";
 import { htmlLang } from "@/lib/i18n/lang";
+import { copyFor } from "@/lib/i18n/strings";
+import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
 /** Headings. A grotesque with signage DNA — it should read like something
@@ -24,11 +26,47 @@ const publicSans = Public_Sans({
   weight: ["400", "500", "600"],
 });
 
-export const metadata: Metadata = {
-  title: "Antas",
-  description: "Antas ng tubig - crowdsourced flood depth reporting for Marikina.",
-  manifest: "/manifest.json",
-};
+/**
+ * What a shared link looks like before anybody opens it.
+ *
+ * This was one static English-ish line claiming the app was "for Marikina",
+ * which stopped being true when the pilot area widened to Metro Manila - the
+ * report form has said `Metro Manila lang ang saklaw` for a while. A preview is
+ * read by people who have not seen the product, so a stale claim there quietly
+ * turns away everybody it excludes.
+ *
+ * Generated rather than static so the tab title follows the reader's language.
+ * A crawler sends no cookie and therefore gets Filipino, which is the right
+ * default for a link pasted into a Philippine group chat.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const copy = copyFor(await getLang());
+
+  return {
+    metadataBase: siteUrl(),
+    title: copy.shell.metaTitle,
+    description: copy.shell.metaDescription,
+    manifest: "/manifest.json",
+    // The map is the product; a link should land there rather than on whatever
+    // path the sharer happened to be reading.
+    alternates: { canonical: "/" },
+    openGraph: {
+      type: "website",
+      siteName: "Antas",
+      title: copy.shell.metaTitle,
+      description: copy.shell.metaDescription,
+      url: "/",
+      locale: "fil_PH",
+    },
+    twitter: {
+      // The card carries a drawn mark and a legible line, so it earns the
+      // large format rather than being cropped into a thumbnail.
+      card: "summary_large_image",
+      title: copy.shell.metaTitle,
+      description: copy.shell.metaDescription,
+    },
+  };
+}
 
 export const viewport = {
   /**

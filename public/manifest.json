@@ -1,7 +1,7 @@
 {
   "name": "Antas",
   "short_name": "Antas",
-  "description": "Antas ng tubig - crowdsourced flood depth reporting for Marikina.",
+  "description": "Mga ulat ng lalim ng tubig mula sa mga taong nasa lugar, sa Metro Manila. Hindi ito nagpapadala ng rescue.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
