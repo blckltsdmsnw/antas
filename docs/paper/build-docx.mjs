@@ -324,25 +324,95 @@ const content = [
   ),
   note("Legend: ✅ provided, △ partial or incidental, ❌ not provided."),
 
-  h2("1.5 Target Audience and Core User Persona"),
-  body("**Name:** Maricel Santos"),
-  body("**Role:** Office worker, commuting daily between Marikina and Ortigas."),
+  h2("1.5 Target Audience and Core User Personas"),
   body(
-    "**Technical profile:** Uses an Android phone on mobile data. Comfortable with Facebook and Messenger; installs few applications and does not create accounts unless required.",
+    "Two personas drive the design, and they use the system for opposite reasons: one is deciding whether to move, the other is deciding whom to help first. A third consideration, the asymmetry between reading and contributing, is set out at the end because it shapes the interface more than either persona alone.",
+  ),
+
+  h3("1.5.1 Primary Persona: Maricel Santos"),
+  body("**Age and location:** 34, renting a ground-floor unit in Barangay Malanday, Marikina."),
+  body(
+    "**Role:** Administrative assistant in an Ortigas office. Commutes daily by jeepney and MRT, leaving home before seven and returning after six.",
+  ),
+  body(
+    "**Household:** Lives with her mother, who is 61 and has limited mobility, and a nine-year-old son. Her decisions are not only about herself: if the water rises she must decide whether to move her mother upstairs to a neighbour's unit, and whether her son's school route is passable.",
+  ),
+  body(
+    "**Device and connectivity:** A mid-range Android phone, three years old, on prepaid mobile data. Storage is nearly full, so she is reluctant to install new applications. During heavy rain her signal degrades and pages that require a network round trip frequently fail to load. Battery is a live concern during a brownout.",
+  ),
+  body(
+    "**Digital habits:** Facebook and Messenger daily; two barangay community groups and one Marikina weather page. She uses Google Maps for unfamiliar routes but not for her commute, which she knows. She has never created an account for a local government service and is wary of giving a mobile number to an application she does not recognise.",
+  ),
+  body("**Goals:**"),
+  bullet(
+    "**Primary:** Decide, within the next few minutes, whether her street and her commute are passable right now.",
+  ),
+  bullet(
+    "**Secondary:** Know early enough to move her mother and belongings upstairs before the water reaches the doorstep.",
+  ),
+  bullet(
+    "**Tertiary:** Warn her neighbours, which she already does by posting to the barangay group.",
   ),
   body("**Primary pain points:**"),
-  bullet("She sees a PAGASA advisory for Marikina but cannot tell whether her own street is passable."),
   bullet(
-    "She checks three Facebook groups and finds photographs with no timestamp and no location, and cannot tell which are from this hour.",
+    "She sees a PAGASA advisory naming Marikina and still cannot tell whether the corner of her own street is ankle-deep or waist-deep. The warning is true and unusable at her scale.",
   ),
   bullet(
-    "She has previously walked into water deeper than she expected, because the photograph she relied on was hours old.",
+    "She checks three Facebook groups and finds photographs with no timestamp and no location. She cannot tell which were taken this hour, and the comments contradict each other.",
   ),
   bullet(
-    "During heavy rain her connection is poor, and pages that need a network round trip simply do not load.",
+    "She has walked into water deeper than she expected, because the photograph she relied on turned out to be from the previous evening. Six inches of moving water is enough to take an adult off their feet.",
+  ),
+  bullet(
+    "When the rain is heaviest her connection is worst, so the moment she most needs information is the moment least likely to load.",
+  ),
+  bullet(
+    "She does not know which number to call for her own barangay, and has never found a list she trusted enough to save.",
   ),
   body(
-    "**Contextual frustration:** She has fifteen minutes to decide whether to leave the office now or wait, and no source she trusts answers the question at the resolution she needs. The secondary user is a barangay disaster desk officer who receives distress reports and must decide which to act on first, with no basis for judging which are credible.",
+    "**Contextual frustration:** It is 4:40 in the afternoon and it has been raining for three hours. She has perhaps fifteen minutes to decide whether to leave now, wait for the rain to ease, or stay in the office overnight. Her mother has phoned to say water has reached the gate. Every source available answers a broader question than the one she is asking, and the one channel that is specific enough, the barangay group, gives her photographs she cannot date.",
+  ),
+  body(
+    "**Why she might not adopt the tool, which the design must answer:** she will not create an account to look at a map; she will not install anything large; and she will abandon a page that does not load on a weak connection. Antas therefore requires no account to read or to send an emergency signal, is installable but works as a web page, and caches its shell and guide so that something useful survives a failed connection.",
+  ),
+  body(
+    "**What success looks like for her:** she opens the map, sees that the reading two streets away is knee-deep and eleven minutes old, and leaves immediately rather than waiting. Or she sees that it is above head height and does not leave at all.",
+  ),
+
+  h3("1.5.2 Secondary Persona: Ronnel Diaz, Barangay Disaster Desk Officer"),
+  body("**Age and role:** 45, a barangay disaster risk reduction officer in Marikina."),
+  body(
+    "**Context:** During a flood he is at a desk with a laptop and a phone, fielding calls and messages from residents while coordinating a small number of volunteers with one truck. He is not a dispatcher for the city; he escalates, and he decides who among his neighbours gets attention first.",
+  ),
+  body(
+    "**Technical profile:** Comfortable with a browser and a spreadsheet. No training in any specialist system, and no time to learn one during an event.",
+  ),
+  body("**Primary pain points:**"),
+  bullet(
+    "Reports arrive by text message, phone call and Facebook comment, in no order, with no way to tell which describe the same incident.",
+  ),
+  bullet(
+    "He has no basis for judging whether a report is credible. A message claiming chest-deep water may be accurate, exaggerated, or from someone who is not there at all.",
+  ),
+  bullet(
+    "He cannot easily reach a person back once their message arrives, because a Facebook comment carries no phone number.",
+  ),
+  bullet(
+    "He is accountable for his decisions afterwards and has no record of what he saw or when he saw it.",
+  ),
+  body(
+    "**Contextual frustration:** Eleven messages arrive within four minutes. Three may describe the same street. He must choose which to act on with no information beyond the words themselves, knowing that being wrong means somebody waits longer than they should have.",
+  ),
+  body(
+    "**What the system gives him:** a queue scoped to his own barangay, each signal carrying a trust score with its supporting evidence stated in plain language, a call button where the sender left a number, directions to the exact coordinate, and an audit record of every signal he opened. What it deliberately does not give him is an instruction; the decision remains his.",
+  ),
+
+  h3("1.5.3 The Contribution Asymmetry"),
+  body(
+    "A crowdsourced system has a structural problem that neither persona expresses on their own: almost everybody reads and almost nobody contributes. Maricel will open the map far more often than she will file a report, and the map is worthless to her unless somebody else has filed one recently.",
+  ),
+  body(
+    "Three decisions follow from this, and they are why the interface looks as it does. Reporting is the raised centre action in the tab bar rather than a peer item, because it is the one contribution the system asks for and it must not be buried. The report itself is a single tap on a five-level scale, with the photograph optional, because every additional field costs contributions at exactly the moment people are least willing to give them. And the freshness control on an existing report exists because confirming somebody else's reading is a far smaller ask than filing a new one, yet it produces most of the value: it tells the next reader whether a pin is still true.",
   ),
 
   pageBreak(),
