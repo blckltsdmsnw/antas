@@ -108,6 +108,50 @@ Three features carry that proposition:
 
 ### Architecture
 
+**Figure 1 — System architecture.**
+
+```mermaid
+flowchart TB
+    subgraph device["Phone (browser / installed PWA)"]
+        map["Map, report form, SOS<br/>MapLibre GL · client components"]
+        sw["Service worker<br/>caches shell + guide"]
+    end
+
+    subgraph next["Next.js App Router"]
+        rsc["Server components<br/>resolve language, render HTML"]
+        act["Server actions<br/>submit report · submit SOS · decide"]
+    end
+
+    subgraph sb["Supabase"]
+        pg[("PostgreSQL<br/>9 tables · 17 functions")]
+        rls{{"Row Level Security<br/>the enforcement point"}}
+        store[["Storage<br/>sos-photos (private)<br/>report-photos (public)"]]
+        rt["Realtime<br/>live queue + status"]
+    end
+
+    ext["Open-Meteo<br/>rainfall · elevation"]
+    tiles["CARTO basemap tiles"]
+
+    map --> rsc
+    map --> act
+    map -.-> sw
+    map --> tiles
+    act --> rls
+    rsc --> rls
+    rls --> pg
+    act --> store
+    rt --> map
+    act --> ext
+
+    style rls fill:#fde68a,stroke:#92400e
+```
+
+Every path to data passes through Row Level Security. A moderator's barangay
+scope, the confidentiality of a reporter's phone number, and the visibility of
+SOS photographs are database predicates rather than application checks, so no
+route can bypass them by accident — including a route added later by someone who
+has not read this report.
+
 - **Client:** Next.js App Router; React server components for content, client
   components for the map and interactive controls
 - **Data:** Supabase — PostgreSQL with geospatial queries, Row Level Security,
@@ -116,11 +160,89 @@ Three features carry that proposition:
   clock time
 - **Environment:** Open-Meteo for rainfall and elevation, used in trust scoring
 
-**Nine tables** across **26 migrations**, and **17 database functions**. Security
-is enforced in PostgreSQL through Row Level Security rather than in application
-code — a moderator's barangay scope, the confidentiality of a reporter's phone
-number, and the visibility of SOS photographs are all database predicates, so no
-route can bypass them by accident.
+**Nine tables** across **26 migrations**, and **17 database functions**.
+
+### Data model
+
+**Figure 2 — Entity relationships.** Key columns only; `profiles` extends
+Supabase's `auth.users` rather than replacing it.
+
+```mermaid
+erDiagram
+    profiles {
+        uuid id PK
+        text barangay
+        text phone
+        timestamptz suspended_at
+    }
+    depth_reports {
+        uuid id PK
+        uuid reporter_id FK
+        geography location
+        depth_level depth
+        text photo_path
+        text status
+        timestamptz reported_at
+    }
+    sos_signals {
+        uuid id PK
+        uuid reporter_id FK
+        geography location
+        depth_level depth "nullable - never asked"
+        text photo_path
+        sos_status status
+        integer trust_score
+        text confidence
+        text photo_sha256
+    }
+    env_snapshots {
+        uuid sos_id PK
+        double rainfall_24h_mm
+        double elevation_m
+        boolean provider_ok
+    }
+    report_updates {
+        uuid id PK
+        uuid report_id FK
+        uuid reporter_id FK
+        report_state state
+    }
+    signal_events {
+        bigint id PK
+        uuid sos_id FK
+        uuid actor_id FK
+        text event_type
+    }
+    reputation {
+        uuid user_id PK
+        integer confirmed_count
+        integer false_report_count
+    }
+    moderators {
+        uuid user_id PK
+        text barangay
+        text role
+    }
+    barangays {
+        text name PK
+        geography centroid
+    }
+
+    profiles ||--o{ depth_reports : files
+    profiles ||--o{ sos_signals : sends
+    profiles ||--o{ report_updates : answers
+    profiles ||--|| reputation : accrues
+    profiles ||--o| moderators : "may be"
+    depth_reports ||--o{ report_updates : "is asked about"
+    sos_signals ||--|| env_snapshots : "scored against"
+    sos_signals ||--o{ signal_events : audits
+```
+
+Two details in this diagram carry design decisions rather than mere structure.
+`sos_signals.depth` is **nullable** because the emergency form stopped asking for
+one — nobody in danger should be working a five-level selector. And
+`signal_events` records a row every time a moderator so much as *opens* a signal,
+which is what keeps the broad admin scope accountable.
 
 ### Workflow: the SOS trust score
 
@@ -130,6 +252,37 @@ surroundings, the reporter's history, evidence quality (including whether the
 photograph has been submitted before), and behavioural signals such as account
 age.
 
+**Figure 3 — SOS trust scoring.**
+
+```mermaid
+flowchart LR
+    sos["SOS received<br/>photo · GPS · optional note"]
+
+    subgraph evidence["Six groups of evidence"]
+        c["Corroboration<br/>nearby reports"]
+        r["Rainfall<br/>last 24h"]
+        e["Elevation<br/>vs surroundings"]
+        h["Reporter history<br/>confirmed · false"]
+        q["Evidence quality<br/>live photo · reused?"]
+        b["Behaviour<br/>account age"]
+    end
+
+    score["Score 0-100"]
+    band{"Confidence"}
+    queue["Moderator queue<br/>ranked, never filtered"]
+
+    sos --> evidence --> score --> band
+    band -->|high| queue
+    band -->|medium| queue
+    band -->|low| queue
+
+    unknown["Provider unreachable<br/>photo unfetchable<br/>question never asked"]
+    unknown -.->|"scores as unknown,<br/>never as evidence against"| score
+
+    style unknown fill:#e0f2fe,stroke:#0284c7
+    style queue fill:#dcfce7,stroke:#166534
+```
+
 **One principle governs the scorer, and it is the paper's strongest design
 argument:** a gap in the system's knowledge is never scored as evidence against
 the person asking for help. An unreachable weather provider, an unfetchable
@@ -137,23 +290,48 @@ photograph, or a question the sender was never asked all score identically to a
 clean result. The system ranks signals it knows less about lower; it never
 refuses one.
 
+The distinction matters in practice. An SOS is no longer asked for a depth, so
+the two checks that exist only to *contradict* a claimed depth withdraw rather
+than treating silence as a shallow claim — otherwise the system would penalise
+people for a form field it had deliberately chosen not to show them, pushing the
+fastest askers toward the bottom of the queue.
+
 ### Information hierarchy
 
-```
-Map (default screen)
-├── Search → fly to a place
-├── Tap pin → report detail → photo, depth, age, freshness answers
-├── Tap street → history for that point
-└── Tab bar
-    ├── Gabay (guide + hotlines, offline-capable)
-    ├── I-report (raised centre action — the one thing users are asked to do)
-    ├── Ako (own reports, phone number, sign out)
-    └── Tulong (emergency, styled unlike its neighbours)
+**Figure 4 — Information hierarchy and core user journeys.** There is no
+onboarding: the map is the first screen, and everything a first-time visitor
+needs to read requires no account.
+
+```mermaid
+flowchart TD
+    map["MAP<br/>default screen"]
+
+    map -->|search| place["Fly to a place"]
+    map -->|locate| self["Fly to my position"]
+    map -->|tap pin| detail["REPORT DETAIL<br/>photo · depth · age"]
+    map -->|tap street| hist["Street history"]
+    detail --> fresh["Kumusta na?<br/>gone · same · deeper"]
+
+    map --> tabs{"Tab bar"}
+    tabs --> guide["GABAY<br/>hotlines first, then<br/>go bag, before, during"]
+    tabs --> report["I-REPORT<br/>raised centre action"]
+    tabs --> me["AKO<br/>my reports · phone · sign out"]
+    tabs --> sos["TULONG<br/>emergency"]
+
+    report --> gauge["Body-scale gauge<br/>+ optional photo"] --> sent["Recorded,<br/>visible on the map"]
+    sos --> photo["Live photo<br/>gallery refused"] --> hold["Hold 3 seconds"] --> signal["Sent · status<br/>updates live"]
+
+    style map fill:#e0f2fe,stroke:#0284c7
+    style sos fill:#fee2e2,stroke:#991b1b
+    style report fill:#dbeafe,stroke:#1e40af
 ```
 
 The map is the default screen because the product's premise is a question about
 a place. Reporting is a raised centre action rather than a peer tab because it
-is the single contribution the system asks for.
+is the single contribution the system asks for. Tulong sits in the tab bar but
+is coloured unlike its neighbours — reachable by a plain labelled tap, because
+an emergency path hidden behind a gesture cannot be discovered by somebody who
+needs it now.
 
 ---
 
