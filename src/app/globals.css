@@ -1693,10 +1693,14 @@ a.btn {
   gap: 10px;
 }
 
+/* A column, not a row. Numbers are published in ranges and trunk lines, so a
+   desk can carry five of them - they cannot sit beside the name, and the
+   alternates are the whole reason for listing a desk at all. */
 .contact {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
   padding: 12px 14px;
   background: var(--raised);
   border: 1px solid var(--line);
@@ -1730,6 +1734,7 @@ a.btn {
   min-height: 48px;
   padding: 0 16px;
   border-radius: var(--radius-control);
+  border: 1px solid transparent;
   background: var(--accent);
   color: #fff;
   font-family: var(--font-display), sans-serif;
@@ -1741,6 +1746,42 @@ a.btn {
 
 .contact-call:hover {
   background: var(--accent-hover);
+}
+
+/* Every line is a full-height target of its own. These are dialled one-handed,
+   wet, in the dark; an alternate nobody can hit is not an alternate. Published
+   strings carry prose - "8911-5061 to 65 local 100" - so the label is
+   left-aligned and a size down rather than clipped mid-range. */
+.contact-lines {
+  display: grid;
+  gap: 8px;
+}
+
+.contact-lines .contact-call {
+  justify-content: flex-start;
+  min-width: 0;
+  font-size: 16px;
+}
+
+/* ONE loud button on this page, and it is the one that dispatches rescue.
+   Everything else is drawn quietly no matter how many lines it publishes -
+   see `EmergencyContact.emphasis`. A coordination desk with five filled
+   buttons outshouts 911, and a reader in rising water presses the biggest
+   blue thing rather than reading which is faster. */
+.contact--primary .contact-call {
+  font-size: 20px;
+}
+
+.contact--secondary .contact-call {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.contact--secondary .contact-call:hover {
+  background: var(--raised);
+  border-color: var(--accent);
 }
 
 /* --------------------------------------------------------------------------

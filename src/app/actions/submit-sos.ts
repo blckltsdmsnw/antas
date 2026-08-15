@@ -7,7 +7,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { validateLocation, type ReportErrorCode } from "@/lib/reports/validate";
 import { scoreSignal } from "@/lib/scoring/score";
 import { openMeteoProvider } from "@/lib/env/open-meteo";
-import type { DepthLevel } from "@/lib/depth/scale";
 import { buildSosRow, type SosInput } from "@/lib/sos/row";
 
 export type { SosInput };

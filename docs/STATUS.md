@@ -1,6 +1,6 @@
 # Antas — where things stand
 
-Last updated: 2026-08-14, ~14:00 PHT.
+Last updated: 2026-08-15, ~18:00 PHT.
 
 Everything described here is committed and pushed to
 `github.com/blckltsdmsnw/antas`. Vercel auto-deploys `main`; a push takes about
@@ -560,8 +560,8 @@ invalid position and passed while announcing nothing.
 policy exists on reports" — untrue since `0018`, and it was a *security* claim.
 
 Not fixed, and small: `display_name` is dead schema (written `'Anonymous'` by a
-trigger, read by nothing), an unused `DepthLevel` import in `submit-sos.ts`, and
-`_map.png` is still an untracked debug screenshot.
+trigger, read by nothing). The unused `DepthLevel` import in `submit-sos.ts` and
+the stray `_map.png` debug screenshot were both cleared on 2026-08-15.
 
 ### No moderator could open an SOS photo — since Phase 2B (migration `0024`)
 
@@ -595,20 +595,58 @@ no moderator could read passed every check for two phases.
 
 ---
 
+### The NDRRMC is on the guide now — and 911 is still the loud one
+
+Added 2026-08-15 from numbers Elijah supplied: the NDRRMC Operations Center's
+five published trunk lines, alongside 911.
+
+Three things came out of it worth keeping.
+
+**A published number and a dialable number are not the same string.** Agencies
+publish trunk lines as prose — *"(02) 8911-5061 to 65 local 100"* — which is
+correct to show and impossible to dial. `EmergencyLine` therefore carries
+`published` and `dial` as two fields, never derived from each other, because
+parsing that sentence into a phone number means guessing at both a range and an
+extension. `guide.spec.ts` asserts every `href` on the page matches
+`^tel:\+?\d+$`, and that guard was confirmed to go **red** against a version
+that fed the published label into the href — the whole point, since the day
+someone "simplifies" those two fields into one, every alternate line silently
+stops working and nothing else would notice.
+
+**Adding a second desk inverted the safety hierarchy, visually.** Five filled
+buttons for the coordination desk against one small button for 911 — the role
+text said 911 was faster, and words lose. Somebody scanning a safety page while
+water rises presses the biggest blue thing. `EmergencyContact.emphasis` now
+carries that as data: `primary` is reserved for a number that dispatches
+rescue, everything else is drawn quietly however important it is
+institutionally. It is not a side effect of how many lines a desk publishes.
+
+**A test went quiet and nearly stayed that way.** "Admits when local numbers are
+missing" counted `.contact` elements and treated more than one as proof a local
+desk was listed. Adding a second *national* desk made that count two, so the
+assertion stopped running while still passing. It now queries
+`[data-scope="local"]` directly. Same shape as the `toHaveAttribute` lesson
+below: a test that cannot fail is not a test, and this one was disarmed by a
+change nowhere near it.
+
 ## Needs you: your local emergency numbers
 
-`src/lib/emergency/contacts.ts` ships with **only the national 911 hotline**.
-`LOCAL_CONTACTS` is deliberately empty and the guide says so out loud rather
-than implying the national line is the whole answer.
+`src/lib/emergency/contacts.ts` now carries **911 and the NDRRMC Operations
+Center**. Both are national. `LOCAL_CONTACTS` is still deliberately empty and
+the guide says so out loud — the note now states plainly that the numbers above
+it are national, because a national operations centre cannot tell a Marikina
+resident which street is passable.
 
 Copy the Marikina and Taguig DRRMO numbers from the LGU's own current
 publication. I did not fill these in from memory on purpose: a wrong number
 here is a person dialling into nothing during a flood.
 
+The NDRRMC numbers were supplied rather than checked against the agency's own
+publication here — `contacts.ts` records that in its `source` field, and they
+should be re-verified before this ever sees real traffic.
+
 ## Known issues, not fixed
 
-- **`_map.png`** in the repo root is a leftover debug screenshot. Untracked,
-  safe to delete.
 - **Hydration warning on `/report`** from a `caret-color` style Chromium injects
   under automation. Dev-only, pre-existing, appears to be a tooling artifact.
 - **A stale `.next` cache can break the build with Google Fonts 404s.**
@@ -623,8 +661,6 @@ here is a person dialling into nothing during a flood.
   `'Anonymous'` by the `handle_new_user` trigger and read by nothing; sign-in is
   email OTP with no name field. Left in place deliberately — see `design.md` §12
   for why reporter names were not built — but nothing depends on it.
-- **Unused `DepthLevel` import** in `src/app/actions/submit-sos.ts`, flagged by
-  the linter. Harmless, one line.
 
 ---
 
@@ -644,7 +680,8 @@ wanted and simply have not been done.
   notifications that were refused.
 
 - **Local DRRMO numbers** — see "Needs you" above. Owner action, not a coding
-  task.
+  task. The national NDRRMC lines added on 2026-08-15 do not close this: they
+  are a different desk answering a different question.
 
 ## Things worth remembering about this codebase
 

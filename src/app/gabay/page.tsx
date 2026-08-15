@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
-import { NATIONAL_CONTACTS, LOCAL_CONTACTS } from "@/lib/emergency/contacts";
+import {
+  NATIONAL_CONTACTS,
+  LOCAL_CONTACTS,
+  type EmergencyContact,
+} from "@/lib/emergency/contacts";
 import { GoBagList } from "@/components/GoBagList";
 
 /**
@@ -91,6 +95,60 @@ const DURING: readonly Item[] = [
   },
 ];
 
+/**
+ * One desk and every published way to reach it.
+ *
+ * Every line gets its own full-width target, because a desk publishes
+ * alternates for a reason: during a disaster its first number is the one
+ * already engaged. They are listed in published order, best first.
+ *
+ * How loud the card is comes from `emphasis`, never from how many lines the
+ * desk happens to publish - see `EmergencyContact.emphasis` for the mistake
+ * that rule was written to prevent.
+ *
+ * The label is the agency's published string, prose and all; the href dials the
+ * single number recorded beside it. See `EmergencyLine` for why those are two
+ * fields and not one.
+ */
+function Contact({ contact }: { contact: EmergencyContact }) {
+  return (
+    <li className={`contact contact--${contact.emphasis}`}>
+      <div className="contact-body">
+        <p className="contact-name">{contact.name}</p>
+        <p className="contact-role">{contact.role}</p>
+      </div>
+      <div className="contact-lines">
+        {contact.lines.map((line) => (
+          <a key={line.dial} className="contact-call" href={`tel:${line.dial}`}>
+            {line.published}
+          </a>
+        ))}
+      </div>
+    </li>
+  );
+}
+
+function ContactList({
+  contacts,
+  scope,
+}: {
+  contacts: readonly EmergencyContact[];
+  /**
+   * Marks which list this is in the DOM. Not styling - it is what lets a test
+   * ask whether a *local* desk is listed. Counting `.contact` cannot answer
+   * that any more now that a second national desk exists.
+   */
+  scope: "national" | "local";
+}) {
+  return (
+    <ul className="contact-list" data-scope={scope}>
+      {contacts.map((contact) => (
+        <Contact key={contact.name} contact={contact} />
+      ))}
+    </ul>
+  );
+}
+
 function Section({
   id,
   title,
@@ -134,43 +192,21 @@ export default function GabayPage() {
           Mga numerong umaabot sa tao
         </h2>
 
-        <ul className="contact-list">
-          {NATIONAL_CONTACTS.map((contact) => (
-            <li key={contact.number} className="contact">
-              <div className="contact-body">
-                <p className="contact-name">{contact.name}</p>
-                <p className="contact-role">{contact.role}</p>
-              </div>
-              <a className="contact-call" href={`tel:${contact.number}`}>
-                {contact.number}
-              </a>
-            </li>
-          ))}
-        </ul>
+        <ContactList contacts={NATIONAL_CONTACTS} scope="national" />
 
         {LOCAL_CONTACTS.length === 0 ? (
           // Said out loud rather than left as a short list that looks complete.
           // Someone scanning this needs to know the local desk is missing here,
-          // so they go and find it now instead of assuming it is covered.
+          // so they go and find it now instead of assuming it is covered. The
+          // national desks above do not cover it: they cannot say which street
+          // in Malanday is passable.
           <p className="guide-note">
-            Wala pang naidagdag na numero ng barangay o lokal na DRRMO dito.
-            Hanapin at itago ang numero ng inyong barangay bago pa
-            mangailangan.
+            Pambansa ang mga numerong nasa itaas. Wala pang naidagdag na numero
+            ng barangay o lokal na DRRMO dito. Hanapin at itago ang numero ng
+            inyong barangay bago pa mangailangan.
           </p>
         ) : (
-          <ul className="contact-list">
-            {LOCAL_CONTACTS.map((contact) => (
-              <li key={contact.number} className="contact">
-                <div className="contact-body">
-                  <p className="contact-name">{contact.name}</p>
-                  <p className="contact-role">{contact.role}</p>
-                </div>
-                <a className="contact-call" href={`tel:${contact.number}`}>
-                  {contact.number}
-                </a>
-              </li>
-            ))}
-          </ul>
+          <ContactList contacts={LOCAL_CONTACTS} scope="local" />
         )}
       </section>
 

@@ -31,13 +31,38 @@ test.describe("the preparedness guide", () => {
     );
   });
 
+  test("every number on the page is actually dialable", async ({ page }) => {
+    await page.goto("/gabay");
+
+    // Agencies publish trunk lines as prose - "8911-5061 to 65 local 100". That
+    // string is correct to SHOW and impossible to DIAL, so `published` and
+    // `dial` are separate fields. This is the assertion that keeps them
+    // separate: the day someone simplifies the component by feeding the
+    // published label straight into the href, every alternate line on this page
+    // silently stops working, and nothing else would notice.
+    const hrefs = await page
+      .locator(".contact-call")
+      .evaluateAll((links) => links.map((l) => l.getAttribute("href") ?? ""));
+
+    expect(hrefs.length).toBeGreaterThan(0);
+    for (const href of hrefs) {
+      expect(href).toMatch(/^tel:\+?\d+$/);
+    }
+  });
+
   test("admits when local numbers are missing", async ({ page }) => {
     await page.goto("/gabay");
     const body = await page.locator("main").innerText();
 
     // A short list that looks complete is worse than an incomplete one that
     // says so - someone would stop looking for their own barangay's number.
-    const hasLocal = (await page.locator(".contact").count()) > 1;
+    //
+    // Asks the local list directly. This used to count `.contact` and treat
+    // "more than one" as proof a local desk was listed, which stopped being
+    // true the moment a second NATIONAL desk was added: the count went to two,
+    // the branch went quiet, and the test passed without checking anything.
+    const hasLocal =
+      (await page.locator('[data-scope="local"] .contact').count()) > 0;
     if (!hasLocal) expect(body).toContain("Wala pang naidagdag");
   });
 });
