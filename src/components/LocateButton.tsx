@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useCopy } from "@/lib/i18n/context";
 
 /**
  * Take me to where I am.
@@ -31,6 +32,7 @@ interface LocateButtonProps {
 
 export function LocateButton({ onLocate }: LocateButtonProps) {
   const [stage, setStage] = useState<Stage>("idle");
+  const copy = useCopy();
 
   const locate = useCallback(() => {
     if (!("geolocation" in navigator)) {
@@ -58,10 +60,10 @@ export function LocateButton({ onLocate }: LocateButtonProps) {
 
   const label =
     stage === "denied"
-      ? "Naka-off ang lokasyon"
+      ? copy.map.locateOff
       : stage === "unavailable"
-        ? "Hindi makuha ang lokasyon"
-        : "Hanapin ang kinaroroonan ko";
+        ? copy.map.locateFailed
+        : copy.map.locate;
 
   return (
     <div className="locate-wrap">

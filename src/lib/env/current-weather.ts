@@ -9,6 +9,8 @@
  * waits eight seconds for a weather strip.
  */
 
+import type { Copy } from "@/lib/i18n/strings";
+
 const BASE = "https://api.open-meteo.com";
 
 /** Short, because this is context next to the map, not the map itself. */
@@ -65,19 +67,33 @@ export function weatherKind(code: number | null): WeatherKind | null {
   return "storm";
 }
 
-const KIND_LABEL: Readonly<Record<WeatherKind, string>> = Object.freeze({
-  clear: "Maaliwalas",
-  cloudy: "Maulap",
-  fog: "Mahamog",
-  drizzle: "Ambon",
-  rain: "Umuulan",
-  downpour: "Malakas na ulan",
-  storm: "May kulog at kidlat",
-});
+/**
+ * Which string names each grouping.
+ *
+ * Keys rather than words, because the product carries two languages and this
+ * module has no business holding either. `Record<WeatherKind, ...>` is doing
+ * real work here: adding a kind without naming it stops compiling, which is a
+ * stronger guarantee than the test that used to check the same thing by
+ * enumerating WMO codes.
+ */
+export const CONDITION_KEY: Readonly<Record<WeatherKind, keyof Copy["map"]>> =
+  Object.freeze({
+    clear: "weatherClear",
+    cloudy: "weatherCloudy",
+    fog: "weatherFog",
+    drizzle: "weatherDrizzle",
+    rain: "weatherRaining",
+    downpour: "weatherDownpour",
+    storm: "weatherStorm",
+  });
 
-export function weatherLabel(code: number | null): string | null {
+/** The condition in words, or null when the provider told us nothing. */
+export function weatherLabel(
+  code: number | null,
+  copy: Copy["map"],
+): string | null {
   const kind = weatherKind(code);
-  return kind === null ? null : KIND_LABEL[kind];
+  return kind === null ? null : (copy[CONDITION_KEY[kind]] as string);
 }
 
 /** The point at which measured rain is worth showing on the map itself. */

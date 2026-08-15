@@ -1,4 +1,4 @@
-import { depthRangeCm, type DepthLevel } from "@/lib/depth/scale";
+import type { DepthLevel } from "@/lib/depth/scale";
 
 /**
  * How the depth scale is *shown*. Kept out of `scale.ts`, which stays a pure
@@ -26,25 +26,8 @@ export const DEPTH_VAR: Record<DepthLevel, string> = {
 };
 
 /**
- * Short forms for legends and tick labels. Deliberately not the full
- * `depthLabel` strings - where both appear on one screen, repeating
- * "Hanggang tuhod" twice is noise.
+ * The words used to live here too - short labels for legends, and the
+ * centimetre range as a phrase. They moved to `lib/depth/name.ts` when the
+ * product gained a second language, because this module is about colour and
+ * should keep having no opinion about language.
  */
-export const DEPTH_SHORT_LABEL: Record<DepthLevel, string> = {
-  ankle: "Bukong-bukong",
-  knee: "Tuhod",
-  waist: "Baywang",
-  chest: "Dibdib",
-  above_head: "Lampas sa ulo",
-};
-
-/**
- * The centimetre range as a phrase. Informative, never the input - the slider
- * is the input, and a number is not how anyone judges water they are standing
- * in. The deepest level is open-ended, so it reads "pataas" rather than
- * inventing a ceiling.
- */
-export function depthRangeLabel(level: DepthLevel): string {
-  const { minCm, maxCm } = depthRangeCm(level);
-  return maxCm === null ? `${minCm} cm pataas` : `${minCm}–${maxCm} cm`;
-}

@@ -14,6 +14,8 @@
  * not a new one. Recording an actual new depth means filing a report.
  */
 
+import type { Copy } from "@/lib/i18n/strings";
+
 export const REPORT_STATES = ["gone", "same", "deeper"] as const;
 
 export type ReportState = (typeof REPORT_STATES)[number];
@@ -23,17 +25,21 @@ export function isReportState(value: string): value is ReportState {
 }
 
 /** What the person tapping the button is saying, in their own words. */
-export const STATE_LABEL: Readonly<Record<ReportState, string>> = Object.freeze({
-  gone: "Wala na",
-  same: "Ganoon pa rin",
-  deeper: "Mas mataas na",
+export const STATE_LABEL_KEY: Readonly<
+  Record<ReportState, keyof Copy["screens"]>
+> = Object.freeze({
+  gone: "freshGone",
+  same: "freshSame",
+  deeper: "freshDeeper",
 });
 
 /** The same three, phrased as a report of what other people have said. */
-export const STATE_SUMMARY: Readonly<Record<ReportState, string>> = Object.freeze({
-  gone: "Wala na raw ang tubig",
-  same: "Ganoon pa rin daw",
-  deeper: "Mas mataas na raw",
+export const STATE_SUMMARY_KEY: Readonly<
+  Record<ReportState, keyof Copy["screens"]>
+> = Object.freeze({
+  gone: "freshGoneSummary",
+  same: "freshSameSummary",
+  deeper: "freshDeeperSummary",
 });
 
 export interface UpdateTally {

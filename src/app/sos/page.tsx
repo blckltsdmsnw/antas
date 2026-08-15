@@ -12,28 +12,34 @@ import {
   formatAccuracy,
   needsLocationConfirmation,
 } from "@/lib/reports/accuracy";
+import { useCopy } from "@/lib/i18n/context";
+import type { Copy } from "@/lib/i18n/strings";
 
 type PageErrorCode = SosErrorCode | "no_location" | "upload_failed";
 
-const ERROR_MESSAGES: Record<PageErrorCode, string> = {
-  invalid_coordinates: "Hindi mabasa ang lokasyon mo.",
-  outside_pilot_area: "Sa ngayon, Metro Manila lang ang saklaw ng Antas.",
-  // An SOS no longer requires an account, so this code no longer means "sign in
-  // first". It means the silent anonymous sign-in itself failed - the project
-  // has anonymous sign-ins switched off, or the per-IP limit was hit.
-  //
-  // The wording still points at signing in because that is the only route left
-  // when it happens, so a project without anonymous sign-ins enabled degrades
-  // to exactly the behaviour it had before rather than to a dead end.
-  not_signed_in:
-    "Hindi nakagawa ng pansamantalang account. Mag-sign in para makapagpadala ng SOS.",
-  already_active: "May aktibo ka nang SOS. Hinihintay pa itong suriin.",
-  insert_failed: "May problema sa pagpapadala. Subukan ulit.",
-  upload_failed: "Hindi naipadala ang larawan. Subukan ulit.",
-  no_location: "Buksan ang location para makapagpadala ng SOS.",
+/**
+ * Which string each failure shows. Keys, so both languages live in `sos.ts`
+ * where the whole set can be read at once by a person checking the wording.
+ *
+ * `not_signed_in` no longer means "sign in first" - an SOS needs no account.
+ * It means the silent anonymous sign-in itself failed, because the project has
+ * anonymous sign-ins switched off or the per-IP limit was hit. The wording
+ * still points at signing in because that is the only route left when it
+ * happens, so a project without anonymous sign-ins degrades to exactly the
+ * behaviour it had before rather than to a dead end.
+ */
+const ERROR_KEY: Record<PageErrorCode, keyof Copy["sos"]> = {
+  invalid_coordinates: "errInvalidCoordinates",
+  outside_pilot_area: "errOutsidePilotArea",
+  not_signed_in: "errNotSignedIn",
+  already_active: "errAlreadyActive",
+  insert_failed: "errInsertFailed",
+  upload_failed: "errUploadFailed",
+  no_location: "errNoLocation",
 };
 
 export default function SosPage() {
+  const copy = useCopy();
   const [photo, setPhoto] = useState<File | null>(null);
   const [note, setNote] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
@@ -150,18 +156,13 @@ export default function SosPage() {
     return (
       <main className="task-page">
         <div className="done">
-          <h1 className="done-title">Naipadala na ang SOS mo.</h1>
-          <p className="done-body">
-            Susuriin ito ng barangay. Manatiling ligtas at kung kaya, pumunta sa
-            mas mataas na lugar.
-          </p>
+          <h1 className="done-title">{copy.sos.sentTitle}</h1>
+          <p className="done-body">{copy.sos.sentBody}</p>
         </div>
 
         {needsLocationConfirmation(sentAccuracyM) && (
           <p className="alert" role="alert" style={{ marginTop: 20 }}>
-            Malabo ang lokasyon mo — mga {formatAccuracy(sentAccuracyM)} ang
-            puwedeng pagkakamali. Naipadala pa rin ang SOS mo. Kung may
-            makakausap ka, sabihin mo ang eksaktong kalye o palatandaan.
+            {copy.sos.inaccurate(formatAccuracy(sentAccuracyM))}
           </p>
         )}
 
@@ -179,15 +180,14 @@ export default function SosPage() {
             that anybody will ring. */}
         {knowsPhone && !storedPhone && (
           <PhoneField
-            title="Mag-iwan ng numero (opsyonal)"
-            note="Kung may kailangang linawin tungkol sa lokasyon mo, ito ang gagamitin. Hindi ito nakikita sa mapa at walang ibang user ang makakakita nito. Puwede mo ring laktawan ito."
-            saveLabel="I-save ang numero ko"
+            title={copy.sos.phoneTitle}
+            note={copy.sos.phoneNote}
+            saveLabel={copy.sos.phoneSave}
           />
         )}
 
         <p className="notice" style={{ marginTop: 24 }}>
-          Demonstrasyon lamang ito. Walang tunay na rescue service na
-          nakakatanggap nito. Sa totoong emergency, tumawag sa 911.
+          {copy.sos.demoNotice}
         </p>
       </main>
     );
@@ -195,64 +195,57 @@ export default function SosPage() {
 
   return (
     <main className="task-page">
-      <h1 className="task-title">Humingi ng tulong</h1>
+      <h1 className="task-title">{copy.sos.title}</h1>
 
-      <p className="notice">
-        Demonstrasyon lamang ito. Walang tunay na rescue service na nakakatanggap
-        nito. Sa totoong emergency, tumawag sa 911.
-      </p>
+      <p className="notice">{copy.sos.demoNotice}</p>
 
       {photo ? (
-        <p className="notice">May larawan na. Handa nang ipadala.</p>
+        <p className="notice">{copy.sos.photoReady}</p>
       ) : (
         <PhotoCapture
-          prompt="Kailangan ng larawan ng tubig ngayon"
-          note="Hindi puwedeng galing sa gallery. Ang barangay lang ang makakakita nito."
-          openLabel="Buksan ang camera"
+          prompt={copy.sos.photoPrompt}
+          note={copy.sos.photoNote}
+          openLabel={copy.sos.photoOpen}
           onCapture={setPhoto}
         />
       )}
 
 
       <label className="field" style={{ marginTop: 24 }}>
-        <span className="field-label">Dagdag na detalye (opsyonal)</span>
+        <span className="field-label">{copy.sos.noteLabel}</span>
         <input
           className="field-input"
           type="text"
           value={note}
           maxLength={140}
-          placeholder="Halimbawa: tatlo kami, may matanda"
+          placeholder={copy.sos.notePlaceholder}
           onChange={(e) => setNote(e.target.value)}
         />
       </label>
 
       <div style={{ marginTop: 8 }}>
         <HoldToConfirm
-          label={
-            status === "sending"
-              ? "Ipinapadala..."
-              : "Pindutin nang 3 segundo para humingi ng tulong"
-          }
+          label={status === "sending" ? copy.sos.holdSending : copy.sos.holdLabel}
           onConfirm={handleConfirm}
         />
       </div>
 
       {!photo && (
         <p className="task-lede" style={{ marginTop: 12 }}>
-          Kumuha muna ng larawan bago magpadala.
+          {copy.sos.photoFirst}
         </p>
       )}
 
       {errors.map((code) => (
         <p key={code} className="alert" role="alert">
-          {ERROR_MESSAGES[code]}
+          {copy.sos[ERROR_KEY[code]] as string}
         </p>
       ))}
 
       {errors.includes("not_signed_in") && (
         <p style={{ marginTop: 16 }}>
           <Link href="/login" className="btn">
-            Mag-sign in
+            {copy.sos.signIn}
           </Link>
         </p>
       )}

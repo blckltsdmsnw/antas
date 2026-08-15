@@ -5,13 +5,14 @@ import { createClient } from "@/lib/supabase/client";
 import { submitUpdate } from "@/app/actions/submit-update";
 import {
   REPORT_STATES,
-  STATE_LABEL,
-  STATE_SUMMARY,
+  STATE_LABEL_KEY,
+  STATE_SUMMARY_KEY,
   leadingUpdate,
   totalVotes,
   type UpdateTally,
 } from "@/lib/reports/update";
 import { relativeTime } from "@/lib/time/relative";
+import { useCopy } from "@/lib/i18n/context";
 
 /**
  * "Kumusta na?" - the honest version of a comment thread.
@@ -34,6 +35,7 @@ interface ReportFreshnessProps {
 type Stage = "loading" | "ready" | "sending" | "signed-out" | "failed";
 
 export function ReportFreshness({ reportId }: ReportFreshnessProps) {
+  const copy = useCopy();
   const [tallies, setTallies] = useState<UpdateTally[]>([]);
   const [stage, setStage] = useState<Stage>("loading");
   const [mine, setMine] = useState<string | null>(null);
@@ -76,25 +78,25 @@ export function ReportFreshness({ reportId }: ReportFreshnessProps) {
   const total = totalVotes(tallies);
 
   return (
-    <section className="fresh" aria-label="Kumusta na ang lugar na ito">
-      <p className="fresh-title">Kumusta na?</p>
+    <section className="fresh" aria-label={copy.screens.freshLabel}>
+      <p className="fresh-title">{copy.screens.freshTitle}</p>
 
       {stage === "failed" && (
-        <p className="fresh-note">Hindi makuha ang mga update ngayon.</p>
+        <p className="fresh-note">{copy.screens.freshFailed}</p>
       )}
 
       {stage === "signed-out" && (
-        <p className="fresh-note">Mag-sign in muna para makasagot.</p>
+        <p className="fresh-note">{copy.screens.freshSignIn}</p>
       )}
 
       {leading && (
         // The most recent word leads, not the most numerous - water moves, and
         // an older consensus is only describing an earlier moment.
         <p className="fresh-lead" data-state={leading.state}>
-          <strong>{STATE_SUMMARY[leading.state]}</strong>
+          <strong>{copy.screens[STATE_SUMMARY_KEY[leading.state]] as string}</strong>
           <span className="fresh-when">
-            {relativeTime(leading.latest)}
-            {total > 1 ? ` · ${total} sagot` : ""}
+            {relativeTime(leading.latest, copy.screens)}
+            {total > 1 ? ` · ${copy.screens.freshAnswers(total)}` : ""}
           </span>
         </p>
       )}
@@ -110,12 +112,12 @@ export function ReportFreshness({ reportId }: ReportFreshnessProps) {
             disabled={stage === "sending"}
             onClick={() => void answer(state)}
           >
-            {STATE_LABEL[state]}
+            {copy.screens[STATE_LABEL_KEY[state]] as string}
           </button>
         ))}
       </div>
 
-      {mine && <p className="fresh-note">Salamat - naitala ang sagot mo.</p>}
+      {mine && <p className="fresh-note">{copy.screens.freshThanks}</p>}
     </section>
   );
 }

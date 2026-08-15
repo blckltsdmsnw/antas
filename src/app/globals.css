@@ -1785,6 +1785,48 @@ a.btn {
 }
 
 /* --------------------------------------------------------------------------
+   Language - Filipino / English, in the header
+   -------------------------------------------------------------------------- */
+
+/* Both options visible, one marked. A single toggling button would have to be
+   labelled either with the language you are in or the one you would get, and
+   half of everyone reads it the other way. */
+.lang {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--raised);
+}
+
+.lang-option {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  /* 32px rather than the 48px the rest of the product uses for touch targets.
+     This is a preference set roughly once, sitting in a 56px header beside the
+     wordmark - at full size it would compete with the page's own actions, and
+     it is never the control somebody is reaching for in a hurry. */
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lang-option[data-active="true"] {
+  background: var(--accent);
+  color: #fff;
+}
+
+.lang-option:not([data-active="true"]):hover {
+  color: var(--ink);
+}
+
+/* --------------------------------------------------------------------------
    Aking mga Report - what you filed, and whether it is still on the map
    -------------------------------------------------------------------------- */
 

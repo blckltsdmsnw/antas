@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { MAX_CACHE_AGE_HOURS, cacheAge, mayShowCached } from "./staleness";
+import { offlineNotice } from "./notice";
+import { copyFor } from "@/lib/i18n/strings";
 
 /**
  * The safety decision in the offline work, so the cases that matter are the
@@ -57,32 +59,54 @@ describe("cacheAge", () => {
   });
 });
 
-describe("what the reader is told", () => {
+/**
+ * Run against BOTH languages, not just the source text.
+ *
+ * These assertions used to read Tagalog out of `cacheAge().notice`. Once the
+ * product carried English too, testing only the Tagalog would have left the
+ * likelier failure untested: an English sentence that reads well and has
+ * quietly lost the number, so an English reader is told the map is offline and
+ * never told it is two hours stale.
+ */
+describe.each([
+  ["tl", copyFor("tl").map],
+  ["en", copyFor("en").map],
+] as const)("what the reader is told (%s)", (_lang, copy) => {
+  const noticeAt = (minutes: number) =>
+    offlineNotice(cacheAge(minutesAgo(minutes), NOW), copy);
+
   it("always states the age, never merely that it is offline", () => {
     // "Offline mode" says the network is down. It does not say the pin under
     // their thumb is two hours old, and that is the fact deciding whether
     // somebody walks down a street.
-    expect(cacheAge(minutesAgo(35), NOW).notice).toMatch(/35 minuto/);
-    expect(cacheAge(minutesAgo(60 * 3 + 10), NOW).notice).toMatch(/3 oras/);
+    expect(noticeAt(35)).toMatch(/\b35\b/);
+    expect(noticeAt(60 * 3 + 10)).toMatch(/\b3\b/);
   });
 
   it("says something for every verdict", () => {
     for (const at of [minutesAgo(1), minutesAgo(90), minutesAgo(60 * 9), null]) {
-      expect(cacheAge(at, NOW).notice.length).toBeGreaterThan(0);
+      expect(offlineNotice(cacheAge(at, NOW), copy).length).toBeGreaterThan(0);
     }
+  });
+
+  it("distinguishes 'too old' from 'we cannot date this'", () => {
+    // Both refuse to draw anything, and they are still not the same sentence.
+    const tooOld = offlineNotice(cacheAge(minutesAgo(60 * 8), NOW), copy);
+    const undated = offlineNotice(cacheAge(null, NOW), copy);
+    expect(tooOld).not.toBe(undated);
   });
 
   it("tells a refused reader the data may no longer be true", () => {
     // Not merely "unavailable". The reason matters: what we have describes a
-    // street from hours ago.
-    const refused = cacheAge(minutesAgo(60 * 8), NOW);
-    expect(refused.notice).toMatch(/iba na ang lalim/i);
+    // street from hours ago, and the depth may have changed since.
+    expect(noticeAt(60 * 8)).toBe(copy.cachedTooOld);
+    expect(copy.cachedTooOld).toMatch(/iba na ang lalim|different depth/i);
   });
 
   it("never claims the data is current", () => {
-    for (const at of [minutesAgo(1), minutesAgo(120), minutesAgo(60 * 7)]) {
-      expect(cacheAge(at, NOW).notice).not.toMatch(
-        /ngayong oras|live|kasalukuyan/i,
+    for (const minutes of [1, 120, 60 * 7]) {
+      expect(noticeAt(minutes)).not.toMatch(
+        /ngayong oras|live|kasalukuyan|up to date|current/i,
       );
     }
   });

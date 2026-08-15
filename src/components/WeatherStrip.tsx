@@ -8,6 +8,7 @@ import {
   type CurrentWeather,
 } from "@/lib/env/current-weather";
 import { WeatherIcon } from "@/components/WeatherIcon";
+import { useCopy } from "@/lib/i18n/context";
 
 interface WeatherStripProps {
   /** Reported upward so the map can react to real rain. */
@@ -28,6 +29,7 @@ type Stage = "idle" | "locating" | "loaded" | "unavailable";
  */
 export function WeatherStrip({ onWeather }: WeatherStripProps) {
   const [stage, setStage] = useState<Stage>("idle");
+  const copy = useCopy();
   const [weather, setWeather] = useState<CurrentWeather | null>(null);
 
   const load = useCallback(async () => {
@@ -89,19 +91,21 @@ export function WeatherStrip({ onWeather }: WeatherStripProps) {
         className="weather-strip weather-strip--ask"
         onClick={() => void load()}
       >
-        Panahon sa lugar ko
+        {copy.map.weatherAsk}
       </button>
     );
   }
 
   if (stage === "locating" || !weather) {
     return (
-      <p className="weather-strip weather-strip--muted">Kinukuha ang panahon...</p>
+      <p className="weather-strip weather-strip--muted">
+        {copy.map.weatherLoading}
+      </p>
     );
   }
 
-  const label = weatherLabel(weather.weatherCode);
   const kind = weatherKind(weather.weatherCode);
+  const label = weatherLabel(weather.weatherCode, copy.map);
   const rain = weather.recentRainMm;
 
   return (
@@ -121,7 +125,7 @@ export function WeatherStrip({ onWeather }: WeatherStripProps) {
           condition label into an ellipsis. The decimal goes too: tenths of a
           millimetre change nothing about whether to walk down a street. */}
       {typeof rain === "number" && rain > 0 && (
-        <span className="weather-rain">{Math.round(rain)} mm sa 3 oras</span>
+        <span className="weather-rain">{copy.map.weatherRain(Math.round(rain))}</span>
       )}
     </p>
   );

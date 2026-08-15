@@ -33,39 +33,28 @@ export type CacheVerdict = "fresh" | "ageing" | "too-old";
 export interface CacheAge {
   verdict: CacheVerdict;
   minutes: number;
-  /** What to put in front of the reader. */
-  notice: string;
+  /**
+   * Whether the age is actually known.
+   *
+   * "Too old to show" and "we cannot tell how old this is" are both refusals,
+   * but they are different sentences and the reader deserves the right one.
+   * The words live in `copy.map.cached*`: this module decides, it does not
+   * speak, which is what lets the decision stay one tested pure function while
+   * the product carries two languages.
+   */
+  dated: boolean;
 }
 
 const UNDATED: CacheAge = Object.freeze({
   verdict: "too-old",
   minutes: Number.MAX_SAFE_INTEGER,
-  notice:
-    "Hindi alam kung kailan ito huling na-update, kaya hindi ito ipinapakita.",
+  dated: false,
 });
 
 function minutesBetween(cachedAt: string, now: Date): number | null {
   const at = new Date(cachedAt).getTime();
   if (Number.isNaN(at)) return null;
   return Math.max(0, Math.floor((now.getTime() - at) / 60_000));
-}
-
-/**
- * The line shown over cached data.
- *
- * Always states the age, never merely "offline". "Offline mode" tells somebody
- * the network is down; it does not tell them the pin under their thumb is two
- * hours old, and that second fact is the one that decides whether they walk
- * down the street.
- */
-function offlineNotice(minutes: number): string {
-  if (minutes < 1) return "Walang koneksyon. Ito ang huling nakuha, ngayon lang.";
-  if (minutes < 60) {
-    return `Walang koneksyon. Ito ang huling nakuha, ${minutes} minuto na ang nakalipas.`;
-  }
-
-  const hours = Math.floor(minutes / 60);
-  return `Walang koneksyon. Ito ang huling nakuha, mahigit ${hours} oras na ang nakalipas.`;
 }
 
 /**
@@ -86,18 +75,13 @@ export function cacheAge(
   if (minutes === null) return UNDATED;
 
   if (minutes >= MAX_CACHE_AGE_HOURS * 60) {
-    return {
-      verdict: "too-old",
-      minutes,
-      notice:
-        "Wala kang koneksyon at masyado nang luma ang huling nakuha, kaya hindi ito ipinapakita. Maaaring iba na ang lalim ng tubig ngayon.",
-    };
+    return { verdict: "too-old", minutes, dated: true };
   }
 
   return {
     verdict: minutes < FRESH_MINUTES ? "fresh" : "ageing",
     minutes,
-    notice: offlineNotice(minutes),
+    dated: true,
   };
 }
 

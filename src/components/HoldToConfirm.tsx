@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useCopy } from "@/lib/i18n/context";
 
 const HOLD_MS = 3000;
 const TICK_MS = 50;
@@ -25,6 +26,7 @@ const HOLD_KEYS = new Set([" ", "Spacebar", "Enter"]);
  * exactly what holding a thumb does.
  */
 export function HoldToConfirm({ label, onConfirm }: HoldToConfirmProps) {
+  const copy = useCopy();
   const [progress, setProgress] = useState(0);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const fired = useRef(false);
@@ -101,7 +103,7 @@ export function HoldToConfirm({ label, onConfirm }: HoldToConfirmProps) {
       <span
         className="hold-fill"
         role="progressbar"
-        aria-label="Progreso ng pagpindot"
+        aria-label={copy.screens.holdProgress}
         aria-valuenow={Math.round(progress * 100)}
         aria-valuemin={0}
         aria-valuemax={100}

@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPhone, normalizePhone } from "@/lib/profile/phone";
+import { useCopy } from "@/lib/i18n/context";
 
 /**
  * One optional mobile number, saved to the caller's own profile.
@@ -30,9 +31,10 @@ export function PhoneField({
   title,
   note,
   initial = null,
-  saveLabel = "I-save ang numero",
+  saveLabel,
   onSaved,
 }: PhoneFieldProps) {
+  const copy = useCopy();
   const [phone, setPhone] = useState(initial ? formatPhone(initial) : "");
   const [saved, setSaved] = useState<string | null>(initial);
   const [stage, setStage] = useState<Stage>("idle");
@@ -79,7 +81,7 @@ export function PhoneField({
       <p className="phone-note">{note}</p>
 
       <label className="field">
-        <span className="field-label">Mobile number</span>
+        <span className="field-label">{copy.screens.phoneLabel}</span>
         <input
           className="field-input"
           type="tel"
@@ -100,7 +102,9 @@ export function PhoneField({
         disabled={stage === "saving" || phone.trim() === ""}
         onClick={() => void save()}
       >
-        {stage === "saving" ? "Sine-save..." : saveLabel}
+        {stage === "saving"
+          ? copy.screens.phoneSaving
+          : (saveLabel ?? copy.screens.phoneSave)}
       </button>
 
       {stage === "invalid" && (
@@ -115,7 +119,7 @@ export function PhoneField({
         </p>
       )}
       {stage === "saved" && (
-        <p className="phone-note">Naka-save na ang numero mo.</p>
+        <p className="phone-note">{copy.screens.phoneSaved}</p>
       )}
       {stage === "idle" && saved && (
         <p className="phone-note">Naka-save: {formatPhone(saved)}</p>

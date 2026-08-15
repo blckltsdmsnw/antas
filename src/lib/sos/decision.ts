@@ -1,3 +1,5 @@
+import type { Copy } from "@/lib/i18n/strings";
+
 export const DISMISS_REASONS = [
   "false_report",
   "duplicate",
@@ -11,11 +13,11 @@ export type DismissReason = (typeof DISMISS_REASONS)[number];
  *  visible accountability deters better than hidden accountability. */
 export const SUSPENSION_THRESHOLD = 3;
 
-const LABELS: Record<DismissReason, string> = {
-  false_report: "Hindi totoo",
-  duplicate: "Doble - naiulat na ito",
-  resolved_already: "Naayos na",
-  insufficient_info: "Kulang ang impormasyon",
+const LABEL_KEY: Record<DismissReason, keyof Copy["screens"]> = {
+  false_report: "dismissFalse",
+  duplicate: "dismissDuplicate",
+  resolved_already: "dismissResolved",
+  insufficient_info: "dismissInsufficient",
 };
 
 export function isDismissReason(value: string): value is DismissReason {
@@ -35,6 +37,9 @@ export function shouldSuspend(falseReportCount: number): boolean {
   return falseReportCount >= SUSPENSION_THRESHOLD;
 }
 
-export function dismissReasonLabel(reason: DismissReason): string {
-  return LABELS[reason];
+export function dismissReasonLabel(
+  reason: DismissReason,
+  copy: Copy["screens"],
+): string {
+  return copy[LABEL_KEY[reason]] as string;
 }

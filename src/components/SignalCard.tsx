@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
-import { depthLabel, type DepthLevel } from "@/lib/depth/scale";
+import { type DepthLevel } from "@/lib/depth/scale";
+import { depthName } from "@/lib/depth/name";
+import { useCopy } from "@/lib/i18n/context";
 
 export interface QueueSignal {
   id: string;
@@ -20,6 +24,7 @@ function minutesAgo(iso: string): string {
 }
 
 export function SignalCard({ signal }: { signal: QueueSignal }) {
+  const copy = useCopy();
   // An unscored signal is not a low-priority signal - we simply do not know.
   const band = signal.confidence ?? "none";
 
@@ -27,18 +32,21 @@ export function SignalCard({ signal }: { signal: QueueSignal }) {
     <Link href={`/console/${signal.id}`} className="signal-card">
       <span className="signal-head">
         <span className="signal-band" data-band={band}>
-          {signal.confidence ?? "hindi pa nasusuri"}
+          {signal.confidence ?? copy.screens.signalUnscored}
         </span>
         {/* A signal is a person asking for help, not a depth reading. Where a
             sender did choose one it is still their word and still shown; where
             they were never asked, the card says the thing that is actually
             true rather than inventing a level. */}
         <strong>
-          {signal.depth ? depthLabel(signal.depth).tl : "Humihingi ng tulong"}
+          {signal.depth
+            ? depthName(signal.depth, copy.map)
+            : copy.screens.signalTitle}
         </strong>
       </span>
       <span className="signal-meta">
-        {signal.barangay ?? "walang barangay"} · {minutesAgo(signal.created_at)}
+        {signal.barangay ?? copy.screens.signalNoBarangay} ·{" "}
+        {minutesAgo(signal.created_at)}
         {signal.trust_score !== null ? ` · ${signal.trust_score}/100` : ""}
       </span>
     </Link>

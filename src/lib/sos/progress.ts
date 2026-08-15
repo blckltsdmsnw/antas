@@ -1,4 +1,5 @@
 import type { SosStatus } from "./status";
+import type { Copy } from "@/lib/i18n/strings";
 
 /**
  * What the SENDER is told about their own signal.
@@ -16,54 +17,70 @@ import type { SosStatus } from "./status";
  */
 
 export interface SignalProgress {
-  /** Short line, shown as the heading of the update. */
-  headline: string;
-  /** What it means, in the sender's terms. */
-  detail: string;
+  /** Which string in `copy.sos` is the heading of the update. */
+  headlineKey: keyof Copy["sos"];
+  /** Which string says what it means, in the sender's terms. */
+  detailKey: keyof Copy["sos"];
   /** Whether the signal is still open, which decides the surrounding copy. */
   open: boolean;
 }
 
+/**
+ * Keys, not sentences.
+ *
+ * The wording moved to `strings/sos.ts` when the product gained English, and it
+ * had to move as a whole: a fallback here would mean an English reader in
+ * rising water getting the one screen whose wording is load-bearing in a
+ * language they have told us they cannot read - and it would look like a
+ * working page rather than a bug. `dict.ts` makes a missing translation a
+ * compile error instead.
+ *
+ * What stays here is the part that is not language: which statuses are still
+ * open, and which are worth announcing.
+ */
 const PROGRESS: Readonly<Record<SosStatus, SignalProgress>> = Object.freeze({
   pending: {
-    headline: "Naipadala na, hindi pa nabubuksan",
-    // Said plainly rather than dressed up as "processing". Nobody is watching a
-    // queue here, and implying somebody is would be the whole problem.
-    detail:
-      "Nasa listahan na ito ng barangay. Wala pang nakakabukas nito ngayon.",
+    headlineKey: "pendingHeadline",
+    detailKey: "pendingDetail",
     open: true,
   },
   under_review: {
-    headline: "Binuksan na ito ng barangay",
-    // The strongest thing that can honestly be said, and deliberately about
-    // reading rather than responding.
-    detail:
-      "May nagbukas ng report mo. Hindi ito nangangahulugang may paparating na tulong.",
+    headlineKey: "reviewHeadline",
+    detailKey: "reviewDetail",
     open: true,
   },
   confirmed: {
-    headline: "Kinumpirma ng barangay",
-    // "Credible", not "help is coming". A moderator judging a signal real is a
-    // statement about the signal, never a dispatch.
-    detail:
-      "Tinasa nilang totoo ang report mo. Hindi pa rin ito nangangahulugang may susundo sa iyo.",
+    headlineKey: "confirmedHeadline",
+    detailKey: "confirmedDetail",
     open: true,
   },
   dismissed: {
-    headline: "Hindi itinuloy ang report na ito",
-    detail:
-      "Sinuri ito ng barangay at hindi itinuloy. Kung nasa panganib ka pa rin, tumawag sa 911.",
+    headlineKey: "dismissedHeadline",
+    detailKey: "dismissedDetail",
     open: false,
   },
   resolved: {
-    headline: "Markado nang tapos",
-    detail: "Isinara na ito ng barangay.",
+    headlineKey: "resolvedHeadline",
+    detailKey: "resolvedDetail",
     open: false,
   },
 });
 
 export function progressFor(status: SosStatus): SignalProgress {
   return PROGRESS[status];
+}
+
+/** The two sentences the sender actually reads. */
+export function progressText(
+  status: SosStatus,
+  copy: Copy["sos"],
+): { headline: string; detail: string; open: boolean } {
+  const { headlineKey, detailKey, open } = PROGRESS[status];
+  return {
+    headline: copy[headlineKey] as string,
+    detail: copy[detailKey] as string,
+    open,
+  };
 }
 
 /**

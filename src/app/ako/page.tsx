@@ -3,8 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { depthLabel, type DepthLevel } from "@/lib/depth/scale";
+import { type DepthLevel } from "@/lib/depth/scale";
 import { DEPTH_VAR } from "@/lib/depth/presentation";
+import { depthName } from "@/lib/depth/name";
+import { useCopy } from "@/lib/i18n/context";
+import type { Copy } from "@/lib/i18n/strings";
 import { reportPhotoUrl } from "@/lib/reports/photo";
 import { timestampLabel } from "@/lib/time/relative";
 import { hideReport } from "@/app/actions/submit-update";
@@ -36,15 +39,16 @@ interface MyReport {
 }
 
 /** The database's own three states, in the words a reporter would use. */
-const STATUS_LABEL: Record<string, string> = {
-  active: "Nasa mapa",
-  flagged: "Sinusuri",
-  hidden: "Tinanggal sa mapa",
+const STATUS_KEY: Record<string, keyof Copy["screens"]> = {
+  active: "statusActive",
+  flagged: "statusFlagged",
+  hidden: "statusHidden",
 };
 
 type Stage = "loading" | "signed-out" | "ready" | "failed";
 
 export default function AkoPage() {
+  const copy = useCopy();
   const [stage, setStage] = useState<Stage>("loading");
   const [reports, setReports] = useState<MyReport[]>([]);
   const [email, setEmail] = useState<string | null>(null);
@@ -152,20 +156,17 @@ export default function AkoPage() {
 
   return (
     <main className="task-page">
-      <h1 className="task-title">Ako</h1>
+      <h1 className="task-title">{copy.screens.akoTitle}</h1>
 
       {stage === "loading" && (
-        <p className="task-lede">Kinukuha ang mga report mo...</p>
+        <p className="task-lede">{copy.screens.akoLoading}</p>
       )}
 
       {stage === "signed-out" && (
         <>
-          <p className="task-lede">
-            Mag-sign in para makita ang mga report mo. Hindi kailangan ng account
-            para tingnan ang mapa.
-          </p>
+          <p className="task-lede">{copy.screens.akoSignedOut}</p>
           <Link href="/login" className="btn">
-            Mag-sign in
+            {copy.screens.loginTitle}
           </Link>
         </>
       )}
@@ -173,15 +174,14 @@ export default function AkoPage() {
       {stage === "failed" && (
         <>
           <p className="alert">
-            <strong>Hindi makuha ang mga report mo ngayon.</strong> Hindi ibig
-            sabihin nito na wala kang naipadala.
+            <strong>{copy.screens.akoFailed}</strong> {copy.screens.akoFailedBody}
           </p>
           <button
             type="button"
             className="btn btn-quiet"
             onClick={() => void load()}
           >
-            Subukan ulit
+            {copy.map.retry}
           </button>
         </>
       )}
@@ -193,8 +193,8 @@ export default function AkoPage() {
               are looking at. */}
           <p className="task-lede">
             {email
-              ? `Naka-sign in bilang ${email}`
-              : "Naka-sign in nang walang account. Nagagamit mo ito dahil nagpadala ka ng SOS."}
+              ? copy.screens.akoSignedInAs(email)
+              : copy.screens.akoAnonymous}
           </p>
 
           {/* Optional, and said so plainly. A required phone number on a flood
@@ -202,18 +202,18 @@ export default function AkoPage() {
               are only looking at the water - the number matters to the one
               person in a hundred who sends an SOS. */}
           <PhoneField
-            title="Numero para sa emergency"
-            note="Kung magpapadala ka ng SOS, ito ang gagamitin kung may kailangang linawin. Hindi ito nakikita sa mapa at walang ibang user ang makakakita nito. Puwede mo ring iwanang blangko."
+            title={copy.screens.akoPhoneTitle}
+            note={copy.screens.akoPhoneNote}
             initial={savedPhone}
           />
 
-          <h2 className="my-reports-title">Aking mga Report</h2>
+          <h2 className="my-reports-title">{copy.screens.akoReportsTitle}</h2>
 
           {reports.length === 0 ? (
             <p className="task-lede">
-              Wala ka pang naipadalang report.{" "}
+              {copy.screens.akoNoReports}{" "}
               <Link href="/report" className="quiet-link">
-                Mag-report ng lalim ng tubig
+                {copy.screens.akoReportLink}
               </Link>
               .
             </p>
@@ -236,13 +236,13 @@ export default function AkoPage() {
 
                     <div className="my-report-body">
                       <p className="my-report-depth">
-                        {depthLabel(report.depth).tl}
+                        {depthName(report.depth, copy.map)}
                       </p>
                       <p className="my-report-where">
-                        {report.barangay ?? "Hindi matukoy na lugar"}
+                        {report.barangay ?? copy.screens.akoUnknownPlace}
                       </p>
                       <p className="my-report-when">
-                        {timestampLabel(report.reported_at)}
+                        {timestampLabel(report.reported_at, copy.screens)}
                       </p>
                     </div>
 
@@ -251,7 +251,9 @@ export default function AkoPage() {
                         className="my-report-status"
                         data-status={report.status}
                       >
-                        {STATUS_LABEL[report.status] ?? report.status}
+                        {STATUS_KEY[report.status]
+                          ? (copy.screens[STATUS_KEY[report.status]] as string)
+                          : report.status}
                       </span>
 
                       {/* Only while it is on the map. Offering "remove" against
@@ -265,7 +267,9 @@ export default function AkoPage() {
                           disabled={removing === report.id}
                           onClick={() => void remove(report.id)}
                         >
-                          {confirming === report.id ? "Sigurado ka?" : "Tanggalin"}
+                          {confirming === report.id
+                            ? copy.screens.akoSure
+                            : copy.screens.akoRemove}
                         </button>
                       )}
                     </div>
@@ -282,18 +286,16 @@ export default function AkoPage() {
               data-confirming={confirmingSignOut}
               onClick={() => void signOut()}
             >
-              {confirmingSignOut ? "Sigurado ka? Hindi na maibabalik" : "Mag-sign out"}
+              {confirmingSignOut
+                ? copy.screens.akoSignOutSure
+                : copy.screens.akoSignOut}
             </button>
 
             {anonymous && (
               // Said before the second tap, not after. Leaving an anonymous
               // session is permanent, and somebody on their own phone almost
               // certainly does not want to.
-              <p className="signout-note">
-                Walang account ang session na ito, kaya kapag nag-sign out ka ay
-                hindi mo na makikita ang SOS mo at ang kalagayan nito. Sa
-                hiniram na telepono, iyan mismo ang dapat gawin.
-              </p>
+              <p className="signout-note">{copy.screens.akoSignOutNote}</p>
             )}
           </section>
         </>

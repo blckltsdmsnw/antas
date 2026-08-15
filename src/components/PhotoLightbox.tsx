@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useCopy } from "@/lib/i18n/context";
 import {
   clampOffset,
   clampScale,
@@ -29,6 +30,7 @@ const DOUBLE_TAP_SCALE = 2.5;
  * against a kerb or a parked car, which is the entire reason the photo is there.
  */
 export function PhotoLightbox({ src, alt, caption, onClose }: PhotoLightboxProps) {
+  const copy = useCopy();
   const [scale, setScale] = useState(MIN_SCALE);
   const [offset, setOffset] = useState<Point>({ x: 0, y: 0 });
   const [mounted, setMounted] = useState(false);
@@ -158,7 +160,7 @@ export function PhotoLightbox({ src, alt, caption, onClose }: PhotoLightboxProps
         type="button"
         className="lightbox-close"
         onClick={onClose}
-        aria-label="Isara ang larawan"
+        aria-label={copy.screens.closePhoto}
       >
         &times;
       </button>

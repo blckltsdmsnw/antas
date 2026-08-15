@@ -1,13 +1,14 @@
 import { describe, it, expect } from "vitest";
 import {
   REPORT_STATES,
-  STATE_LABEL,
-  STATE_SUMMARY,
+  STATE_LABEL_KEY,
+  STATE_SUMMARY_KEY,
   isReportState,
   leadingUpdate,
   totalVotes,
   type UpdateTally,
 } from "./update";
+import { copyFor } from "@/lib/i18n/strings";
 
 const NOW = new Date("2026-08-14T15:40:00+08:00");
 
@@ -106,12 +107,33 @@ describe("isReportState", () => {
 });
 
 describe("labels", () => {
-  it("covers every state in both voices", () => {
+  it("covers every state in both voices, in both languages", () => {
     // A missing key renders as blank rather than throwing, so a gap here stays
-    // invisible until someone is looking at an unlabelled button.
+    // invisible until somebody is looking at an unlabelled button - and these
+    // buttons are how a reader says the water got deeper.
     for (const state of REPORT_STATES) {
-      expect(STATE_LABEL[state]).toBeTruthy();
-      expect(STATE_SUMMARY[state]).toBeTruthy();
+      for (const lang of ["tl", "en"] as const) {
+        const copy = copyFor(lang).screens;
+        expect(copy[STATE_LABEL_KEY[state]], `${lang} ${state} label`).toBeTruthy();
+        expect(
+          copy[STATE_SUMMARY_KEY[state]],
+          `${lang} ${state} summary`,
+        ).toBeTruthy();
+      }
+    }
+  });
+
+  it("keeps the button and the summary distinct", () => {
+    // "Mas mataas na" is what you tap; "Mas mataas na raw" is what the card
+    // then reports other people said. Collapsing them would make the summary
+    // read as your own answer echoed back at you.
+    for (const state of REPORT_STATES) {
+      for (const lang of ["tl", "en"] as const) {
+        const copy = copyFor(lang).screens;
+        expect(copy[STATE_LABEL_KEY[state]]).not.toBe(
+          copy[STATE_SUMMARY_KEY[state]],
+        );
+      }
     }
   });
 });

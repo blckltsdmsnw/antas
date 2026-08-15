@@ -629,6 +629,55 @@ assertion stopped running while still passing. It now queries
 below: a test that cannot fail is not a test, and this one was disarmed by a
 change nowhere near it.
 
+### Filipino / English, and why it was all-or-nothing
+
+Built 2026-08-15, the last of the things "asked for, not built yet".
+
+**A half-translated safety app is worse than a Filipino-only one.** Somebody
+switches to English *because they cannot read Tagalog*, gets English
+navigation, and then meets the SOS screen in Tagalog — a page that looks like
+it is working, so nothing tells them to go back. That ruled out shipping the
+switch before the strings were done, and it is why the control was not put on
+screen until the last literal was gone.
+
+**A missing translation is a compile error, not a fallback.** `dict()` takes
+the Tagalog table and demands an English one with the same keys and the same
+function signatures; there is no `Partial` and no "fall back to `tl`". Verified
+by writing a broken dictionary and watching `tsc` reject it. A fallback would
+have failed silently and *looked* like a working page — exactly where it would
+hurt most, on `/sos` and `/gabay`.
+
+**The language is a cookie, read on the server.** `localStorage` cannot be read
+before the first paint, so it could only ever produce a Tagalog page corrected
+to English a frame later — the flash this codebase has already shipped twice,
+in the go bag's "0 sa 4" and in `data-map-theme`. The price is that every route
+is now `ƒ` server-rendered rather than `○` prerendered, which is visible in the
+build output and is the intended trade.
+
+Four things worth keeping:
+
+- **Functions cannot cross the server/client boundary.** Passing
+  `copy.guide.goBagProgress` from the guide page into `GoBagList` made React
+  refuse to render the page at all. Any interpolated phrase must be *called* on
+  the server or *read* on the client, never handed between them — so client
+  components take the copy and server components take the finished string.
+- **The go bag was keyed by its own Tagalog titles.** Translating them would
+  have silently emptied every packed bag the moment somebody switched language,
+  on the page most likely to be read with no signal. Items have stable ids now,
+  and the four old titles are migrated on read.
+- **`timestampLabel` compared against a literal.** It suppressed the wall clock
+  by testing `relative === "ngayon lang"`; in English that would never match and
+  every fresh report would have grown a redundant clock. It compares against the
+  dictionary now.
+- **The cross-language gloss is gone.** The depth slider and the report card
+  used to print the Tagalog reading with its English equivalent underneath. The
+  toggle does that job properly, so keeping it would print the same thing twice.
+
+`tests/e2e/language.spec.ts` drives all six reachable screens in English and
+fails on any Tagalog function word left on the page — the one thing the type
+system cannot catch, since a literal that never went through the dictionary is
+invisible to it. Confirmed to go **red** by putting one back.
+
 ## Needs you: your local emergency numbers
 
 `src/lib/emergency/contacts.ts` now carries **911 and the NDRRMC Operations
@@ -669,16 +718,6 @@ should be re-verified before this ever sees real traffic.
 Distinct from `design.md` §12, which lists things refused on purpose. These were
 wanted and simply have not been done.
 
-- **An English / Tagalog toggle.** Requested on 2026-08-14 alongside the
-  freshness answers and reporter names, ranked last at the time, and never
-  picked up. The product is Filipino-first with English glosses already present
-  in places — `depthLabel` returns both `tl` and `en`, and the report detail
-  shows them side by side — so the groundwork is partly there. The hard part is
-  not the switch: it is that every safety-critical string (the SOS notices, the
-  guide, `lib/sos/progress.ts`) would need a second version that carries exactly
-  the same meaning, and a mistranslation there is the same class of harm as the
-  notifications that were refused.
-
 - **Local DRRMO numbers** — see "Needs you" above. Owner action, not a coding
   task. The national NDRRMC lines added on 2026-08-15 do not close this: they
   are a different desk answering a different question.
@@ -715,8 +754,8 @@ asynchronously, assert the value twice and require both reads to agree.
 ## Verification commands
 
 ```
-npm test                            # unit (175)
-npx playwright test                 # e2e (8)
+npx vitest run src/                 # unit (255)
+npx playwright test                 # e2e (54)
 npx vitest run tests/integration    # integration (48) - needs local Supabase
 npm run build
 ```

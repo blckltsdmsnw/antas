@@ -6,7 +6,9 @@ import {
   weatherLabel,
   RAINING_MM_PER_HOUR,
   UNKNOWN_WEATHER,
+  CONDITION_KEY,
 } from "./current-weather";
+import { copyFor } from "@/lib/i18n/strings";
 
 const realFetch = globalThis.fetch;
 
@@ -27,17 +29,32 @@ afterEach(() => {
   globalThis.fetch = realFetch;
 });
 
+const tl = copyFor("tl").map;
+const en = copyFor("en").map;
+
 describe("weatherLabel", () => {
   it("names the conditions that matter for a flood", () => {
-    expect(weatherLabel(0)).toBe("Maaliwalas");
-    expect(weatherLabel(3)).toBe("Maulap");
-    expect(weatherLabel(61)).toBe("Umuulan");
-    expect(weatherLabel(82)).toBe("Malakas na ulan");
-    expect(weatherLabel(95)).toBe("May kulog at kidlat");
+    expect(weatherLabel(0, tl)).toBe("Maaliwalas");
+    expect(weatherLabel(3, tl)).toBe("Maulap");
+    expect(weatherLabel(61, tl)).toBe("Umuulan");
+    expect(weatherLabel(82, tl)).toBe("Malakas na ulan");
+    expect(weatherLabel(95, tl)).toBe("May kulog at kidlat");
+  });
+
+  it("names the same conditions in English", () => {
+    // The distinction that matters for a flood is drizzle vs rain vs heavy
+    // rain, and it has to survive translation - the strip is read to judge
+    // whether the water is still rising.
+    expect(weatherLabel(0, en)).toBe("Clear");
+    expect(weatherLabel(55, en)).toBe("Drizzle");
+    expect(weatherLabel(61, en)).toBe("Raining");
+    expect(weatherLabel(82, en)).toBe("Heavy rain");
+    expect(weatherLabel(95, en)).toBe("Thunder and lightning");
   });
 
   it("says nothing rather than guessing when the code is missing", () => {
-    expect(weatherLabel(null)).toBeNull();
+    expect(weatherLabel(null, tl)).toBeNull();
+    expect(weatherLabel(null, en)).toBeNull();
   });
 });
 
@@ -62,21 +79,16 @@ describe("weatherKind", () => {
   it("agrees with the label at every code the provider can send", () => {
     // The real guard. Walking all 100 codes means a boundary cannot be nudged
     // in one place and left in the other - which is the entire failure this
-    // refactor exists to prevent.
-    const expected: Record<string, string> = {
-      clear: "Maaliwalas",
-      cloudy: "Maulap",
-      fog: "Mahamog",
-      drizzle: "Ambon",
-      rain: "Umuulan",
-      downpour: "Malakas na ulan",
-      storm: "May kulog at kidlat",
-    };
-
-    for (let code = 0; code <= 99; code += 1) {
-      const kind = weatherKind(code);
-      expect(kind, `code ${code} has no kind`).not.toBeNull();
-      expect(weatherLabel(code), `code ${code} disagrees`).toBe(expected[kind!]);
+    // refactor exists to prevent. Run in both languages, since the word and the
+    // glyph have to agree whichever one is on screen.
+    for (const copy of [tl, en]) {
+      for (let code = 0; code <= 99; code += 1) {
+        const kind = weatherKind(code);
+        expect(kind, `code ${code} has no kind`).not.toBeNull();
+        expect(weatherLabel(code, copy), `code ${code} disagrees`).toBe(
+          copy[CONDITION_KEY[kind!]],
+        );
+      }
     }
   });
 

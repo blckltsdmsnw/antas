@@ -11,8 +11,10 @@ import {
   formatAccuracy,
   needsLocationConfirmation,
 } from "@/lib/reports/accuracy";
-import { depthLabel, type DepthLevel } from "@/lib/depth/scale";
+import { type DepthLevel } from "@/lib/depth/scale";
+import { depthName } from "@/lib/depth/name";
 import { formatPhone } from "@/lib/profile/phone";
+import { useCopy } from "@/lib/i18n/context";
 import type { Reason } from "@/lib/scoring/types";
 
 interface Detail {
@@ -55,6 +57,7 @@ export default function SignalDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const copy = useCopy();
   const router = useRouter();
   const [detail, setDetail] = useState<Detail | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -97,7 +100,11 @@ export default function SignalDetailPage({
     setBusy(false);
 
     if (!result.ok) {
-      setError(result.message);
+      setError(
+        result.code === "no_reason"
+          ? copy.screens.decideNoReason
+          : copy.screens.decideFailed,
+      );
       return;
     }
     router.push("/console");
@@ -108,7 +115,7 @@ export default function SignalDetailPage({
       <>
         <SimulationBanner />
         <main className="console-page">
-          <p className="task-lede">Naglo-load, o wala ka sa barangay na ito.</p>
+          <p className="task-lede">{copy.screens.signalLoading}</p>
         </main>
       </>
     );
@@ -123,13 +130,15 @@ export default function SignalDetailPage({
             here on carry none - and inventing one would put a claim about the
             water into a record a moderator reads as theirs. */}
         <h1 className="task-title">
-          {detail.depth ? depthLabel(detail.depth).tl : "Humihingi ng tulong"}
+          {detail.depth
+            ? depthName(detail.depth, copy.map)
+            : copy.screens.signalTitle}
         </h1>
         <p className="task-lede">
           {detail.barangay} · {new Date(detail.created_at).toLocaleString("en-PH")}
           {detail.trust_score !== null
             ? ` · ${detail.confidence} (${detail.trust_score}/100)`
-            : " · hindi pa nasusuri"}
+            : ` · ${copy.screens.signalUnscored}`}
         </p>
 
         {/* A moderator deciding where to send people needs to know how much to
@@ -137,8 +146,9 @@ export default function SignalDetailPage({
             looks exactly like one accurate to the doorstep. */}
         {needsLocationConfirmation(detail.gps_accuracy_m) && (
           <p className="alert" style={{ marginTop: 16 }}>
-            Malabo ang lokasyon: mga {formatAccuracy(detail.gps_accuracy_m)} ang
-            puwedeng pagkakamali. Maaaring hindi ito ang tamang kalye.
+            {copy.screens.signalVagueLocation(
+              formatAccuracy(detail.gps_accuracy_m),
+            )}
           </p>
         )}
 
@@ -149,12 +159,12 @@ export default function SignalDetailPage({
         <div className="reach">
           {detail.reporter_phone ? (
             <a className="reach-call" href={`tel:${detail.reporter_phone}`}>
-              Tawagan {formatPhone(detail.reporter_phone)}
+              {copy.screens.signalCall(formatPhone(detail.reporter_phone))}
             </a>
           ) : (
             // Said out loud rather than left as a missing button. "No number"
             // and "the button did not render" look identical otherwise.
-            <p className="reach-none">Walang naibigay na numero ang nag-report.</p>
+            <p className="reach-none">{copy.screens.signalNoPhone}</p>
           )}
 
           <a
@@ -163,21 +173,18 @@ export default function SignalDetailPage({
             target="_blank"
             rel="noopener noreferrer"
           >
-            Direksyon papunta rito
+            {copy.screens.signalDirections}
           </a>
 
           {detail.reporter_phone && (
             // Labelled unverified because it is. No SMS provider means no code
             // was ever sent, and a number presented as checked when it was
             // merely typed is a moderator trusting the wrong thing.
-            <p className="reach-caveat">
-              Hindi pa na-verify ang numerong ito — ito ang ibinigay mismo ng
-              nag-report.
-            </p>
+            <p className="reach-caveat">{copy.screens.signalPhoneUnverified}</p>
           )}
         </div>
 
-        <h2 className="sheet-count">Pagsusuri</h2>
+        <h2 className="sheet-count">{copy.screens.signalAssessment}</h2>
         <ReasonList reasons={detail.reasons ?? []} />
 
         {detail.note && (
@@ -189,7 +196,7 @@ export default function SignalDetailPage({
         {photoUrl ? (
           <img
             src={photoUrl}
-            alt="Larawan ng tubig mula sa nag-report"
+            alt={copy.screens.signalPhotoAlt}
             style={{ width: "100%", borderRadius: 12, marginTop: 20 }}
           />
         ) : (
@@ -198,30 +205,31 @@ export default function SignalDetailPage({
           // needs to know that is what is happening rather than assuming the
           // sender simply did not send one - which they cannot.
           <p className="alert" style={{ marginTop: 20 }}>
-            <strong>Hindi mabuksan ang larawan.</strong> Laging may larawan ang
-            SOS, kaya ibig sabihin nito ay may problema sa pagkuha nito - hindi
-            ito nangangahulugang walang ipinadalang larawan.
+            <strong>{copy.screens.signalPhotoFailed}</strong>{" "}
+            {copy.screens.signalPhotoMissing}
             {photoError ? ` (${photoError})` : ""}
           </p>
         )}
 
-        <h2 className="sheet-count" style={{ marginTop: 28 }}>Desisyon</h2>
+        <h2 className="sheet-count" style={{ marginTop: 28 }}>
+          {copy.screens.signalDecision}
+        </h2>
 
         <button className="btn" onClick={() => decide("confirmed")} disabled={busy}>
-          Kumpirmahin
+          {copy.screens.signalConfirm}
         </button>
 
         <label className="field" style={{ marginTop: 20 }}>
-          <span className="field-label">Dahilan ng pag-dismiss</span>
+          <span className="field-label">{copy.screens.signalDismissReason}</span>
           <select
             className="field-input"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
           >
-            <option value="">Pumili...</option>
+            <option value="">{copy.screens.signalChoose}</option>
             {DISMISS_REASONS.map((r) => (
               <option key={r} value={r}>
-                {dismissReasonLabel(r)}
+                {dismissReasonLabel(r, copy.screens)}
               </option>
             ))}
           </select>
@@ -233,7 +241,7 @@ export default function SignalDetailPage({
           onClick={() => decide("dismissed")}
           disabled={busy || reason === ""}
         >
-          I-dismiss
+          {copy.screens.signalDismiss}
         </button>
 
         {error && (

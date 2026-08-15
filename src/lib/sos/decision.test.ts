@@ -7,6 +7,7 @@ import {
   isDismissReason,
   dismissReasonLabel,
 } from "./decision";
+import { copyFor } from "@/lib/i18n/strings";
 
 describe("dismiss reasons", () => {
   it("lists every reason", () => {
@@ -37,10 +38,24 @@ describe("dismiss reasons", () => {
     expect(isDismissReason("spam")).toBe(false);
   });
 
-  it("gives every reason a Filipino label", () => {
-    for (const reason of DISMISS_REASONS) {
-      expect(dismissReasonLabel(reason).length).toBeGreaterThan(0);
+  it("gives every reason a label in both languages", () => {
+    // An unlabelled option in this dropdown is a moderator dismissing somebody's
+    // call for help without being able to read what they are choosing.
+    for (const lang of ["tl", "en"] as const) {
+      const copy = copyFor(lang).screens;
+      for (const reason of DISMISS_REASONS) {
+        expect(
+          dismissReasonLabel(reason, copy).length,
+          `${lang} ${reason}`,
+        ).toBeGreaterThan(0);
+      }
     }
-    expect(dismissReasonLabel("duplicate")).toBe("Doble - naiulat na ito");
+
+    expect(dismissReasonLabel("duplicate", copyFor("tl").screens)).toBe(
+      "Doble - naiulat na ito",
+    );
+    expect(dismissReasonLabel("duplicate", copyFor("en").screens)).toBe(
+      "Duplicate - already reported",
+    );
   });
 });

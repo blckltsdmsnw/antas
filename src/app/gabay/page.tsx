@@ -5,6 +5,8 @@ import {
   type EmergencyContact,
 } from "@/lib/emergency/contacts";
 import { GoBagList } from "@/components/GoBagList";
+import { copyFor, type Copy } from "@/lib/i18n/strings";
+import { getLang } from "@/lib/i18n/server";
 
 /**
  * Preparedness, and the numbers that actually reach someone.
@@ -27,73 +29,22 @@ import { GoBagList } from "@/components/GoBagList";
  * boundary exists to prevent.
  */
 
-export const metadata: Metadata = {
-  title: "Gabay sa Baha - Antas",
-  description:
-    "Paghahanda bago, habang, at pagkatapos ng baha. Kasama ang mga numerong dapat tawagan.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  // Translated too. A tab title and a share preview are read before the page
+  // is, so leaving them Tagalog would hand an English reader a page that
+  // announces itself in a language they told us they could not read.
+  const copy = copyFor(await getLang());
+  return {
+    title: copy.guide.metaTitle,
+    description: copy.guide.metaDescription,
+  };
+}
 
 interface Item {
+  id: string;
   title: string;
   body: string;
 }
-
-const GO_BAG: readonly Item[] = [
-  {
-    title: "Tubig at pagkain",
-    body: "Para sa tatlong araw. Piliin ang hindi kailangang lutuin - de-lata, biskwit, tubig na naka-bote.",
-  },
-  {
-    title: "Flashlight at radyo",
-    body: "May kasamang ekstrang baterya. Mas maaasahan ang radyo kaysa signal kapag tumaas ang tubig.",
-  },
-  {
-    title: "Gamot at first aid",
-    body: "Alcohol, benda, at ang mga regular na gamot ng bawat isa sa bahay.",
-  },
-  {
-    title: "Mahahalagang dokumento",
-    body: "Ilagay sa plastik na selyado. ID, titulo, birth certificate, at kopya ng mga numerong nasa itaas.",
-  },
-];
-
-const BEFORE: readonly Item[] = [
-  {
-    title: "Makinig sa opisyal na balita",
-    body: "Ang PAGASA at ang inyong barangay ang may sinasabi tungkol sa paglikas. Ang Antas ay nagsasabi kung gaano kalalim ang tubig - hindi ito nagbabala at hindi ito nag-uutos lumikas.",
-  },
-  {
-    title: "Alamin ang daan palabas",
-    body: "Tukuyin ngayon kung saan ang pinakamalapit na evacuation center at kung aling kalsada ang hindi madaling bahain. Huwag hintaying gabi na at umaapaw na ang tubig.",
-  },
-  {
-    title: "Itaas ang mga gamit",
-    body: "Ilipat sa mataas na lugar ang mga kagamitang de-kuryente at ang mga papeles. Linisin ang kanal at bubong bago pa dumating ang malakas na ulan.",
-  },
-  {
-    title: "I-charge ang lahat",
-    body: "Telepono, power bank, at flashlight. Kapag nawalan ng kuryente, wala nang pagkakataon.",
-  },
-];
-
-const DURING: readonly Item[] = [
-  {
-    title: "Huwag lumusong sa baha",
-    body: "Anim na pulgada ng umaagos na tubig ay sapat na para matumba ka. Hindi mo nakikita ang bukas na manhole, ang kable, o kung gaano na kalalim.",
-  },
-  {
-    title: "Patayin ang kuryente",
-    body: "Ibaba ang main switch bago pumasok ang tubig sa loob ng bahay. Huwag hahawak ng anumang de-kuryente habang basa ang paa.",
-  },
-  {
-    title: "Umakyat, huwag tumawid",
-    body: "Kung tumataas na ang tubig, umakyat sa mas mataas na palapag o sa bubong. Huwag piliting tumawid sa umaagos na tubig para makarating sa ibang lugar.",
-  },
-  {
-    title: "Humingi ng tulong sa mga tumutugon",
-    body: "Tumawag sa 911 o sa inyong barangay disaster desk. Ang Antas ay hindi nagpapadala ng rescue at walang nakabantay dito - ang mga numerong nasa itaas ang umaabot sa taong makakasagip.",
-  },
-];
 
 /**
  * One desk and every published way to reach it.
@@ -110,12 +61,18 @@ const DURING: readonly Item[] = [
  * single number recorded beside it. See `EmergencyLine` for why those are two
  * fields and not one.
  */
-function Contact({ contact }: { contact: EmergencyContact }) {
+function Contact({
+  contact,
+  copy,
+}: {
+  contact: EmergencyContact;
+  copy: Copy["guide"];
+}) {
   return (
     <li className={`contact contact--${contact.emphasis}`}>
       <div className="contact-body">
         <p className="contact-name">{contact.name}</p>
-        <p className="contact-role">{contact.role}</p>
+        <p className="contact-role">{copy[contact.roleKey] as string}</p>
       </div>
       <div className="contact-lines">
         {contact.lines.map((line) => (
@@ -131,8 +88,10 @@ function Contact({ contact }: { contact: EmergencyContact }) {
 function ContactList({
   contacts,
   scope,
+  copy,
 }: {
   contacts: readonly EmergencyContact[];
+  copy: Copy["guide"];
   /**
    * Marks which list this is in the DOM. Not styling - it is what lets a test
    * ask whether a *local* desk is listed. Counting `.contact` cannot answer
@@ -143,7 +102,7 @@ function ContactList({
   return (
     <ul className="contact-list" data-scope={scope}>
       {contacts.map((contact) => (
-        <Contact key={contact.name} contact={contact} />
+        <Contact key={contact.name} contact={contact} copy={copy} />
       ))}
     </ul>
   );
@@ -165,7 +124,7 @@ function Section({
       </h2>
       <ul className="guide-list">
         {items.map((item) => (
-          <li key={item.title} className="guide-item">
+          <li key={item.id} className="guide-item">
             <p className="guide-item-title">{item.title}</p>
             <p className="guide-item-body">{item.body}</p>
           </li>
@@ -175,24 +134,44 @@ function Section({
   );
 }
 
-export default function GabayPage() {
+export default async function GabayPage() {
+  const copy = copyFor(await getLang());
+
+  const before: readonly Item[] = [
+    { id: "news", title: copy.guide.beforeNewsTitle, body: copy.guide.beforeNewsBody },
+    { id: "route", title: copy.guide.beforeRouteTitle, body: copy.guide.beforeRouteBody },
+    { id: "lift", title: copy.guide.beforeLiftTitle, body: copy.guide.beforeLiftBody },
+    {
+      id: "charge",
+      title: copy.guide.beforeChargeTitle,
+      body: copy.guide.beforeChargeBody,
+    },
+  ];
+
+  const during: readonly Item[] = [
+    { id: "wade", title: copy.guide.duringWadeTitle, body: copy.guide.duringWadeBody },
+    { id: "power", title: copy.guide.duringPowerTitle, body: copy.guide.duringPowerBody },
+    { id: "climb", title: copy.guide.duringClimbTitle, body: copy.guide.duringClimbBody },
+    { id: "call", title: copy.guide.duringCallTitle, body: copy.guide.duringCallBody },
+  ];
+
   return (
     <main className="task-page">
-      <h1 className="task-title">Handa ka ba?</h1>
-      <p className="task-lede">
-        Ang Antas ay nagsasabi kung gaano kalalim ang tubig. Hindi ito
-        nagpapadala ng rescue at walang nakabantay dito. Ito ang dapat gawin - at
-        ang mga numerong dapat tawagan.
-      </p>
+      <h1 className="task-title">{copy.guide.title}</h1>
+      <p className="task-lede">{copy.guide.lede}</p>
 
       {/* First, because it is the only section that matters when the water is
           already rising. The checklist can wait; this cannot. */}
       <section className="guide-section" aria-labelledby="tulong">
         <h2 className="guide-heading" id="tulong">
-          Mga numerong umaabot sa tao
+          {copy.guide.hotlinesHeading}
         </h2>
 
-        <ContactList contacts={NATIONAL_CONTACTS} scope="national" />
+        <ContactList
+          contacts={NATIONAL_CONTACTS}
+          scope="national"
+          copy={copy.guide}
+        />
 
         {LOCAL_CONTACTS.length === 0 ? (
           // Said out loud rather than left as a short list that looks complete.
@@ -200,27 +179,27 @@ export default function GabayPage() {
           // so they go and find it now instead of assuming it is covered. The
           // national desks above do not cover it: they cannot say which street
           // in Malanday is passable.
-          <p className="guide-note">
-            Pambansa ang mga numerong nasa itaas. Wala pang naidagdag na numero
-            ng barangay o lokal na DRRMO dito. Hanapin at itago ang numero ng
-            inyong barangay bago pa mangailangan.
-          </p>
+          <p className="guide-note">{copy.guide.noLocalNumbers}</p>
         ) : (
-          <ContactList contacts={LOCAL_CONTACTS} scope="local" />
+          <ContactList
+            contacts={LOCAL_CONTACTS}
+            scope="local"
+            copy={copy.guide}
+          />
         )}
       </section>
 
       {/* The only interactive part of this page, and the only one that should
           be: packing is a task, so it gets checkboxes. Everything else here is
           read once and acted on, not tracked. */}
-      <GoBagList items={GO_BAG} />
-      <Section id="bago" title="Bago ang baha" items={BEFORE} />
-      <Section id="habang" title="Habang may baha" items={DURING} />
+      {/* Takes no props: it is a client component and reads its own copy. See
+          the note in GoBagList - an interpolated phrase is a function, and
+          functions cannot be passed from a server component. */}
+      <GoBagList />
+      <Section id="bago" title={copy.guide.beforeHeading} items={before} />
+      <Section id="habang" title={copy.guide.duringHeading} items={during} />
 
-      <p className="guide-note">
-        Pangkalahatan ang gabay na ito. Ang barangay at ang PAGASA ang may
-        opisyal na babala at utos na lumikas para sa inyong lugar.
-      </p>
+      <p className="guide-note">{copy.guide.footer}</p>
     </main>
   );
 }

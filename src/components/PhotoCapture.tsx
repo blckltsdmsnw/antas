@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useCopy } from "@/lib/i18n/context";
 
 interface PhotoCaptureProps {
   /** Fired once the photo is confirmed, never on the shutter itself. */
@@ -54,12 +55,18 @@ export function PhotoCapture({
   onCapture,
   prompt,
   note,
-  openLabel = "Buksan ang camera",
+  openLabel,
   onSkip,
   skipLabel,
   variant = "primary",
   source = "live",
 }: PhotoCaptureProps) {
+  const copy = useCopy();
+  // Resolved once and used by BOTH branches. Made optional when the labels
+  // moved into the dictionary, and the native hand-off kept reading the bare
+  // prop - which rendered a button with no text on it. Caught by a test that
+  // clicks it by name.
+  const openText = openLabel ?? copy.sos.photoOpen;
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [stage, setStage] = useState<Stage>("resting");
@@ -157,7 +164,7 @@ export function PhotoCapture({
           o kumuha ng larawan gamit ang camera ng telepono.
         </p>
         <label className="capture-file">
-          <span>Pumili ng larawan</span>
+          <span>{copy.screens.choosePhoto}</span>
           <input
             type="file"
             accept="image/*"
@@ -175,7 +182,7 @@ export function PhotoCapture({
   if (stage === "preview" && shot) {
     return (
       <figure className="capture-card capture-card--shot">
-        <img className="capture-shot" src={shot.url} alt="Ang larawang kinuha mo" />
+        <img className="capture-shot" src={shot.url} alt={copy.screens.yourPhoto} />
         <figcaption className="capture-actions">
           <button type="button" className="btn" onClick={() => onCapture(shot.file)}>
             Gamitin ang larawang ito
@@ -204,7 +211,7 @@ export function PhotoCapture({
             type="button"
             className="shutter"
             onClick={capture}
-            aria-label="Kumuha ng larawan"
+            aria-label={copy.screens.takePhoto}
           />
           <button
             type="button"
@@ -232,7 +239,7 @@ export function PhotoCapture({
         // browsers. The input stays in the DOM but visually hidden so it
         // remains reachable by keyboard and by assistive tech.
         <label className={variant === "secondary" ? "btn btn-quiet" : "btn"}>
-          {openLabel}
+          {openText}
           <input
             className="sr-only"
             type="file"
@@ -251,7 +258,9 @@ export function PhotoCapture({
           onClick={() => void open()}
           disabled={stage === "opening"}
         >
-          {stage === "opening" ? "Binubuksan ang camera..." : openLabel}
+          {stage === "opening"
+            ? copy.screens.openingCamera
+            : openText}
         </button>
       )}
       {onSkip && (

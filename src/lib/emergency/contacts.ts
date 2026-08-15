@@ -16,6 +16,8 @@
  * national lines alone as though that were the complete answer.
  */
 
+import type { Copy } from "@/lib/i18n/strings";
+
 /**
  * One dialable line.
  *
@@ -33,10 +35,17 @@ export interface EmergencyLine {
 }
 
 export interface EmergencyContact {
-  /** Who answers. */
+  /**
+   * Who answers. Not translated - an agency's name is its name, and "NDRRMC"
+   * is what is printed on the door and answered on the phone.
+   */
   name: string;
-  /** What they do, in the reader's terms. */
-  role: string;
+  /**
+   * What they do, in the reader's terms. A key rather than a sentence: this
+   * line is read by somebody deciding which number to press, so it has to exist
+   * in whichever language they are reading.
+   */
+  roleKey: keyof Copy["guide"];
   /**
    * How loudly this desk is drawn.
    *
@@ -73,14 +82,14 @@ export interface EmergencyContact {
 export const NATIONAL_CONTACTS: readonly EmergencyContact[] = [
   {
     name: "Emergency 911",
-    role: "Pambansang emergency hotline - pulis, bumbero, medikal, rescue. Ito ang tawagan kung may nanganganib ngayon.",
+    roleKey: "role911",
     emphasis: "primary",
     lines: [{ published: "911", dial: "911" }],
     source: "Philippine national emergency hotline",
   },
   {
     name: "NDRRMC Operations Center",
-    role: "Pambansang tanggapan sa sakuna - nagko-koordina ng tugon at nagbibigay ng impormasyon. Hindi ito ang pinakamabilis na daan sa rescue; mas mabilis ang 911 at ang inyong barangay.",
+    roleKey: "roleNdrrmc",
     emphasis: "secondary",
     lines: [
       { published: "(02) 8911-5061 to 65 local 100", dial: "+63289115061" },

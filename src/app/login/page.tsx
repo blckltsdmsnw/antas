@@ -3,17 +3,21 @@
 import { Suspense, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useCopy } from "@/lib/i18n/context";
+import type { Copy } from "@/lib/i18n/strings";
 
 type SubmitStatus = "idle" | "sending" | "sent";
 
-const LINK_ERROR_MESSAGES: Record<string, string> = {
-  expired_link: "Paso na ang link o nagamit na. Humingi ng bago.",
-  missing_code: "Walang code sa link. Humingi ng bago.",
+const LINK_ERROR_KEY: Record<string, keyof Copy["screens"]> = {
+  expired_link: "loginExpired",
+  missing_code: "loginNoCode",
 };
 
 function LinkErrorAlert() {
+  const copy = useCopy();
   const searchParams = useSearchParams();
-  const message = LINK_ERROR_MESSAGES[searchParams.get("error") ?? ""];
+  const key = LINK_ERROR_KEY[searchParams.get("error") ?? ""];
+  const message = key ? (copy.screens[key] as string) : null;
 
   if (!message) return null;
   return (
@@ -24,6 +28,7 @@ function LinkErrorAlert() {
 }
 
 export default function LoginPage() {
+  const copy = useCopy();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<SubmitStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +49,7 @@ export default function LoginPage() {
       // (e.g. Sentry) later. Keep the user-facing message generic; the
       // real error goes to the console/ops for now.
       console.error("signInWithOtp failed:", signInError);
-      setError("Hindi naipadala ang link. Subukan ulit.");
+      setError(copy.screens.loginFailed);
       setStatus("idle");
       return;
     }
@@ -56,8 +61,8 @@ export default function LoginPage() {
     return (
       <main className="task-page">
         <div className="done">
-          <h1 className="done-title">Tingnan ang email mo</h1>
-          <p className="done-body">Check your email for the sign-in link.</p>
+          <h1 className="done-title">{copy.screens.loginCheckTitle}</h1>
+          <p className="done-body">{copy.screens.loginCheckBody}</p>
         </div>
       </main>
     );
@@ -65,10 +70,8 @@ export default function LoginPage() {
 
   return (
     <main className="task-page">
-      <h1 className="task-title">Mag-sign in</h1>
-      <p className="task-lede">
-        Kailangan lang ito bago mag-report. Hindi kailangan para tingnan ang mapa.
-      </p>
+      <h1 className="task-title">{copy.screens.loginTitle}</h1>
+      <p className="task-lede">{copy.screens.loginLede}</p>
 
       <form onSubmit={handleSubmit}>
         <Suspense fallback={null}>
@@ -77,7 +80,7 @@ export default function LoginPage() {
 
         <label className="field">
           <span className="field-label" id="email-label">
-            Email
+            {copy.screens.loginEmail}
           </span>
           <input
             id="email"
@@ -86,14 +89,14 @@ export default function LoginPage() {
             required
             autoComplete="email"
             inputMode="email"
-            placeholder="ikaw@halimbawa.com"
+            placeholder={copy.screens.loginEmailPlaceholder}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </label>
 
         <button className="btn" type="submit" disabled={status === "sending"}>
-          {status === "sending" ? "Ipinapadala..." : "Send sign-in link"}
+          {status === "sending" ? copy.screens.loginSending : copy.screens.loginSend}
         </button>
         {error && (
           <p className="alert" role="alert">

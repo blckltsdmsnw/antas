@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AntasMark } from "@/components/AntasMark";
 import { ModeratorLink } from "@/components/ModeratorLink";
+import { LanguageToggle } from "@/components/LanguageToggle";
 
 /**
  * The header, everywhere except the map.
@@ -44,6 +45,11 @@ export function SiteHeader() {
         Antas
       </Link>
       <nav className="site-nav">
+        {/* The language control lives here and only here. The map deliberately
+            has no header, so it is not reachable from that one screen - which
+            is right: this is a preference set once, not something reached for
+            while looking at water. It is one tab away from anywhere. */}
+        <LanguageToggle />
         <ModeratorLink />
       </nav>
     </header>

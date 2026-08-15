@@ -12,25 +12,30 @@ import {
 import { reportPhotoPath, REPORT_PHOTO_BUCKET } from "@/lib/reports/photo";
 import { createClient } from "@/lib/supabase/client";
 import type { DepthLevel } from "@/lib/depth/scale";
+import { useCopy } from "@/lib/i18n/context";
+import type { Copy } from "@/lib/i18n/strings";
 
 /** Everything the page can display, including the failures it detects itself. */
 type PageErrorCode = SubmitErrorCode | "no_location" | "upload_failed";
 
-const ERROR_MESSAGES: Record<PageErrorCode, string> = {
-  invalid_depth: "Pumili ng lalim ng tubig.",
-  invalid_coordinates: "Hindi mabasa ang lokasyon mo.",
-  outside_pilot_area: "Sa ngayon, Metro Manila lang ang saklaw ng Antas.",
-  not_signed_in: "Mag-sign in muna bago mag-report.",
-  insert_failed: "May problema sa pag-save. Subukan ulit.",
-  // Says what happened, and deliberately does NOT say "subukan ulit" - retrying
-  // will not help, and inviting it wastes the time of somebody who deserves a
-  // straight answer. It also says the emergency route is still open, which is
-  // true: suspension withdraws the ability to contribute, never the ability to
-  // ask for help.
-  suspended:
-    "Naka-hold ang account mo dahil sa mga naunang report na hindi napatunayang totoo. Hindi ka muna makakapag-report ng lalim ng tubig. Kung nasa panganib ka, gamitin pa rin ang Tulong o tumawag sa 911.",
-  no_location: "Buksan ang location para makapag-report.",
-  upload_failed: "Hindi naipadala ang larawan. Subukan ulit.",
+/**
+ * Which string each failure shows.
+ *
+ * `suspended` is the one to read in `screens.ts` before touching: it says what
+ * happened and deliberately does NOT invite a retry, because retrying cannot
+ * work. It also says the emergency route is still open, which is true -
+ * suspension withdraws the ability to contribute, never the ability to ask for
+ * help - and that sentence has to survive into every language.
+ */
+const ERROR_KEY: Record<PageErrorCode, keyof Copy["screens"]> = {
+  invalid_depth: "errInvalidDepth",
+  invalid_coordinates: "errInvalidCoordinates",
+  outside_pilot_area: "errOutsidePilotArea",
+  not_signed_in: "errNotSignedIn",
+  insert_failed: "errInsertFailed",
+  suspended: "errSuspended",
+  no_location: "errNoLocation",
+  upload_failed: "errUploadFailed",
 };
 
 /** A single geolocation reading, kept while the user confirms it. */
@@ -41,6 +46,7 @@ interface Fix {
 }
 
 export default function ReportPage() {
+  const copy = useCopy();
   const [depth, setDepth] = useState<DepthLevel>("knee");
   const [status, setStatus] = useState<
     "idle" | "locating" | "confirming" | "sending" | "sent"
@@ -143,14 +149,12 @@ export default function ReportPage() {
     return (
       <main className="task-page">
         <div className="done">
-          <h1 className="done-title">Salamat. Naitala na ang report mo.</h1>
-          <p className="done-body">
-            Makikita na ito ng iba sa mapa. Mag-ingat.
-          </p>
+          <h1 className="done-title">{copy.screens.reportDoneTitle}</h1>
+          <p className="done-body">{copy.screens.reportDoneBody}</p>
         </div>
         <p style={{ marginTop: 24 }}>
           <Link href="/" className="quiet-link">
-            Bumalik sa mapa
+            {copy.screens.reportBackToMap}
           </Link>
         </p>
       </main>
@@ -160,26 +164,21 @@ export default function ReportPage() {
   if (status === "confirming" && fix) {
     return (
       <main className="task-page">
-        <h1 className="task-title">Malabo ang lokasyon mo</h1>
+        <h1 className="task-title">{copy.screens.vagueTitle}</h1>
         <p className="task-lede">
-          Hindi sigurado ang telepono mo kung nasaan ka — mga{" "}
-          <strong>{formatAccuracy(fix.accuracyM)}</strong> ang puwedeng pagkakamali.
-          Ang report mo ay puwedeng mapunta sa maling kalye.
+          {copy.screens.vagueLede(formatAccuracy(fix.accuracyM))}
         </p>
-        <p className="task-lede">
-          Kung nasa loob ka ng gusali, lumabas o lumapit sa bintana, pagkatapos
-          subukan ulit. Kung tama naman ang lugar, ituloy mo.
-        </p>
+        <p className="task-lede">{copy.screens.vagueAdvice}</p>
 
         <div style={{ marginTop: 28, display: "grid", gap: 12 }}>
           <button className="btn" onClick={() => void handleSubmit()}>
-            Subukan ulit ang lokasyon
+            {copy.screens.vagueRetry}
           </button>
           <button
             className="btn btn-quiet"
             onClick={() => void send(fix)}
           >
-            Ituloy — tama ang lugar
+            {copy.screens.vagueContinue}
           </button>
         </div>
 
@@ -191,7 +190,7 @@ export default function ReportPage() {
               setStatus("idle");
             }}
           >
-            Kanselahin
+            {copy.screens.cancel}
           </button>
         </p>
       </main>
@@ -202,10 +201,8 @@ export default function ReportPage() {
 
   return (
     <main className="task-page">
-      <h1 className="task-title">Gaano kalalim ang tubig?</h1>
-      <p className="task-lede">
-        Pindutin kung saan umaabot ang tubig sa katawan ngayon.
-      </p>
+      <h1 className="task-title">{copy.screens.reportTitle}</h1>
+      <p className="task-lede">{copy.screens.reportLede}</p>
 
       <DepthSlider value={depth} onChange={setDepth} />
 
@@ -214,7 +211,7 @@ export default function ReportPage() {
           demanding one would lose every report made in heavy rain. */}
       {photo ? (
         <figure className="capture-card capture-card--shot">
-          <img className="capture-shot" src={photo.url} alt="Ang larawang kinuha mo" />
+          <img className="capture-shot" src={photo.url} alt={copy.screens.yourPhoto} />
           <figcaption className="capture-actions">
             <button
               type="button"
@@ -224,15 +221,15 @@ export default function ReportPage() {
                 setPhoto(null);
               }}
             >
-              Alisin ang larawan
+              {copy.screens.reportPhotoRemove}
             </button>
           </figcaption>
         </figure>
       ) : (
         <PhotoCapture
-          prompt="Magdagdag ng larawan ng tubig"
-          note="Opsyonal. Makikita ito ng lahat sa mapa."
-          openLabel="Kumuha ng larawan"
+          prompt={copy.screens.reportPhotoPrompt}
+          note={copy.screens.reportPhotoNote}
+          openLabel={copy.screens.reportPhotoOpen}
           variant="secondary"
           source="native"
           onCapture={(file) =>
@@ -244,16 +241,16 @@ export default function ReportPage() {
       <div style={{ marginTop: 28 }}>
         <button className="btn" onClick={handleSubmit} disabled={isBusy}>
           {status === "locating"
-            ? "Hinahanap ang lokasyon..."
+            ? copy.screens.reportLocating
             : status === "sending"
-              ? "Ipinapadala..."
-              : "I-report"}
+              ? copy.screens.reportSending
+              : copy.screens.reportSend}
         </button>
       </div>
 
       {errors.map((code) => (
         <p key={code} className="alert" role="alert">
-          {ERROR_MESSAGES[code]}
+          {copy.screens[ERROR_KEY[code]] as string}
         </p>
       ))}
 
@@ -262,7 +259,7 @@ export default function ReportPage() {
       {errors.includes("not_signed_in") && (
         <p style={{ marginTop: 16 }}>
           <Link href="/login" className="btn">
-            Mag-sign in
+            {copy.screens.loginTitle}
           </Link>
         </p>
       )}

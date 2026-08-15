@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { isSosStatus, type SosStatus } from "@/lib/sos/status";
-import { progressFor } from "@/lib/sos/progress";
+import { progressText } from "@/lib/sos/progress";
+import { useCopy } from "@/lib/i18n/context";
 
 /**
  * What happened to the signal you just sent.
@@ -28,6 +29,7 @@ interface SignalStatusProps {
 }
 
 export function SignalStatus({ signalId }: SignalStatusProps) {
+  const copy = useCopy();
   const [status, setStatus] = useState<SosStatus | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -72,16 +74,12 @@ export function SignalStatus({ signalId }: SignalStatusProps) {
   }, [signalId]);
 
   if (failed) {
-    return (
-      <p className="progress-note">
-        Hindi makuha ang kalagayan ng report mo ngayon. Naipadala pa rin ito.
-      </p>
-    );
+    return <p className="progress-note">{copy.sos.statusUnavailable}</p>;
   }
 
   if (!status) return null;
 
-  const progress = progressFor(status);
+  const progress = progressText(status, copy.sos);
 
   return (
     <section className="progress" data-status={status} aria-live="polite">

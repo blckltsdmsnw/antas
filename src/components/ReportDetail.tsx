@@ -5,10 +5,12 @@ import type { MapReport } from "@/components/FloodMap";
 import { PhotoLightbox } from "@/components/PhotoLightbox";
 import { ReportFreshness } from "@/components/ReportFreshness";
 import { ReporterStanding } from "@/components/ReporterStanding";
-import { depthLabel, depthRank, DEPTH_LEVELS } from "@/lib/depth/scale";
-import { DEPTH_VAR, depthRangeLabel } from "@/lib/depth/presentation";
+import { depthRank, DEPTH_LEVELS } from "@/lib/depth/scale";
+import { DEPTH_VAR } from "@/lib/depth/presentation";
+import { depthName, depthShortName, depthRangeText } from "@/lib/depth/name";
 import { reportPhotoUrl } from "@/lib/reports/photo";
 import { clockTime, relativeTime } from "@/lib/time/relative";
+import { useCopy } from "@/lib/i18n/context";
 
 interface ReportDetailProps {
   report: MapReport;
@@ -23,6 +25,7 @@ interface ReportDetailProps {
  * that the word "knee" is not. Everything else on the card is caption.
  */
 export function ReportDetail({ report, onClose }: ReportDetailProps) {
+  const copy = useCopy();
   const photo = reportPhotoUrl(report.photoPath);
   const [photoFailed, setPhotoFailed] = useState(false);
   const [zoomed, setZoomed] = useState(false);
@@ -34,16 +37,16 @@ export function ReportDetail({ report, onClose }: ReportDetailProps) {
     setZoomed(false);
   }, [report.id]);
 
-  const label = depthLabel(report.depth);
+  const label = depthName(report.depth, copy.map);
   const rank = depthRank(report.depth);
 
   return (
-    <section className="detail-sheet" aria-label="Detalye ng report">
+    <section className="detail-sheet" aria-label={copy.screens.detailLabel}>
       <button
         type="button"
         className="detail-close"
         onClick={onClose}
-        aria-label="Isara ang detalye"
+        aria-label={copy.screens.detailClose}
       >
         &times;
       </button>
@@ -55,16 +58,16 @@ export function ReportDetail({ report, onClose }: ReportDetailProps) {
           type="button"
           className="detail-photo-button"
           onClick={() => setZoomed(true)}
-          aria-label="Buksan ang larawan sa buong screen"
+          aria-label={copy.screens.detailOpenPhoto}
         >
           <img
             className="detail-photo"
             src={photo}
-            alt={`Tubig na ${label.tl.toLowerCase()}`}
+            alt={copy.screens.detailPhotoAlt(label)}
             onError={() => setPhotoFailed(true)}
           />
           <span className="detail-photo-cue" aria-hidden="true">
-            Pindutin para lakihan
+            {copy.screens.detailZoomCue}
           </span>
         </button>
       ) : (
@@ -72,8 +75,8 @@ export function ReportDetail({ report, onClose }: ReportDetailProps) {
         // saying so plainly beats an empty frame or a broken-image icon.
         <p className="detail-nophoto">
           {photoFailed
-            ? "Hindi ma-load ang larawan."
-            : "Walang larawan ang report na ito."}
+            ? copy.screens.detailPhotoFailed
+            : copy.screens.detailNoPhoto}
         </p>
       )}
 
@@ -86,10 +89,16 @@ export function ReportDetail({ report, onClose }: ReportDetailProps) {
             className="detail-swatch"
             style={{ background: DEPTH_VAR[report.depth] }}
           />
-          {label.tl}
+          {label}
         </p>
+        {/* The cross-language gloss used to live here - the Tagalog reading with
+            its English equivalent underneath. The language toggle now does that
+            job properly, so repeating it would only say the same thing twice in
+            whichever language is on screen. The centimetre range is the part
+            that was never a translation. */}
         <p className="detail-sub">
-          {label.en} · {depthRangeLabel(report.depth)}
+          {depthShortName(report.depth, copy.map)} ·{" "}
+          {depthRangeText(report.depth, copy.map)}
         </p>
 
         {/* Sits with the reading it qualifies, not down beside the timestamp:
@@ -101,14 +110,18 @@ export function ReportDetail({ report, onClose }: ReportDetailProps) {
             stale this is; someone judging whether the photo still describes the
             street needs the hour it was taken. */}
         <p className="detail-when">
-          <strong>{relativeTime(report.reportedAt)}</strong>
+          <strong>{relativeTime(report.reportedAt, copy.screens)}</strong>
           <span className="detail-clock">{clockTime(report.reportedAt)}</span>
         </p>
 
         <div
           className="depth-meter"
           role="img"
-          aria-label={`Lalim: ${label.tl}, ${rank + 1} sa ${DEPTH_LEVELS.length}`}
+          aria-label={copy.screens.detailMeter(
+            label,
+            rank + 1,
+            DEPTH_LEVELS.length,
+          )}
         >
           {DEPTH_LEVELS.map((level, index) => (
             <span
@@ -127,8 +140,8 @@ export function ReportDetail({ report, onClose }: ReportDetailProps) {
       {zoomed && photo && (
         <PhotoLightbox
           src={photo}
-          alt={`Tubig na ${label.tl.toLowerCase()}`}
-          caption={`${label.tl} · ${relativeTime(report.reportedAt)} · ${clockTime(report.reportedAt)}`}
+          alt={copy.screens.detailPhotoAlt(label)}
+          caption={`${label} · ${relativeTime(report.reportedAt, copy.screens)} · ${clockTime(report.reportedAt)}`}
           onClose={() => setZoomed(false)}
         />
       )}

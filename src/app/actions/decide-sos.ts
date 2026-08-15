@@ -4,7 +4,17 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isDismissReason, type DismissReason } from "@/lib/sos/decision";
 
-export type DecideResult = { ok: true } | { ok: false; message: string };
+/**
+ * A code, not a sentence.
+ *
+ * A server action has no business holding user-facing prose once the product
+ * carries two languages: it would have to resolve the reader's language itself,
+ * and every caller would be stuck with whatever it chose. The console maps
+ * these onto `copy.screens` instead.
+ */
+export type DecideError = "no_reason" | "failed";
+
+export type DecideResult = { ok: true } | { ok: false; code: DecideError };
 
 /**
  * Thin wrapper. Every rule - barangay scope, valid transition, reason
@@ -18,7 +28,7 @@ export async function decideSos(
   reason: string | null,
 ): Promise<DecideResult> {
   if (decision === "dismissed" && (reason === null || !isDismissReason(reason))) {
-    return { ok: false, message: "Pumili ng dahilan bago i-dismiss." };
+    return { ok: false, code: "no_reason" };
   }
 
   const supabase = await createClient();
@@ -35,7 +45,7 @@ export async function decideSos(
       code: error.code,
       message: error.message,
     });
-    return { ok: false, message: "Hindi naitala ang desisyon. Subukan ulit." };
+    return { ok: false, code: "failed" };
   }
 
   revalidatePath("/console");

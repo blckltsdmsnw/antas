@@ -4,8 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { SimulationBanner } from "@/components/SimulationBanner";
 import { SignalCard, type QueueSignal } from "@/components/SignalCard";
+import { useCopy } from "@/lib/i18n/context";
 
 export default function ConsolePage() {
+  const copy = useCopy();
   const [signals, setSignals] = useState<QueueSignal[] | null>(null);
 
   const load = useCallback(async () => {
@@ -37,15 +39,14 @@ export default function ConsolePage() {
     <>
       <SimulationBanner />
       <main className="console-page">
-        <h1 className="task-title">Mga SOS</h1>
+        <h1 className="task-title">{copy.screens.consoleTitle}</h1>
 
-        {signals === null && <p className="task-lede">Naglo-load...</p>}
+        {signals === null && (
+          <p className="task-lede">{copy.screens.consoleLoading}</p>
+        )}
 
         {signals !== null && signals.length === 0 && (
-          <p className="task-lede">
-            Walang aktibong SOS sa barangay mo. Kung wala kang nakikita at
-            inaasahan mong mayroon, tiyakin na moderator ka ng tamang barangay.
-          </p>
+          <p className="task-lede">{copy.screens.consoleEmpty}</p>
         )}
 
         {signals?.map((signal) => (

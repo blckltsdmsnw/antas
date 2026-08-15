@@ -1,7 +1,9 @@
 "use client";
 
-import { DEPTH_LEVELS, depthLabel, type DepthLevel } from "@/lib/depth/scale";
-import { DEPTH_SHORT_LABEL, depthRangeLabel } from "@/lib/depth/presentation";
+import { DEPTH_LEVELS, type DepthLevel } from "@/lib/depth/scale";
+import { depthName } from "@/lib/depth/name";
+import { depthShortName, depthRangeText } from "@/lib/depth/name";
+import { useCopy } from "@/lib/i18n/context";
 
 /**
  * The gauge is a body, not a column.
@@ -52,7 +54,8 @@ const WATER_Y: Record<DepthLevel, number> = {
 };
 
 export function DepthSlider({ value, onChange }: DepthSliderProps) {
-  const label = depthLabel(value);
+  const copy = useCopy();
+  const label = depthName(value, copy.map);
   const deepestFirst = [...DEPTH_LEVELS].reverse();
 
   // Carries no instruction of its own: the page above already says what to do,
@@ -109,17 +112,19 @@ export function DepthSlider({ value, onChange }: DepthSliderProps) {
                 aria-pressed={level === value}
                 onClick={() => onChange(level)}
               >
-                {DEPTH_SHORT_LABEL[level]}
+                {depthShortName(level, copy.map)}
               </button>
             </li>
           ))}
         </ul>
       </div>
 
+      {/* The English gloss that used to sit under the Tagalog is gone: the
+          language toggle now does that job, and keeping it would print the
+          same reading twice in whichever language is on screen. */}
       <p className="gauge-readout">
-        <strong className="gauge-readout-label">{label.tl}</strong>
-        <span className="gauge-readout-en">{label.en}</span>
-        <span className="gauge-readout-cm">{depthRangeLabel(value)}</span>
+        <strong className="gauge-readout-label">{label}</strong>
+        <span className="gauge-readout-cm">{depthRangeText(value, copy.map)}</span>
       </p>
     </div>
   );

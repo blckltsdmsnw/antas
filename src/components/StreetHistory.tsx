@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { MapReport } from "@/components/FloodMap";
-import { depthLabel, depthRank, type DepthLevel } from "@/lib/depth/scale";
+import { depthRank, type DepthLevel } from "@/lib/depth/scale";
 import { DEPTH_VAR } from "@/lib/depth/presentation";
+import { depthName } from "@/lib/depth/name";
 import { reportPhotoUrl } from "@/lib/reports/photo";
 import { relativeTime } from "@/lib/time/relative";
+import { useCopy } from "@/lib/i18n/context";
 
 interface NearbyReport {
   id: string;
@@ -37,6 +39,7 @@ function toMapReport(row: NearbyReport): MapReport {
 }
 
 export function StreetHistory({ point, onSelect }: StreetHistoryProps) {
+  const copy = useCopy();
   const [reports, setReports] = useState<NearbyReport[] | null>(null);
 
   useEffect(() => {
@@ -57,7 +60,7 @@ export function StreetHistory({ point, onSelect }: StreetHistoryProps) {
   if (!point) {
     return (
       <section className="history-sheet">
-        <p className="sheet-hint">Pindutin ang mapa para makita ang kasaysayan.</p>
+        <p className="sheet-hint">{copy.screens.historyHint}</p>
       </section>
     );
   }
@@ -65,7 +68,7 @@ export function StreetHistory({ point, onSelect }: StreetHistoryProps) {
   if (reports === null) {
     return (
       <section className="history-sheet">
-        <p className="sheet-hint">Naghahanap...</p>
+        <p className="sheet-hint">{copy.screens.historySearching}</p>
       </section>
     );
   }
@@ -73,7 +76,7 @@ export function StreetHistory({ point, onSelect }: StreetHistoryProps) {
   if (reports.length === 0) {
     return (
       <section className="history-sheet">
-        <p className="sheet-hint">Walang naitalang baha sa lugar na ito.</p>
+        <p className="sheet-hint">{copy.screens.historyEmpty}</p>
       </section>
     );
   }
@@ -84,7 +87,7 @@ export function StreetHistory({ point, onSelect }: StreetHistoryProps) {
 
   return (
     <section className="history-sheet">
-      <h2 className="sheet-count">{reports.length} report sa lugar na ito</h2>
+      <h2 className="sheet-count">{copy.screens.historyCount(reports.length)}</h2>
 
       {/* The worst case leads. Someone reading this is deciding whether to walk
           down the street, and the average depth is not what would stop them. */}
@@ -94,7 +97,7 @@ export function StreetHistory({ point, onSelect }: StreetHistoryProps) {
           style={{ background: DEPTH_VAR[deepest.depth] }}
         />
         <span className="deepest-label">
-          Pinakamalalim: {depthLabel(deepest.depth).tl}
+          {copy.screens.historyDeepest(depthName(deepest.depth, copy.map))}
         </span>
       </p>
 
@@ -112,8 +115,12 @@ export function StreetHistory({ point, onSelect }: StreetHistoryProps) {
                   className="report-swatch"
                   style={{ background: DEPTH_VAR[report.depth] }}
                 />
-                <span className="report-label">{depthLabel(report.depth).tl}</span>
-                <span className="report-when">{relativeTime(report.reported_at)}</span>
+                <span className="report-label">
+                  {depthName(report.depth, copy.map)}
+                </span>
+                <span className="report-when">
+                  {relativeTime(report.reported_at, copy.screens)}
+                </span>
                 {thumb ? (
                   <img className="report-thumb" src={thumb} alt="" aria-hidden="true" />
                 ) : (

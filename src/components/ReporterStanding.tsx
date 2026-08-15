@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useCopy } from "@/lib/i18n/context";
 
 /**
  * Whether this reporter's past readings held up. Never who they are.
@@ -25,6 +26,7 @@ interface ReporterStandingProps {
 }
 
 export function ReporterStanding({ reportId }: ReporterStandingProps) {
+  const copy = useCopy();
   const [standing, setStanding] = useState<string | null>(null);
 
   useEffect(() => {
@@ -51,7 +53,7 @@ export function ReporterStanding({ reportId }: ReporterStandingProps) {
   return (
     <p className="standing">
       <span className="standing-mark" aria-hidden="true" />
-      Madalas tumutugma ang mga naunang report ng nag-report nito
+      {copy.screens.standing}
     </p>
   );
 }

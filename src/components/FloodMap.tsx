@@ -8,8 +8,11 @@ import {
   type MapMouseEvent,
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { depthLabel, type DepthLevel } from "@/lib/depth/scale";
+import { type DepthLevel } from "@/lib/depth/scale";
 import { DEPTH_HEX } from "@/lib/depth/presentation";
+import { depthName } from "@/lib/depth/name";
+import { useCopy } from "@/lib/i18n/context";
+import type { Copy } from "@/lib/i18n/strings";
 import { clusterByProximity, CLUSTER_RADIUS_PX } from "@/lib/map/cluster";
 import { mapThemeFor, type MapTheme } from "@/lib/map/theme";
 import { freshnessOf, freshnessOpacity } from "@/lib/reports/freshness";
@@ -233,6 +236,9 @@ const FOCUS_ZOOM = 14.5;
 function singlePinElement(
   report: MapReport,
   isSelected: boolean,
+  // Passed in rather than read from context: these builders make DOM nodes
+  // outside React, for MapLibre to own, so no hook can reach them.
+  copy: Copy["map"],
 ): HTMLButtonElement {
   const photo = reportPhotoUrl(report.photoPath);
   const el = document.createElement("button");
@@ -262,7 +268,7 @@ function singlePinElement(
 
   el.setAttribute(
     "aria-label",
-    `${depthLabel(report.depth).tl}${photo ? ", may larawan" : ""}`,
+    copy.pinLabel(depthName(report.depth, copy), photo !== null),
   );
   return el;
 }
@@ -274,7 +280,11 @@ function singlePinElement(
  * `clusterByProximity`. The count is rendered as text so the information does
  * not live in size alone.
  */
-function clusterElement(depth: DepthLevel, count: number): HTMLButtonElement {
+function clusterElement(
+  depth: DepthLevel,
+  count: number,
+  copy: Copy["map"],
+): HTMLButtonElement {
   const el = document.createElement("button");
   el.type = "button";
   el.className = "pin-cluster";
@@ -282,7 +292,7 @@ function clusterElement(depth: DepthLevel, count: number): HTMLButtonElement {
   el.textContent = String(count);
   el.setAttribute(
     "aria-label",
-    `${count} report dito, pinakamalalim: ${depthLabel(depth).tl}. Pindutin para lakihan.`,
+    copy.clusterLabel(count, depthName(depth, copy)),
   );
   return el;
 }
@@ -297,6 +307,7 @@ export function FloodMap({
   focus,
   self,
 }: FloodMapProps) {
+  const copy = useCopy();
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
   // Seeded from the clock for the same reason the map is *built* with
@@ -492,8 +503,8 @@ export function FloodMap({
         const single = cluster.members.length === 1 ? cluster.members[0].report : null;
 
         const element = single
-          ? singlePinElement(single, single.id === selectedId)
-          : clusterElement(cluster.depth, cluster.members.length);
+          ? singlePinElement(single, single.id === selectedId, copy.map)
+          : clusterElement(cluster.depth, cluster.members.length, copy.map);
 
         // Without stopPropagation the map's own click handler also fires, so a
         // tap would open the report and then immediately replace it with the

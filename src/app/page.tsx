@@ -16,6 +16,8 @@ import { createClient } from "@/lib/supabase/client";
 import type { DepthLevel } from "@/lib/depth/scale";
 import { restoreSnapshot, saveSnapshot } from "@/lib/offline/snapshot";
 import type { CacheAge } from "@/lib/offline/staleness";
+import { offlineNotice } from "@/lib/offline/notice";
+import { useCopy } from "@/lib/i18n/context";
 
 /**
  * Wide enough to cover the whole pilot area from its centre.
@@ -46,6 +48,7 @@ interface NearbyRow {
 }
 
 export default function HomePage() {
+  const copy = useCopy();
   const [reports, setReports] = useState<MapReport[]>([]);
   const [point, setPoint] = useState<{ lat: number; lon: number } | null>(null);
   const [selected, setSelected] = useState<MapReport | null>(null);
@@ -251,7 +254,7 @@ export default function HomePage() {
           instead. */}
       {cachedAge && !loadFailed && (
         <p className="map-cached" role="status" data-verdict={cachedAge.verdict}>
-          {cachedAge.notice}
+          {offlineNotice(cachedAge, copy.map)}
         </p>
       )}
 
@@ -264,12 +267,12 @@ export default function HomePage() {
               // plain outage. There IS saved data; it is simply too old to put
               // in front of somebody deciding whether a street is passable.
               <>
-                <strong>Hindi ma-load ang mga report.</strong> {cachedAge.notice}
+                <strong>{copy.map.loadFailed}</strong>{" "}
+                {offlineNotice(cachedAge, copy.map)}
               </>
             ) : (
               <>
-                <strong>Hindi ma-load ang mga report.</strong> Hindi ibig sabihin
-                nito na walang baha - hindi lang namin makuha ang datos ngayon.
+                <strong>{copy.map.loadFailed}</strong> {copy.map.loadFailedBody}
               </>
             )}
           </p>
@@ -284,7 +287,7 @@ export default function HomePage() {
               setAttempt((n) => n + 1);
             }}
           >
-            Subukan ulit
+            {copy.map.retry}
           </button>
         </div>
       )}

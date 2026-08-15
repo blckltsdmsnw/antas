@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useCopy } from "@/lib/i18n/context";
 
 /**
  * Primary navigation, at the bottom.
@@ -37,7 +38,8 @@ import { usePathname } from "next/navigation";
 
 interface Tab {
   href: string;
-  label: string;
+  /** Which string in `copy.shell` names this tab. */
+  label: "mapa" | "gabay" | "report" | "ako" | "tulong";
   /** Paths this tab owns beyond its own href, so a related page keeps it lit. */
   also?: readonly string[];
   /** The raised centre action, or the emergency control. Neither is a peer. */
@@ -45,11 +47,11 @@ interface Tab {
 }
 
 const TABS: readonly Tab[] = [
-  { href: "/", label: "Mapa" },
-  { href: "/gabay", label: "Gabay" },
-  { href: "/report", label: "I-report", kind: "action" },
-  { href: "/ako", label: "Ako", also: ["/login", "/console"] },
-  { href: "/sos", label: "Tulong", kind: "sos" },
+  { href: "/", label: "mapa" },
+  { href: "/gabay", label: "gabay" },
+  { href: "/report", label: "report", kind: "action" },
+  { href: "/ako", label: "ako", also: ["/login", "/console"] },
+  { href: "/sos", label: "tulong", kind: "sos" },
 ];
 
 function isActive(pathname: string, tab: Tab): boolean {
@@ -62,6 +64,7 @@ function isActive(pathname: string, tab: Tab): boolean {
 
 export function TabBar() {
   const pathname = usePathname();
+  const copy = useCopy();
 
   // Shown on every screen, including /sos.
   //
@@ -72,7 +75,7 @@ export function TabBar() {
   // is worse than distracting them, and there is nothing to lose by leaving:
   // an SOS is only sent by the live photo and the three-second hold.
   return (
-    <nav className="tabbar" aria-label="Pangunahing nabigasyon">
+    <nav className="tabbar" aria-label={copy.shell.primaryNav}>
       {TABS.map((tab) => {
         const active = isActive(pathname, tab);
         return (
@@ -87,7 +90,7 @@ export function TabBar() {
             aria-current={active ? "page" : undefined}
           >
             <TabIcon href={tab.href} />
-            <span className="tab-label">{tab.label}</span>
+            <span className="tab-label">{copy.shell[tab.label]}</span>
           </Link>
         );
       })}

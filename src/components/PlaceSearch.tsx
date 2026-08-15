@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useCopy } from "@/lib/i18n/context";
 
 /**
  * Find your own barangay without panning the region.
@@ -40,6 +41,7 @@ interface PlaceSearchProps {
 }
 
 export function PlaceSearch({ onPick }: PlaceSearchProps) {
+  const copy = useCopy();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Place[]>([]);
   const [open, setOpen] = useState(false);
@@ -143,7 +145,7 @@ export function PlaceSearch({ onPick }: PlaceSearchProps) {
   return (
     <div className="place-search" ref={box}>
       <label className="sr-only" htmlFor="place-search-input">
-        Maghanap ng lugar o barangay
+        {copy.map.searchLabel}
       </label>
 
       <div className="place-search-field">
@@ -168,7 +170,7 @@ export function PlaceSearch({ onPick }: PlaceSearchProps) {
           type="search"
           inputMode="search"
           autoComplete="off"
-          placeholder="Maghanap ng lugar o barangay"
+          placeholder={copy.map.searchPlaceholder}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setOpen(true)}
@@ -179,7 +181,7 @@ export function PlaceSearch({ onPick }: PlaceSearchProps) {
           <button
             type="button"
             className="place-search-clear"
-            aria-label="Burahin ang hinahanap"
+            aria-label={copy.map.searchClear}
             onClick={() => {
               setQuery("");
               setResults([]);
@@ -194,9 +196,9 @@ export function PlaceSearch({ onPick }: PlaceSearchProps) {
       {showList && (
         <ul className="place-search-results">
           {failed ? (
-            <li className="place-search-empty">Hindi makahanap ngayon. Subukan ulit.</li>
+            <li className="place-search-empty">{copy.map.searchFailed}</li>
           ) : visible.length === 0 ? (
-            <li className="place-search-empty">Walang tugma.</li>
+            <li className="place-search-empty">{copy.map.searchEmpty}</li>
           ) : (
             visible.map((place, i) => (
               <li key={`${place.city}-${place.name}`}>
