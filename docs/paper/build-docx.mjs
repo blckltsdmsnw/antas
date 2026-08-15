@@ -97,7 +97,61 @@ const bullet = (t) =>
 const note = (t) => para(t, { italic: true, size: 22 });
 const code = (t) =>
   para(t, { mono: true, size: 20, before: 120, after: 120, indentLeft: 360 });
+const h3 = (t) => para(t, { size: 24, before: 240, after: 80, keepNext: true });
 const pageBreak = () => `<w:p><w:r><w:br w:type="page"/></w:r></w:p>`;
+
+/**
+ * A numbered item. Written as literal text rather than through numbering.xml,
+ * because a real numPr needs a numbering part and an abstract definition, and
+ * the reference document's own lists are plain paragraphs with a hanging
+ * indent. Matching what was accepted beats being technically tidier.
+ */
+const numbered = (n, t) =>
+  para(`${n}.  ${t}`, { indentLeft: 720, hanging: 360, before: 0, after: 120 });
+
+/**
+ * A table, sized to the printable width.
+ *
+ * Letter minus 1in margins each side leaves 9360 twips. Column widths are given
+ * explicitly and must total that, or Word reflows the table to its own liking
+ * and the first column swallows the rest.
+ */
+function table(widths, rows, { headerRow = true } = {}) {
+  const border = (side) =>
+    `<w:${side} w:val="single" w:sz="4" w:space="0" w:color="000000"/>`;
+
+  const cell = (text, w, bold) =>
+    `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>` +
+    `<w:vAlign w:val="center"/></w:tcPr>` +
+    para(bold ? `**${text}**` : text, {
+      size: 20,
+      before: 40,
+      after: 40,
+      align: text.length <= 2 ? "center" : "left",
+    }) +
+    `</w:tc>`;
+
+  const body = rows
+    .map(
+      (cells, r) =>
+        `<w:tr>${cells
+          .map((t, i) => cell(t, widths[i], headerRow && r === 0))
+          .join("")}</w:tr>`,
+    )
+    .join("");
+
+  return (
+    `<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/>` +
+    `<w:tblBorders>${["top", "left", "bottom", "right", "insideH", "insideV"]
+      .map(border)
+      .join("")}</w:tblBorders>` +
+    `<w:tblLayout w:type="fixed"/></w:tblPr>` +
+    `<w:tblGrid>${widths.map((w) => `<w:gridCol w:w="${w}"/>`).join("")}</w:tblGrid>` +
+    `${body}</w:tbl>` +
+    // Word requires a paragraph after a table, or the next block merges into it.
+    para("", { before: 0, after: 120 })
+  );
+}
 
 /** A figure the author pastes an image into, plus its numbered caption. */
 function figure(n, caption) {
@@ -119,237 +173,414 @@ function figure(n, caption) {
 }
 
 const content = [
-  // --- Title block, centred, matching the reference's front matter ---------
-  title("Antas: Street-Level Flood Depth Reporting for Metro Manila"),
+  // --- Front matter, centred, matching the reference's title block --------
+  title("Antas: A Street-Level Flood Depth Reporting System for Metro Manila"),
   centred("Elijah Olores"),
   centred("Centro Escolar University"),
   centred("Empirical Software Innovation and Interface Prototyping"),
   centred("2026"),
-  para("", { before: 240, after: 0 }),
+  para("", { before: 200, after: 0 }),
 
-  // --- Section I -----------------------------------------------------------
-  h1("I. Research Foundation"),
-  h2("Problem Statement"),
+  // === SECTION I ===========================================================
+  h1("Section I: Research Foundation"),
+
+  h2("1.1 Problem Statement"),
   body(
-    "During a flood, the question a Metro Manila resident actually needs answered is narrow and local: is the water on my street passable right now? The information available to them answers a different question.",
+    "During a flood, the question a Metro Manila resident actually needs answered is narrow and local: is the water on my street passable right now? Every information source available to them answers a different question.",
   ),
   body(
-    "Official warnings operate at the scale of a river basin or a city. They are authoritative about rainfall and river level, and silent about the two hundred metres between somebody and the main road. [VERIFY: cite PAGASA's public warning products and their spatial granularity.]",
+    "Official warnings operate at the scale of a river basin or a city. They are authoritative about rainfall and river level, and silent about the two hundred metres between a person and the main road. A resident who knows the Marikina River is at second alarm still does not know whether the corner of their own street is ankle-deep or waist-deep. [VERIFY: cite PAGASA's public warning products and their spatial granularity.]",
   ),
   body(
-    "The gap is filled informally, by neighbours posting photographs and text to Facebook groups and Messenger threads. That channel is fast and genuinely useful, and it fails in three specific ways. First, it is unstructured: “baha na dito” cannot be compared, sorted, or aged, and two posts an hour apart cannot be told apart for currency. Second, it is not addressable by location, because a post attaches to a group rather than to a coordinate, so a reader cannot ask what is happening on their own street. Third, it has no notion of staleness: a photograph from three hours ago looks exactly like one from three minutes ago, and floodwater moves in far less than three hours.",
+    "The gap is filled informally, by neighbours posting photographs and short messages to Facebook groups and Messenger threads. That channel is fast, local, and genuinely useful, and it fails in three specific ways. First, it is unstructured: a post saying baha na dito cannot be compared, sorted, or aged, and two posts an hour apart cannot be told apart for currency. Second, it is not addressable by location, because a post attaches to a group rather than to a coordinate, so a reader cannot ask what is happening on their own street. Third, it carries no notion of staleness: a photograph taken three hours ago looks exactly like one taken three minutes ago, and floodwater moves in far less than three hours.",
   ),
   body(
-    "[VERIFY: at least one peer-reviewed source on crowdsourced or participatory disaster reporting. Read before citing. PetaBencana.id, from the MIT Urban Risk Lab, is crowdsourced flood mapping in Jakarta and is directly comparable to this work; the Ushahidi platform literature is the other obvious starting point.]",
+    "The consequence is a decision made on bad information. A resident either waits longer than necessary, or walks into water deeper than they expected. Six inches of moving water is enough to knock an adult off their feet, and floodwater hides open drains and live cables. The cost of the missing information is not inconvenience; it is a person stepping into a street they believed was passable. [VERIFY: one industry or government statistic on the scale of urban flooding in Metro Manila. NDRRMC situational reports and MMDA flood-control publications are the credible primary sources.]",
   ),
   body(
-    "[VERIFY: one industry or government statistic establishing the scale of urban flooding in Metro Manila. NDRRMC situational reports and MMDA flood-control publications are the credible primary sources.]",
+    "[VERIFY: at least one peer-reviewed source on crowdsourced or participatory disaster reporting, read before citing. PetaBencana.id, from the MIT Urban Risk Lab, is crowdsourced flood mapping in Jakarta and is the closest published comparison to this work; the Ushahidi platform literature is the other established starting point.]",
+  ),
+  body(
+    "There is a clear need for a tool that collects what residents already report informally, but does so in a structured, located, and time-stamped form, and that is honest about the limits of what it knows. This is the gap Antas aims to fill.",
   ),
 
-  h2("Target Audience"),
-  body(
-    "The primary persona is a commuter deciding a route: a resident of Marikina or Taguig, on a phone, on mobile data, deciding within the next few minutes whether to walk or ride down a particular street. Their pain point is not a lack of weather information. It is that no available source is specific to the street they are standing on.",
-  ),
-  body(
-    "The secondary persona is a barangay disaster desk officer, who receives reports of people in distress and must triage them with no way to judge which are credible.",
-  ),
+  h2("1.2 Related Literature and Studies"),
   note(
-    "Limitation stated rather than hidden: these personas are derived from the design constraints and the developer's own locality, not from formal user interviews. A persona presented as research when it is really a designer's assumption is the weakness a panel will find first, and conceding it costs less than being caught by it.",
+    "The entries below are placeholders carrying the correct identifying details. Each must be read and verified before submission; a fabricated citation is checkable and is worse than a missing one. The requirement is a minimum of three peer-reviewed or credible industry sources.",
   ),
 
-  h2("Why Existing Tools Fail"),
-  bullet(
-    "**PAGASA bulletins** give authoritative rainfall and river levels, and cannot say whether this street is passable.",
-  ),
-  bullet(
-    "**News and broadcast** are city-scale and delayed, and carry nothing at street resolution.",
-  ),
-  bullet(
-    "**Facebook and Messenger groups** are fast, local and human, and are unstructured, unsearchable by location, and carry no age.",
-  ),
-
-  h2("Core Value Proposition"),
+  h3("Crowdsourced and Participatory Disaster Reporting"),
   body(
-    "Antas turns informal Facebook-group behaviour into structured, located, time-stamped observations, and refuses to become an emergency service while doing it. Three features carry that proposition.",
+    "**[VERIFY] PetaBencana.id — MIT Urban Risk Lab.** A crowdsourced flood-mapping platform operating in Jakarta, which collects reports from residents through social messaging channels and renders them on a public map in real time. This is the closest published precedent for Antas and the most important source to read: it establishes that resident-sourced flood reporting is viable at city scale, and its published evaluations describe how report volume and verification were handled. Antas differs in scope, using a fixed five-level depth scale rather than free-form reports, and in refusing any dispatch role.",
+  ),
+  body(
+    "**[VERIFY] Ushahidi platform literature.** The original crisis-mapping platform, widely studied since 2008. The relevant finding for this project concerns verification: crowdsourced crisis data is fast but of uneven reliability, and the platform's history documents the trade-off between openness and trust. This directly motivated the trust-scoring component described in Section 2.4.",
+  ),
+
+  h3("Official Warning Systems and Their Granularity"),
+  body(
+    "**[VERIFY] PAGASA public warning products.** The Philippine national meteorological agency issues rainfall and flood advisories by basin and by area. Cite the official description of the bulletin levels to establish, from a primary source, that the granularity is regional rather than street-level. This is the factual basis for the gap Antas addresses.",
+  ),
+  body(
+    "**[VERIFY] NDRRMC situational reports.** The national disaster council's post-event reports give affected-population figures per region. One such report supplies the scale statistic the problem statement needs.",
+  ),
+
+  h3("Interface Design Under Stress"),
+  body(
+    "**[VERIFY] Literature on interface design for emergency and high-stress use.** The claim to support is that users under stress take the routine action and do not discover hidden controls. This is the basis for two decisions in this project: the emergency control is a plainly labelled tab rather than a long-press gesture, and the depth scale is expressed in body parts rather than centimetres so that no conversion is required under pressure.",
+  ),
+
+  h2("1.3 How Antas Improves Upon Existing Solutions"),
+  body("Six differences separate Antas from the tools a Metro Manila resident already has."),
+  numbered(
+    1,
+    "**Street-level resolution.** Official warnings describe a basin; Antas describes a coordinate. A report is attached to the point it was observed at, so the map answers a question about one street rather than one city.",
+  ),
+  numbered(
+    2,
+    "**A scale a person can actually read.** Depth is recorded in body parts, from ankle to above head, because somebody standing in water knows where it reaches on them and does not know it is sixty-three centimetres. The scale is the interface.",
+  ),
+  numbered(
+    3,
+    "**Every reading carries its age.** A pin states how old it is, and past six hours the map refuses to draw the data at all rather than presenting a stale reading as current. No informal channel does this.",
+  ),
+  numbered(
+    4,
+    "**Structured freshness, without free text.** Readers answer whether the water is gone, the same, or higher. The most recent answer leads rather than the most numerous, because water moves and an older consensus describes an earlier moment.",
+  ),
+  numbered(
+    5,
+    "**Triage support for the barangay desk.** An emergency signal is scored from corroborating reports, rainfall, elevation, reporter history and evidence quality, so a moderator sees a ranked queue rather than an undifferentiated list.",
+  ),
+  numbered(
+    6,
+    "**An explicit refusal to dispatch.** Antas states on every relevant screen that it sends no rescue. This is a feature rather than a missing one: a tool that implies help is coming makes a person wait instead of climbing.",
+  ),
+
+  h2("1.4 Functionality Comparison"),
+  body(
+    "The table below compares Antas with the sources a Metro Manila resident currently relies on during a flood.",
+  ),
+  table(
+    [2760, 1320, 1320, 1320, 1320, 1320],
+    [
+      ["Function", "PAGASA", "News", "FB groups", "Waze", "Antas"],
+      ["Street-level water depth", "❌", "❌", "△", "❌", "✅"],
+      ["Structured, comparable readings", "✅", "❌", "❌", "✅", "✅"],
+      ["Searchable by location", "❌", "❌", "❌", "✅", "✅"],
+      ["States the age of each reading", "✅", "❌", "❌", "△", "✅"],
+      ["Refuses to show stale data", "❌", "❌", "❌", "❌", "✅"],
+      ["Usable with no account", "✅", "✅", "❌", "❌", "✅"],
+      ["Works with no connection", "❌", "❌", "❌", "❌", "✅"],
+      ["Filipino-first interface", "△", "✅", "✅", "❌", "✅"],
+      ["Confirmation that a report still holds", "❌", "❌", "△", "✅", "✅"],
+      ["Triage queue for barangay desks", "❌", "❌", "❌", "❌", "✅"],
+      ["States plainly that it cannot dispatch", "❌", "❌", "❌", "❌", "✅"],
+    ],
+  ),
+  note("Legend: ✅ provided, △ partial or incidental, ❌ not provided."),
+
+  h2("1.5 Target Audience and Core User Persona"),
+  body("**Name:** Maricel Santos"),
+  body("**Role:** Office worker, commuting daily between Marikina and Ortigas."),
+  body(
+    "**Technical profile:** Uses an Android phone on mobile data. Comfortable with Facebook and Messenger; installs few applications and does not create accounts unless required.",
+  ),
+  body("**Primary pain points:**"),
+  bullet("She sees a PAGASA advisory for Marikina but cannot tell whether her own street is passable."),
+  bullet(
+    "She checks three Facebook groups and finds photographs with no timestamp and no location, and cannot tell which are from this hour.",
   ),
   bullet(
-    "**A depth scale measured in body parts, not centimetres** — ankle, knee, waist, chest, above head. A person standing in water knows where it reaches on them; they do not know it is sixty-three centimetres. The scale is the interface.",
+    "She has previously walked into water deeper than she expected, because the photograph she relied on was hours old.",
   ),
   bullet(
-    "**Every reading carries its age.** The map refuses to draw data older than six hours rather than presenting it as current.",
+    "During heavy rain her connection is poor, and pages that need a network round trip simply do not load.",
   ),
-  bullet(
-    "**A hard boundary, stated on every relevant screen.** Antas reports water. It dispatches nobody. It says so on the guide, on the SOS screen, and on the shared link preview itself.",
+  body(
+    "**Contextual frustration:** She has fifteen minutes to decide whether to leave the office now or wait, and no source she trusts answers the question at the resolution she needs. The secondary user is a barangay disaster desk officer who receives distress reports and must decide which to act on first, with no basis for judging which are credible.",
   ),
 
   pageBreak(),
 
-  // --- Section II ----------------------------------------------------------
-  h1("II. Software Architecture and Purpose"),
-  h2("Feature Set"),
-  bullet("**Depth map.** Reports as pins coloured by depth, with deepest-first clustering."),
-  bullet("**Report flow.** Five-level body-scale gauge, optional photo, GPS accuracy check."),
-  bullet("**Kumusta na?** Three-state freshness answers on an existing report."),
-  bullet("**Tulong, the SOS.** Live photo, three-second hold, no account required."),
-  bullet("**Moderator console.** Triage queue scoped to a barangay, with trust scoring."),
-  bullet("**Gabay.** Preparedness guide and hotline numbers, cached for offline use."),
-  bullet("**Filipino and English.** Whole-interface language toggle."),
+  // === SECTION II ==========================================================
+  h1("Section II: Software Architecture and Purpose"),
 
-  h2("Architecture"),
+  h2("2.1 Core Purpose and Primary Objective"),
+  body(
+    "Antas is an observation-sharing system for flood depth. Its primary objective is to turn what residents already report informally into structured, located, time-stamped readings that another resident can act on, and to be explicit about the limits of what those readings support.",
+  ),
+  body(
+    "It is deliberately not a dispatch system. The product states on the guide, on the emergency screen, and in its shared link preview that it sends no rescue. This boundary is the design's organising constraint rather than a disclaimer: a person told that help is coming waits, and waiting is the wrong action when water is rising.",
+  ),
+
+  h2("2.2 Functional Requirements (Feature Set)"),
+  body("The application is structured around seven interactive features."),
+  numbered(
+    1,
+    "**Depth Map.** The default screen. Reports are drawn as pins coloured along a five-step depth ramp, clustered when they overlap. A cluster takes the depth of its deepest member rather than an average, so eleven ankle-deep reports cannot hide one above-head report behind a reassuring colour.",
+  ),
+  numbered(
+    2,
+    "**Report Flow.** A five-level gauge labelled by body part, with an optional photograph and an automatic GPS accuracy check. Where the fix is imprecise the user is warned and asked to confirm, because a report placed on the wrong street is worse than no report.",
+  ),
+  numbered(
+    3,
+    "**Freshness Answers.** Three buttons under an existing report, reading gone, the same, and higher, so a reading can be confirmed or contradicted without free text. The most recent answer leads, and ties break toward the worse state.",
+  ),
+  numbered(
+    4,
+    "**Emergency Signal (Tulong).** A live photograph and a three-second hold. No account is required: an anonymous session is created silently, because a magic-link sign-in costs minutes that a person in rising water does not have.",
+  ),
+  numbered(
+    5,
+    "**Moderator Console.** A triage queue scoped to a barangay, showing each signal's trust score, its supporting evidence, a call button, and directions. Every opening of a signal is recorded.",
+  ),
+  numbered(
+    6,
+    "**Preparedness Guide (Gabay).** Hotline numbers first, then a packing checklist and advice for before and during a flood. Cached for offline use, because this is the page most likely to be read with no connection.",
+  ),
+  numbered(
+    7,
+    "**Language Toggle.** The whole interface in Filipino or English, with no partial translation, resolved on the server so no screen is ever briefly in the wrong language.",
+  ),
+
+  h2("2.3 System Architecture"),
   body(
     "The client is built on the Next.js App Router, using server components for content and client components for the map and interactive controls. Data lives in Supabase: PostgreSQL with geospatial queries, Row Level Security, Storage for photographs, and Realtime for live queue updates. The map is MapLibre GL over CARTO basemaps, switching between day and night styling according to Manila clock time. Rainfall and elevation come from Open-Meteo and feed the trust score.",
   ),
   figure(1, "System architecture. Every path to data passes through Row Level Security."),
   body(
-    "The system comprises nine tables across twenty-six migrations, and seventeen database functions. Security is enforced in PostgreSQL through Row Level Security rather than in application code. A moderator's barangay scope, the confidentiality of a reporter's phone number, and the visibility of SOS photographs are all database predicates, so no route can bypass them by accident, including a route added later by somebody who has not read this report.",
+    "The system comprises nine tables across twenty-six migrations, and seventeen database functions. Security is enforced in PostgreSQL rather than in application code: a moderator's barangay scope, the confidentiality of a reporter's phone number, and the visibility of emergency photographs are all database predicates, so no route can bypass them by accident, including a route added later by somebody who has not read this report.",
   ),
-
-  h2("Data Model"),
   figure(
     2,
     "Entity relationships. Key columns only; profiles extends Supabase's auth.users rather than replacing it.",
   ),
-  body(
-    "Two details in the schema carry design decisions rather than mere structure. The depth column on sos_signals is nullable, because the emergency form stopped asking for one, since nobody in danger should be working a five-level selector. And signal_events records a row every time a moderator so much as opens a signal, which is what keeps the broad admin scope accountable.",
-  ),
 
-  h2("Workflow: The SOS Trust Score"),
+  h2("2.4 Workflow: The Trust Score"),
   body(
-    "The most substantial algorithm in the system scores an incoming distress signal from six groups of evidence: corroborating nearby reports, recent rainfall, elevation relative to surroundings, the reporter's history, evidence quality including whether the photograph has been submitted before, and behavioural signals such as account age.",
+    "The most substantial algorithm scores an incoming distress signal from six groups of evidence: corroborating nearby reports, recent rainfall, elevation relative to surroundings, the reporter's history, evidence quality including whether the photograph has been submitted before, and behavioural signals such as account age.",
   ),
   figure(
     3,
-    "SOS trust scoring. A gap in the system's knowledge scores as unknown, never as evidence against the sender.",
+    "Trust scoring. A gap in the system's knowledge scores as unknown, never as evidence against the sender.",
   ),
   body(
-    "One principle governs the scorer, and it is the strongest design argument in this project: a gap in the system's knowledge is never scored as evidence against the person asking for help. An unreachable weather provider, an unfetchable photograph, or a question the sender was never asked all score identically to a clean result. The system ranks signals it knows less about lower; it never refuses one.",
+    "One principle governs the scorer, and it is the strongest design argument in this project: a gap in the system's knowledge is never scored as evidence against the person asking for help. An unreachable weather provider, a photograph that could not be fetched, or a question the sender was never asked all score identically to a clean result. The system ranks signals it knows less about lower; it never refuses one.",
   ),
   body(
-    "The distinction matters in practice. An SOS is no longer asked for a depth, so the two checks that exist only to contradict a claimed depth withdraw rather than treating silence as a shallow claim. Otherwise the system would penalise people for a form field it had deliberately chosen not to show them, pushing the fastest askers toward the bottom of the queue.",
+    "The distinction matters in practice. The emergency form stopped asking for a depth, so the two checks that exist only to contradict a claimed depth withdraw rather than treating silence as a shallow claim. Otherwise the system would penalise people for a form field it had deliberately chosen not to show them, pushing the fastest askers toward the bottom of the queue.",
   ),
 
-  h2("Information Hierarchy"),
+  h2("2.5 Information Hierarchy"),
   figure(
     4,
     "Information hierarchy and core user journeys. There is no onboarding: the map is the first screen.",
   ),
   body(
-    "The map is the default screen because the product's premise is a question about a place. Reporting is a raised centre action rather than a peer tab, because it is the single contribution the system asks of its users. Tulong sits in the tab bar but is coloured unlike its neighbours, and is reachable by a plain labelled tap, because an emergency path hidden behind a gesture cannot be discovered by somebody who needs it now.",
+    "The user flow is Map, then Report Detail, then Freshness Answer, with the tab bar branching to Guide, Report, Me and Tulong. The map is the default screen because the product's premise is a question about a place. Reporting is a raised centre action rather than a peer tab, because it is the single contribution the system asks of its users.",
   ),
 
   pageBreak(),
 
-  // --- Section III ---------------------------------------------------------
-  h1("III. Design Prompt and Rationale"),
+  // === SECTION III =========================================================
+  h1("Section III: Design Prompt and Rationale"),
+
+  body("**Project Name:** Antas, a street-level flood depth reporting system."),
+  body("**App Type:** A mobile-first public safety web application, installable as a PWA."),
+  body("**Design Style and UI Guidelines:**"),
+  bullet(
+    "Light interface on every task screen. It is read outdoors in daylight during heavy rain, which is the one condition where a dark interface is a liability rather than a preference.",
+  ),
+  bullet(
+    "A five-step depth ramp carries all severity meaning: pale blue #7DD3FC for ankle, through #38BDF8, #0284C7 and #1E40AF, to deep purple #581C87 for above-head. Only the water is allowed to look alarming; the surrounding interface stays neutral.",
+  ),
+  bullet(
+    "Ink #0F172A on white #FFFFFF, with a pale wash #F1F5F9 for grouped content. No decorative illustration, no gradients, no glassmorphism.",
+  ),
+  bullet("**Tone:** Plain, direct, Filipino-first. Never reassuring about water."),
+  bullet(
+    "**Typography:** A grotesque with signage character for headings, and a public-service sans for interface text.",
+  ),
+  bullet(
+    "Minimum 48-pixel touch targets, with all primary navigation within thumb reach at the bottom of the screen.",
+  ),
   body(
-    "The interface was generated with Google Stitch and then filtered. The prompts below are given in the order they were issued, each with the reasoning behind it.",
+    "**User Flow (Navigation):** Map, then Search or Locate, then Report Detail, then Freshness Answer, with Report, Guide, Me and Tulong reachable from the tab bar at any point.",
   ),
 
-  h2("Prompt 1: Context and Constraints"),
-  code("Design a mobile-first flood reporting app for Metro Manila residents."),
+  h2("3.1 Prompt 1: Context and Constraints"),
   code(
-    "CONTEXT: Users open this during heavy rain, one-handed, on a phone, outdoors in daylight, often on poor mobile data. Many are deciding within seconds whether a street is safe to walk down.",
-  ),
-  code(
-    "CONSTRAINTS: Light interface only, because it is read outdoors in daylight. No decorative illustration, gradients or glassmorphism. All primary navigation reachable by thumb at the bottom of the screen. Filipino-first labels. Minimum 48px touch targets.",
-  ),
-  code(
-    "DO NOT include: rescue dispatch, evacuation orders, official authority badges, or any label implying floodwater is safe.",
+    "Design a mobile-first flood reporting app for Metro Manila residents. CONTEXT: Users open this during heavy rain, one-handed, on a phone, outdoors in daylight, often on poor mobile data. Many are deciding within seconds whether a street is safe to walk down. CONSTRAINTS: Light interface only. No decorative illustration, gradients or glassmorphism. All primary navigation reachable by thumb at the bottom of the screen. Filipino-first labels. Minimum 48px touch targets. DO NOT include: rescue dispatch, evacuation orders, official authority badges, or any label implying floodwater is safe.",
   ),
   body(
     "**Rationale.** The negative constraints do the real work. An unconstrained generator reaches for the visual language of emergency dashboards, with sirens, alerts and authority, which this system has no right to use. Stating the prohibitions in the prompt is cheaper than rejecting the output afterwards.",
   ),
 
-  h2("Prompt 2: The Map Screen"),
-  code(
-    "Screen 1, Map. Full-bleed map filling the viewport. Floating search field pinned to the top. Bottom tab bar with five items: Map, Guide, Report as a raised circular centre button, Me, and Help. A compact legend showing five water-depth levels from ankle to above-head, ordered deepest first. A weather chip. No header bar; the map is the content.",
+  h2("3.2 Screen 1: Map (Home Dashboard)"),
+  bullet("**Layout:** Full-bleed map filling the viewport, with no header bar; the map is the content."),
+  bullet("**Top:** A floating search field labelled Maghanap ng lugar o barangay."),
+  bullet(
+    "**Overlay:** A compact legend listing five depth levels ordered deepest first, and a weather chip showing current conditions.",
+  ),
+  bullet(
+    "**Bottom:** A tab bar with five items, being Mapa, Gabay, I-report as a raised circular centre button, Ako, and Tulong in red.",
   ),
   body(
-    "**Rationale.** Depth is ordered deepest-first so the legend reads as a warning rather than a neutral scale. The header is omitted because on a phone, three stacked bands of chrome consume roughly a fifth of the screen before the product appears.",
+    "**Rationale.** The legend is ordered deepest-first so it reads as a warning rather than a neutral scale. The header is omitted because on a phone, three stacked bands of chrome consume roughly a fifth of the screen before the product appears.",
   ),
 
-  h2("Prompt 3: The Report Flow"),
-  code(
-    "Screen 2, Report water depth. A large vertical selector with five options labelled by body part: ankle, knee, waist, chest, above head. Each option has a distinct colour from pale blue to deep purple. A human figure beside the list showing where the water reaches. Optional add-photo card below. One primary submit button.",
+  h2("3.3 Screen 2: Report Water Depth (Main Action)"),
+  bullet(
+    "**Main body:** A vertical selector with five options labelled by body part, each in its own colour from pale blue to deep purple, beside a human figure showing where the water reaches.",
   ),
+  bullet("**Secondary:** An optional add-photo card, clearly marked as optional."),
+  bullet("**Primary action:** A single full-width submit button labelled I-report."),
   body(
     "**Rationale.** The scale is a body because the measurement is taken against a body. A centimetre field would ask the user to convert something they perceive directly into something they must estimate.",
   ),
 
-  h2("Prompt 4: Iteration"),
+  h2("3.4 Screen 3: Report Detail (Detail View)"),
+  bullet("**Top:** The photograph, if one was submitted, tappable to open full screen."),
+  bullet(
+    "**Body:** The depth reading with its colour swatch, the centimetre range beneath it, and the age of the report in bold beside the wall-clock time it was taken.",
+  ),
+  bullet("**Bottom:** Kumusta na? with three buttons reading Wala na, Ganoon pa rin, and Mas mataas na."),
+  body(
+    "**Rationale.** Age is set in bold because staleness is the property that decides whether the reading can be acted on. The three-state control replaces the free-text comments the generator proposed; see Section 4.2.",
+  ),
+
+  h2("3.5 Screen 4: Gabay (Guide and Hotlines)"),
+  bullet(
+    "**First section:** Emergency numbers, with 911 as a single large filled button and coordination desks below it as quieter outlined buttons.",
+  ),
+  bullet("**Then:** A go-bag checklist with tickable items that persist without an account."),
+  bullet("**Then:** Advice for before and during a flood, in short titled sections."),
+  body(
+    "**Rationale.** The hotline section is placed first because it is the only part useful when water is already rising. One filled button, and only one, so the number that dispatches rescue is visually unambiguous.",
+  ),
+
+  h2("3.6 Screen 5: Tulong (Emergency)"),
+  bullet(
+    "**Top:** A notice stating that no real rescue service receives this and that 911 should be called in a real emergency.",
+  ),
+  bullet("**Body:** A live camera capture, with the gallery deliberately unavailable."),
+  bullet("**Action:** A press-and-hold control requiring three seconds."),
+  bullet(
+    "**After sending:** A status line reporting only what has actually happened, and an optional field for a contact number.",
+  ),
+  body(
+    "**Rationale.** The hold is an anti-accident measure rather than an obstacle, and the live-capture requirement is an anti-abuse one. The post-send status reports completed acts and never a promise.",
+  ),
+
+  h2("3.7 Conversational Iteration"),
   code(
     "Refine: reduce the card treatment. Too many surfaces are raised, which flattens the hierarchy. Keep cards only where content is genuinely grouped, and let the depth colour ramp run edge to edge in the selector.",
   ),
   body(
-    "**Rationale.** The first generation applied card containers uniformly. When everything is elevated, nothing is emphasised, and the depth ramp, the most important information on the screen, was competing with its own container.",
+    "**Rationale.** The first generation applied card containers uniformly. When everything is elevated nothing is emphasised, and the depth ramp, the most important information on the screen, was competing with its own container.",
   ),
 
   pageBreak(),
 
-  // --- Section IV ----------------------------------------------------------
-  h1("IV. Reflection and Usability Evaluation"),
-  h2("Where the Generated Interface Aligned Well"),
+  // === SECTION IV ==========================================================
+  h1("Section IV: Reflection and Usability Evaluation"),
+
+  h2("4.1 Evaluation of Generated Stitch Layout Alignment with User Needs"),
   body(
-    "Several proposals were adopted essentially unchanged, and each solved a real problem. Place search mattered because the map opens over the whole of Metro Manila while the user's question is about one street; before search, answering it began with a pinch across the region. A bottom tab bar is correct for one-handed phone use and moved navigation out of the header entirely. A my-reports screen fixed the fact that a submitted report previously vanished into the map with no way to see or withdraw a contribution. And a locate button answers take me to me, which is a more common question than take me to Malanday.",
+    "The generated prototype translated the research into a usable interface, and its structure aligns with Maricel's expectations because it mirrors applications she already uses: a map with a bottom tab bar, a search field at the top, and a raised centre action.",
+  ),
+  body("**Strengths and Alignment:**"),
+  bullet(
+    "**Task fluidity.** The flow from Map to Detail to Answer matches how the question is actually asked: where am I, what is here, is it still true. No onboarding is required.",
+  ),
+  bullet(
+    "**Reachability.** Moving navigation to a bottom tab bar suited one-handed phone use in rain, and freed the vertical space the map needed.",
+  ),
+  bullet(
+    "**Discoverability of contribution.** A my-reports screen resolved a real gap: a submitted report previously vanished into the map with no way to see or withdraw it.",
+  ),
+  bullet(
+    "**Locating oneself.** The generated locate control answers take me to me, which proved a more common need than searching for a named place.",
   ),
 
-  h2("Where the Generated Interface Was Actively Unsafe"),
+  h2("4.2 Where the Generated Layout Was Actively Unsafe"),
   body(
-    "This is the finding worth reporting. Several generated proposals were plausible, well-composed, and would have caused harm. Each was rejected, and the reason was the same every time: they assumed an authority relationship, or live operational data, that the system does not have.",
+    "This is the more important finding. Several generated proposals were plausible, well-composed, and would have caused harm. Each was rejected, and the reason was the same every time: they assumed an authority relationship, or live operational data, that the system does not have.",
   ),
   bullet(
-    "**Official alert broadcasts with forced-evacuation orders.** An evacuation order is an instruction only an authority may issue.",
+    "**Official alert broadcasts with evacuation orders.** An evacuation order is an instruction only an authority may issue.",
   ),
   bullet(
-    "**Evacuation centre capacity, shown as sixty per cent full.** Being wrong sends a family through floodwater to a centre that is full. Capacity is not ours to know.",
+    "**Evacuation centre capacity, shown as a percentage full.** Being wrong sends a family through floodwater to a centre that is full. Capacity is not ours to know.",
   ),
+  bullet("**Verified-authority badges.** These impersonate an institution the project has no relationship with."),
   bullet(
-    "**Verified-authority badges on posts.** This impersonates an institution the project has no relationship with.",
-  ),
-  bullet(
-    "**A Ligtas, or safe, label on ankle-deep water.** No flood depth is safe. Ankle-deep water hides open drains and moves fast.",
+    "**A Ligtas, or safe, label on ankle-deep water.** No flood depth is safe; ankle-deep water hides open drains and moves fast.",
   ),
   bullet(
     "**A satellite basemap with filled heat zones.** This claims continuous area knowledge derived from sparse point reports.",
   ),
   bullet(
-    "**Free-text comments under a report.** Nobody moderates this application, and a comment saying the water is gone could sit beneath water that is still chest-deep.",
+    "**Free-text comments under a report.** Nobody moderates this application, and a comment saying the water is gone could sit beneath water that is still chest-deep. It was replaced by the three-state control on Screen 3.",
   ),
 
-  h2("What This Says About AI-Assisted Interface Design"),
+  h2("4.3 What This Says About AI-Assisted Interface Design"),
   body(
-    "The generator was reliably good at conventions, such as where controls belong, what a mobile flood application usually contains, and how to structure a tab bar. It was reliably unable to distinguish what the system is entitled to claim. It proposed an authority badge and a capacity indicator with exactly the same confidence as it proposed a search field, because visually they are all simply components.",
+    "The generator was reliably good at conventions: where controls belong, what a mobile flood application usually contains, and how to structure a tab bar. It was reliably unable to distinguish what the system is entitled to claim. It proposed an authority badge and a capacity indicator with exactly the same confidence as it proposed a search field, because visually they are all simply components.",
   ),
   body(
-    "The judgement that separates them is not a design skill. It is knowing what data the system actually holds and what it may honestly assert, which the tool cannot know and which no prompt reliably supplies.",
+    "The judgement that separates them is not a design skill. It is knowing what data the system actually holds and what it may honestly assert, which the tool cannot know and which no prompt reliably supplies. Two of the refusals above, the Ligtas label and free-text comments, would have passed an ordinary usability review; they fail only against the question of what happens if this is wrong while somebody is standing in water.",
   ),
   body(
-    "The practical conclusion is that AI interface generation was most valuable for layout and convention, and required a domain-informed reviewer with the authority to refuse. Two of the refusals above, the Ligtas label and free-text comments, would have passed an ordinary usability review. They fail only against the question: what happens if this is wrong while somebody is standing in water?",
+    "The practical conclusion is that AI interface generation was most valuable for layout and convention, and required a domain-informed reviewer with the authority to refuse.",
   ),
 
-  h2("Usability Evaluation Against the Target User"),
-  bullet(
-    "**Readable outdoors in daylight.** Light interface on all task pages; the map follows the Manila clock.",
-  ),
-  bullet(
-    "**Usable one-handed.** All navigation sits in a bottom tab bar, with 48-pixel minimum targets.",
-  ),
-  bullet(
-    "**Usable on poor connectivity.** The shell and guide are cached; the map keeps its last snapshot and always states its age.",
-  ),
-  bullet(
-    "**Usable with no account.** The SOS requires none, and neither do the map or the guide.",
-  ),
-  bullet(
-    "**Readable by non-Tagalog speakers.** A full Filipino and English toggle, with no partial translation.",
+  h2("4.4 Usability Evaluation Against the Target User"),
+  table(
+    [4680, 4680],
+    [
+      ["Requirement", "Outcome"],
+      ["Readable outdoors in daylight", "Light interface on all task pages; map follows the Manila clock"],
+      ["Usable one-handed", "All navigation in a bottom tab bar; 48-pixel minimum targets"],
+      ["Usable on poor connectivity", "Shell and guide cached; map keeps its last snapshot and states its age"],
+      ["Usable with no account", "Emergency signal requires none; neither do the map or the guide"],
+      ["Readable by non-Tagalog speakers", "Full Filipino and English toggle, with no partial translation"],
+    ],
   ),
   body(
-    "Remaining limitations, stated rather than hidden: barangay granularity is uneven outside Marikina, Taguig and the City of Manila; the hotline numbers were supplied rather than independently verified; and the personas were not validated through formal user research.",
+    "**Remaining limitations, stated rather than hidden.** Barangay granularity is uneven outside Marikina, Taguig and the City of Manila, where every other city is represented by a single placeholder centroid. The hotline numbers were supplied rather than independently verified against the issuing agency's own publication. And the personas were derived from design constraints and local knowledge rather than validated through formal user interviews.",
   ),
 
-  h2("Appendix: Verification"),
+  h2("Use Case"),
   body(
-    "Claims in Sections II through IV are checkable in the repository at github.com/blckltsdmsnw/antas. The file docs/STATUS.md records what was built and why, docs/design/design.md section 12 lists every refused feature with its reasoning, and the test suite, of 260 unit tests and 60 end-to-end tests, encodes the safety rules as assertions, including tests that the interface never promises rescue in either language.",
+    "Antas is a flood depth reporting system that helps Metro Manila residents decide whether a street is passable. The user opens the map, which loads without an account and shows nearby reports as coloured pins. The user may search for a place or locate themselves, then tap a pin to see the depth, the photograph if one exists, and how long ago it was recorded. If the reading is out of date, the user answers whether the water is gone, the same, or higher. To contribute, the user taps I-report, selects a depth on the body-scale gauge, optionally adds a photograph, and submits; the system records the location and the time and publishes the pin. In an emergency, the user taps Tulong, takes a live photograph, and holds the send control for three seconds; the system creates an anonymous session, scores the signal, and places it in the barangay's queue, then reports back only what has actually happened to it. A moderator opens the queue, reviews the score and its evidence, calls the reporter if a number was left, and confirms or dismisses the signal. Every opening of a signal is recorded. Throughout, the system states that it does not dispatch rescue.",
+  ),
+
+  h2("Software Interface"),
+  body("**Prototype Link:** [PASTE YOUR GOOGLE STITCH SHARE LINK HERE]"),
+  body("**Live Application:** https://antas-one.vercel.app"),
+  body("**Source Repository:** https://github.com/blckltsdmsnw/antas"),
+
+  h2("References"),
+  note(
+    "Placeholders carrying the correct identifying details. Replace each with a full APA entry once you have read the source. Do not submit an entry you have not opened.",
+  ),
+  body(
+    "[VERIFY] MIT Urban Risk Lab. PetaBencana.id: Crowdsourced flood mapping. Retrieve the platform's own published description or an associated peer-reviewed evaluation.",
+  ),
+  body(
+    "[VERIFY] Ushahidi. Platform documentation and peer-reviewed evaluations of crowdsourced crisis mapping.",
+  ),
+  body(
+    "[VERIFY] Philippine Atmospheric, Geophysical and Astronomical Services Administration (PAGASA). Public weather and flood warning products.",
+  ),
+  body(
+    "[VERIFY] National Disaster Risk Reduction and Management Council (NDRRMC). Situational report on flooding in the National Capital Region.",
+  ),
+  body(
+    "[VERIFY] Metropolitan Manila Development Authority (MMDA). Flood control and monitoring publications.",
   ),
 ].join("");
 
