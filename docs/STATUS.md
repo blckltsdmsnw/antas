@@ -1,6 +1,6 @@
 # Antas — where things stand
 
-Last updated: 2026-08-15, ~18:00 PHT.
+Last updated: 2026-08-15, ~20:00 PHT.
 
 Everything described here is committed and pushed to
 `github.com/blckltsdmsnw/antas`. Vercel auto-deploys `main`; a push takes about
@@ -678,6 +678,47 @@ fails on any Tagalog function word left on the page — the one thing the type
 system cannot catch, since a literal that never went through the dictionary is
 invisible to it. Confirmed to go **red** by putting one back.
 
+### Tab-to-tab felt rough, and half of that was self-inflicted
+
+Elijah reported that moving between tabs felt rough. Measured before changing
+anything, on a throttled connection:
+
+| | before | after |
+|---|---|---|
+| production, tap to content | 50–160ms | unchanged |
+| dev, tap **acknowledged** | ~850ms (nothing on screen) | ~200ms |
+
+**Most of what he was feeling is the dev server**, which recompiles each route
+on demand — roughly ten times slower than the built app. Worth knowing before
+anybody optimises production for a problem that lives in `next dev`.
+
+**But part of it was mine.** Reading the language cookie in the root layout
+turned every route from `○` prerendered to `ƒ` server-rendered, and those routes
+used to be prefetched and swapped instantly. A `loading.tsx` per route buys that
+back: per `node_modules/next/dist/docs/.../loading.md`, the fallback is
+**prefetched**, so the shell is already on the device when the tab is tapped.
+
+Three things worth keeping:
+
+- **The skeleton is wordless, and that is structural, not stylistic.** A
+  `loading.tsx` that read the language cookie could not be prerendered, and an
+  un-prerendered fallback cannot be prefetched — which is the whole point.
+  `PageSkeleton.test.tsx` asserts it contains no text, because the day somebody
+  adds "Loading…" they either break prefetching or ship one language to both
+  readers, and neither failure is visible by looking at the page.
+- **A pulse, not a shimmer sweep.** §8 rules out decorative gradients, and a
+  band of light travelling across the screen also reads as a progress bar —
+  the same objection the splash's waves answer. It earns its place on the
+  splash's terms: it covers latency that already exists and never adds any.
+- **`--raised` was too faint to see** on a phone in daylight, which is the
+  condition this product is used in. A skeleton nobody can see is the frozen
+  screen it was meant to replace, so the fill is `--line`.
+
+**The map has no skeleton, on purpose.** It is a full-bleed canvas that paints
+its own surface, and grey bars would misrepresent it. A full-screen tinted
+field would also risk a light flash at night — the exact failure `mapThemeFor`
+exists to prevent — because `data-map-theme` is cleared when the map unmounts.
+
 ## Needs you: your local emergency numbers
 
 `src/lib/emergency/contacts.ts` now carries **911 and the NDRRMC Operations
@@ -754,7 +795,7 @@ asynchronously, assert the value twice and require both reads to agree.
 ## Verification commands
 
 ```
-npx vitest run src/                 # unit (255)
+npx vitest run src/                 # unit (260)
 npx playwright test                 # e2e (54)
 npx vitest run tests/integration    # integration (48) - needs local Supabase
 npm run build

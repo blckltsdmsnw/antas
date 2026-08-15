@@ -1785,6 +1785,79 @@ a.btn {
 }
 
 /* --------------------------------------------------------------------------
+   Skeleton - what a task page looks like before its content arrives
+   -------------------------------------------------------------------------- */
+
+/* A PULSE, not a shimmer sweep. §8 rules out decorative gradients, and a band
+   of light travelling across the screen is exactly that - it also reads as a
+   progress bar, which is the same objection the splash's waves answer.
+
+   It earns its place on the splash's terms: it covers latency that already
+   exists, never manufactures any, and stops the instant the content lands.
+   Slow and low-contrast on purpose, so it reads as "working" rather than as
+   something to watch. */
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* `--line` rather than `--raised` as the fill. At `--raised` on white the bars
+   were nearly invisible on a phone in daylight - which is the condition this
+   product is used in - and a skeleton nobody can see is the frozen screen it
+   was meant to replace. Still calm, still not competing with the water. */
+.skeleton-bar {
+  background: var(--line);
+  border-radius: var(--radius-control);
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+/* Matches `.task-title`: same 32px display size and the same 8px below it, so
+   the real heading lands where the band was rather than shunting the page. */
+.skeleton-title {
+  height: 36px;
+  width: 68%;
+  margin-bottom: 12px;
+}
+
+/* Two lines, the second short, because that is what a wrapped lede looks like.
+   The total height matches `.task-lede`'s 28px bottom margin. */
+.skeleton-lede {
+  height: 15px;
+  width: 100%;
+  margin-bottom: 6px;
+  border-radius: 6px;
+}
+
+.skeleton-lede--short {
+  width: 62%;
+  margin-bottom: 28px;
+}
+
+.skeleton-blocks {
+  display: grid;
+  gap: 12px;
+}
+
+.skeleton-block {
+  height: 84px;
+  border-radius: var(--radius-card);
+}
+
+/* Somebody who has asked for less motion gets a still skeleton. It still says
+   "not content yet" by being blank - the pulse was never carrying information
+   the shape does not already carry. */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-bar {
+    animation: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
    Language - Filipino / English, in the header
    -------------------------------------------------------------------------- */
 
