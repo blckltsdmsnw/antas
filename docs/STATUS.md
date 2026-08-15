@@ -1,6 +1,6 @@
 # Antas — where things stand
 
-Last updated: 2026-08-15, ~21:30 PHT.
+Last updated: 2026-08-16, ~04:45 PHT.
 
 Everything described here is committed and pushed to
 `github.com/blckltsdmsnw/antas`. Vercel auto-deploys `main`; a push takes about
@@ -813,6 +813,38 @@ checked** against the agency's own publication. `contacts.ts` records that in
 its `source` field, and they are worth re-verifying before this ever sees real
 traffic.
 
+## Removing a report does not remove its photograph — 2026-08-16
+
+**A real gap, found by needing it.** Elijah asked for a Taguig pin to be taken
+down because it carried photographs that should not have been public. Hiding the
+report is not sufficient: `report-photos` is a **public** bucket by design, so
+the map can draw dozens of thumbnails without a signing round-trip per pin.
+Setting `status = 'hidden'` removes the pin and leaves the image sitting at a
+public URL that anyone holding the link can still open.
+
+The in-app **Tanggalin** control has exactly this behaviour. Somebody removing
+their own report reasonably believes the photograph goes with it. It does not.
+
+`scripts/remove-report.ts` does the whole job — deletes the storage object,
+confirms it is gone by re-listing the folder, then clears `photo_path` and hides
+the row. Storage is deleted **first** on purpose: a hidden row with a live image
+is worse than either problem alone, because it looks handled.
+
+```
+npx tsx --env-file=.env.hosted scripts/remove-report.ts              # list what viewers see
+npx tsx --env-file=.env.hosted scripts/remove-report.ts --remove ID  # delete photo + hide
+```
+
+**Still to decide, and it is a product question rather than a bug fix.** Either
+`hideReport` should delete the photograph too, or the bucket should stop being
+public and the map should fetch signed URLs. The first is probably right, since
+the bucket is public for a good reason.
+
+**Production now has a real third-party user.** One of the two photo-bearing
+pins belonged to an account that is neither Elijah's nor a seed. It was left
+untouched. This changes the standing assumption behind every destructive
+operation here: the database is no longer only test data.
+
 ## Known issues, not fixed
 
 - **Hydration warning on `/report`** from a `caret-color` style Chromium injects
@@ -837,10 +869,23 @@ traffic.
 Distinct from `design.md` §12, which lists things refused on purpose. These were
 wanted and simply have not been done.
 
-**Nothing is currently open.** The last two items both closed on 2026-08-15 —
-the English / Tagalog toggle was built, and the local DRRMO numbers were closed
-by the owner rather than by code. This section is kept because it is where the
-next one goes.
+- **Haptic feedback on the SOS hold.** Asked for on 2026-08-16: the phone should
+  vibrate while the three-second hold is being pressed. It fits that control
+  specifically — the hold is the one place in the product where somebody needs
+  to know something is happening while keeping their thumb down, and they may be
+  looking at the water rather than at the screen.
+
+  Worth thinking through before building. `navigator.vibrate` is unsupported on
+  iOS Safari, so it cannot be the only feedback and the existing progress ring
+  has to keep working alone. A continuous buzz for three seconds is also the
+  wrong shape: a short pulse at the start and a distinct one on fire says *begun*
+  and *sent*, rather than merely *something is happening*. And it must not fire
+  on the failure paths — releasing early, or a submission that errors — because
+  a confirming buzz for an SOS that did not send is the same class of harm as
+  the notifications refused in `design.md` §12.
+
+The English / Tagalog toggle and the local DRRMO numbers both closed on
+2026-08-15, the latter by the owner rather than by code.
 
 ## Things worth remembering about this codebase
 
