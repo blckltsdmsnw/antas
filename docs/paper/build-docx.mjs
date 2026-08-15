@@ -198,7 +198,7 @@ const content = [
     "The consequence is a decision made on bad information. A resident either waits longer than necessary, or walks into water deeper than they expected. Six inches of moving water is enough to knock an adult off their feet, and floodwater hides open drains and live cables. The cost of the missing information is not inconvenience; it is a person stepping into a street they believed was passable. [VERIFY: one industry or government statistic on the scale of urban flooding in Metro Manila. NDRRMC situational reports and MMDA flood-control publications are the credible primary sources.]",
   ),
   body(
-    "[VERIFY: at least one peer-reviewed source on crowdsourced or participatory disaster reporting, read before citing. PetaBencana.id, from the MIT Urban Risk Lab, is crowdsourced flood mapping in Jakarta and is the closest published comparison to this work; the Ushahidi platform literature is the other established starting point.]",
+    "[VERIFY: at least one peer-reviewed source, dated 2022 or later, on crowdsourced or participatory disaster reporting. See the search brief under Section 1.2A. Recent work on PetaBencana.id, the crowdsourced flood-mapping platform in Jakarta, is the closest published comparison to this project.]",
   ),
   body(
     "There is a clear need for a tool that collects what residents already report informally, but does so in a structured, located, and time-stamped form, and that is honest about the limits of what it knows. This is the gap Antas aims to fill.",
@@ -206,74 +206,95 @@ const content = [
 
   h2("1.2 Related Literature and Studies"),
   body(
-    "The literature relevant to Antas falls into six areas: the theoretical basis for treating ordinary citizens as data sources, the empirical record of crowdsourced disaster platforms, the specific problem of trusting that data, the Philippine warning context, the design of interfaces used under stress, and the handling of information that decays with time. Each section below states what the source establishes and how it bears on a decision in this system.",
+    "The literature relevant to Antas falls into five areas: the recent record of crowdsourced disaster reporting platforms, the problem of trusting citizen-contributed data, the Philippine flood and warning context, the design of interfaces used under stress, and the handling of information that decays with time. Each entry states what the source establishes and which decision in this system it supports.",
   ),
   note(
-    "Every entry below is a placeholder carrying identifying details that are believed correct but have not been checked here. Read each source and complete the citation before submission. A fabricated or half-remembered reference is checkable and is worse than a missing one. The assignment requires a minimum of three peer-reviewed or credible industry sources; more than three are listed so that the strongest available can be chosen.",
+    "TO COMPLETE BEFORE SUBMISSION. Each entry gives an APA citation line to be filled in, followed by its discussion paragraph. The citation lines are deliberately blank where author, year, title and venue belong: those details are not invented here, because a fabricated reference is checkable and is worse than a missing one. Each entry carries a search brief naming the terms and venues most likely to surface a suitable source. All sources must be dated 2022 or later. The requirement is a minimum of three; more slots are provided than needed, so the strongest can be kept and the rest deleted.",
+  ),
+  note(
+    "A note on the date restriction. The foundational works in this field - the paper that named volunteered geographic information, and the first crisis-mapping platforms - all fall well outside the window. Do not cite them, and do not cite anything that merely quotes them. Cite instead a recent review, replication or application that restates the concept from within the window, which is standard practice when a date range is imposed and is what the search terms below are written to find.",
   ),
 
-  h3("A. Theoretical Foundation: Citizens as Sensors"),
-  body(
-    "**[VERIFY] Goodchild, M. F. (2007). Citizens as sensors: The world of volunteered geographic information. GeoJournal, 69(4).** The paper that named Volunteered Geographic Information and argued that ordinary people carrying location-aware devices constitute a distributed sensor network of enormous reach and uneven reliability. It is the theoretical foundation for the entire premise of Antas: a resident standing in floodwater is an instrument that no rain gauge can replace, because the gauge measures rainfall while the resident measures the street. The paper is equally clear that such data is heterogeneous in quality, which is why this system scores signals rather than accepting them uniformly.",
+  h3("A. Crowdsourced and Participatory Disaster Reporting"),
+  body("**Citation 1:** ____________ (20__). ____________. ____________, __(_), ___-___."),
+  note(
+    "Search brief: Google Scholar, filtered 2022 onward. Terms: crowdsourced flood reporting; participatory flood mapping; volunteered geographic information flood; citizen reporting urban flooding. Venues likely to carry it: International Journal of Disaster Risk Reduction; Natural Hazards; ISCRAM conference proceedings; Sustainability. Search also for recent work on PetaBencana.id, the crowdsourced flood-mapping platform operating in Jakarta, which is the closest precedent to this project.",
   ),
   body(
-    "**[VERIFY] Literature on the field of crisis informatics.** The study of how information flows through communities during disasters, and how members of the public act as information producers rather than only as victims. Search on the term itself; the field is well established and the foundational work is widely cited. The finding relevant here is that people already self-organise to share hazard information during a crisis, and that formal systems succeed when they structure that behaviour rather than replacing it. Antas is built on precisely that assumption: residents already post flood photographs to Facebook groups, and the contribution of this project is structure, location and time, not the impulse to share.",
-  ),
-
-  h3("B. Empirical Precedent: Crowdsourced Disaster Platforms"),
-  body(
-    "**[VERIFY] PetaBencana.id — MIT Urban Risk Lab, Jakarta.** A crowdsourced flood-mapping platform that collects reports from residents through social messaging channels and renders them on a public map in real time. This is the closest published precedent for Antas and the single most important source to read. It establishes that resident-sourced flood reporting works at city scale in a South-East Asian megacity with comparable flooding, and its published evaluations describe how report volume, verification and decay were handled. Note the difference in approach for the paper's comparison: PetaBencana accepts free-form reports through channels people already use, whereas Antas constrains input to a fixed five-level depth scale, trading reach for comparability.",
-  ),
-  body(
-    "**[VERIFY] Ushahidi platform (2008 onward) and its evaluations.** The original crisis-mapping platform, built during the Kenyan post-election violence and studied extensively since. Its history is the standard reference for the central trade-off in this field: openness produces volume and speed, and simultaneously produces unverifiable and occasionally malicious reports. That trade-off is the direct motivation for the trust-scoring component in Section 2.4, and for the decision that Antas ranks doubtful signals lower rather than refusing them.",
-  ),
-  body(
-    "**[VERIFY] Humanitarian OpenStreetMap Team (HOT) and volunteered mapping during disasters.** Documents large-scale volunteer contribution to mapping in crisis, including in the Philippines after major typhoons. Useful to this paper for its treatment of coverage as uneven and clustered: volunteers map where volunteers are. That is the same limitation Antas has, and it is stated openly in Section 4.4 rather than hidden — barangay coverage is dense in Marikina and Taguig and thin elsewhere.",
+    "**What this source must establish, and how it connects to Antas.** That resident-contributed flood observations are viable at city scale, and how such a platform handles report volume and geographic coverage. This is the empirical warrant for the premise of the project: a person standing in floodwater is an instrument no rain gauge can replace, because the gauge measures rainfall while the resident measures the street. Where the source describes free-form reporting, note the contrast: Antas constrains input to a fixed five-level depth scale, trading reach for comparability between reports.",
   ),
 
-  h3("C. Trust and Verification in Crowdsourced Data"),
-  body(
-    "**[VERIFY] Research on credibility assessment of social media content during disasters.** The relevant body of work examines how to judge whether an unverified report from an unknown person is likely to be true, using signals such as corroboration by nearby reports, the reporter's history, and consistency with independent data. This literature is the direct justification for the six-group scoring model in Section 2.4, and specifically for the choice to combine reporter history with environmental corroboration rather than relying on either alone.",
+  body("**Citation 2:** ____________ (20__). ____________. ____________, __(_), ___-___."),
+  note(
+    "Search brief: terms: social media disaster response; citizen sensing emergency management; crisis informatics review. A recent review article is ideal here, because it restates the foundational position from within the date window.",
   ),
   body(
-    "**[VERIFY] Research on misinformation and rumour propagation during emergencies.** Establishes that false or outdated information spreads readily in a crisis, and that corrections propagate more slowly than the claims they correct. This is the argument behind two refusals recorded in Section 4.2: free-text comments beneath a depth reading, and any label describing floodwater as safe. In an unmoderated system a reassuring comment outlives the conditions that produced it.",
-  ),
-
-  h3("D. The Philippine Flood Context"),
-  body(
-    "**[VERIFY] PAGASA public warning products and their spatial granularity.** The Philippine Atmospheric, Geophysical and Astronomical Services Administration issues rainfall advisories and flood bulletins by basin and by area. Cite the agency's own description of its bulletin and rainfall-warning levels. This is the primary-source basis for the central claim of the problem statement: official warnings are authoritative at the scale of a river system and silent at the scale of a street.",
-  ),
-  body(
-    "**[VERIFY] NDRRMC situational reports on flooding in the National Capital Region.** The national council's post-event reports give affected-population and displacement figures. One such report supplies the scale statistic the problem statement needs, and is preferable to a news summary because it is the primary record.",
-  ),
-  body(
-    "**[VERIFY] Project NOAH (Nationwide Operational Assessment of Hazards) and Philippine flood hazard mapping.** A government and university programme producing flood hazard maps for the country. Important for this paper as a contrast rather than a competitor: hazard maps model where flooding is likely under modelled conditions, while Antas reports where water is observed now. The two answer different questions, and saying so protects the paper from the objection that the problem is already solved.",
+    "**What this source must establish, and how it connects to Antas.** That members of the public already share hazard information during a crisis through whatever channels they have, and that formal systems succeed by structuring that behaviour rather than replacing it. This justifies the product's basic shape: residents already post flood photographs to Facebook groups, and the contribution of Antas is structure, location and time, not the impulse to share.",
   ),
 
-  h3("E. Interface Design for Use Under Stress"),
-  body(
-    "**[VERIFY] Literature on interface design for emergency and high-stress conditions.** The claim to support is that people under stress fall back on routine actions, have reduced working memory, and do not discover controls that are hidden behind gestures. Two decisions in this project rest on it: the emergency control is a plainly labelled tab rather than a long-press on the ordinary report button, and the depth scale is expressed in body parts so that no arithmetic conversion is required.",
+  h3("B. Trust, Verification and Data Quality"),
+  body("**Citation 3:** ____________ (20__). ____________. ____________, __(_), ___-___."),
+  note(
+    "Search brief: terms: credibility assessment user-generated content disaster; trust crowdsourced data quality; verification citizen reports emergency. Venues: IEEE Access; International Journal of Disaster Risk Reduction; ACM CSCW proceedings.",
   ),
   body(
-    "**[VERIFY] Research on mobile usability in outdoor and low-visibility conditions.** Covers legibility in direct sunlight, one-handed reach on large phones, and touch target sizing. This supports the light-only interface on task screens, the 48-pixel minimum target, and the placement of all primary navigation within thumb reach at the bottom of the display — each of which is otherwise merely an assertion of taste.",
+    "**What this source must establish, and how it connects to Antas.** How the reliability of an unverified report from an unknown person can be estimated, using signals such as corroboration by nearby reports, the contributor's history, and consistency with independent environmental data. This is the direct justification for the six-group trust score in Section 2.4, and specifically for combining reporter history with environmental corroboration rather than relying on either alone.",
   ),
 
-  h3("F. Information Decay and Offline Operation"),
-  body(
-    "**[VERIFY] Research on temporal decay and the freshness of user-generated observations.** Establishes that the usefulness of an observation falls with age, and that systems presenting old data without marking it lead users to act on conditions that have changed. This is the basis for the two most distinctive rules in Antas: every reading states its age, and past six hours the map refuses to draw cached data at all. Both are unusual enough to need a citation rather than an assertion.",
+  body("**Citation 4:** ____________ (20__). ____________. ____________, __(_), ___-___."),
+  note(
+    "Search brief: terms: misinformation during disasters; rumour propagation emergency social media; outdated information crisis communication.",
   ),
   body(
-    "**[VERIFY] Literature on offline-first and intermittently connected application design.** Relevant because connectivity degrades in exactly the conditions this application is built for. Supports the decision to cache the application shell and the preparedness guide, and to keep the last successful map snapshot, while stating its age rather than presenting it as live.",
+    "**What this source must establish, and how it connects to Antas.** That false or outdated information spreads readily during an emergency, and that corrections travel more slowly than the claims they correct. This supports two refusals recorded in Section 4.2: free-text comments beneath a depth reading, and any label describing floodwater as safe. In a system nobody moderates, a reassuring comment outlives the conditions that produced it.",
+  ),
+
+  h3("C. The Philippine Flood Context"),
+  body(
+    "**Citation 5:** Philippine Atmospheric, Geophysical and Astronomical Services Administration. (20__). ____________. Retrieved from ____________",
+  ),
+  note(
+    "Search brief: PAGASA's own website, 2022 onward. Look for the published description of rainfall warning levels and flood bulletins. A government primary source is both easy to verify and inherently current, which makes it the safest way to satisfy the date restriction.",
+  ),
+  body(
+    "**What this source must establish, and how it connects to Antas.** That official warnings are issued by basin and by area rather than by street. This is the primary-source basis for the central claim of the problem statement: the warnings are authoritative at the scale of a river system and silent at the scale of a doorstep. Antas does not compete with them; it answers the question they are not designed to answer.",
+  ),
+
+  body(
+    "**Citation 6:** National Disaster Risk Reduction and Management Council. (20__). ____________. Retrieved from ____________",
+  ),
+  note(
+    "Search brief: NDRRMC situational reports for a named flooding event in the National Capital Region, 2022 onward. Cite the specific report and its date. The southwest monsoon flooding of July 2024 falls within the window and is well documented.",
+  ),
+  body(
+    "**What this source must establish, and how it connects to Antas.** Affected-population or displacement figures for a recent flooding event in Metro Manila. This supplies the scale statistic the problem statement needs, and the primary record is preferable to a news summary of it.",
+  ),
+
+  h3("D. Interface Design for Use Under Stress"),
+  body("**Citation 7:** ____________ (20__). ____________. ____________, __(_), ___-___."),
+  note(
+    "Search brief: terms: emergency application usability; user interface design high stress; mobile usability outdoor sunlight legibility; touch target size mobile accessibility. Venues: ACM CHI proceedings; International Journal of Human-Computer Studies; Applied Ergonomics.",
+  ),
+  body(
+    "**What this source must establish, and how it connects to Antas.** That people under stress fall back on routine actions, hold less in working memory, and do not discover controls hidden behind gestures. Two decisions rest on this: the emergency control is a plainly labelled tab rather than a long-press on the ordinary report button, and depth is expressed in body parts so that no arithmetic conversion is required. Where the source also covers outdoor legibility and touch target sizing, it additionally supports the light-only interface and the 48-pixel minimum target.",
+  ),
+
+  h3("E. Information Decay and Offline Operation"),
+  body("**Citation 8:** ____________ (20__). ____________. ____________, __(_), ___-___."),
+  note(
+    "Search brief: terms: temporal decay user-generated content; information freshness real-time systems; offline-first application design; intermittent connectivity mobile developing regions.",
+  ),
+  body(
+    "**What this source must establish, and how it connects to Antas.** That the usefulness of an observation falls with age, and that presenting old data without marking it leads users to act on conditions that have changed. This is the basis for the two most distinctive rules in this system: every reading states its age, and past six hours the map refuses to draw cached data at all. Both are unusual enough to require a citation rather than an assertion. Work on offline-first design additionally supports caching the application shell and the preparedness guide, since connectivity degrades in exactly the conditions the product exists for.",
   ),
 
   h3("Synthesis: The Gap This Project Addresses"),
   body(
-    "Taken together the literature establishes four things. Residents are a viable sensor network for hazards that instruments cannot observe at street level. Platforms built on that premise work at city scale, and have done so in a comparable megacity. Their central difficulty is not collection but trust, and the accepted response is to weigh signals rather than to reject them. And official warning systems, which are authoritative, operate at a resolution that cannot answer the question a person on the street is actually asking.",
+    "Taken together the literature establishes three things. Residents are a viable source of hazard information that instruments cannot capture at street level, and platforms built on that premise operate successfully in comparable cities. The central difficulty of such platforms is not collection but trust, and the accepted response is to weigh signals by corroboration and history rather than to reject them outright. And official warning systems, which are authoritative and necessary, work at a spatial resolution that cannot answer the question a person standing on a street is actually asking.",
   ),
   body(
-    "What the literature does not supply, and where this project contributes, is the handling of information decay in the interface itself. Existing platforms display reports; the reviewed work says little about refusing to display them once they are too old to be safe. Antas treats staleness as a first-class safety property, states the age of every reading, and declines to draw data beyond six hours. It pairs that with an explicit refusal to imply dispatch capability it does not have. Those two commitments, rather than the collection mechanism, are what distinguish this system from its precedents.",
+    "What the reviewed literature does not address, and where this project contributes, is the treatment of information decay in the interface itself. Existing platforms display reports; the literature says comparatively little about refusing to display them once they are too old to be acted on safely. Antas treats staleness as a first-class safety property: every reading states its age, and beyond six hours the map draws nothing and says why. It pairs that with an explicit refusal to imply a dispatch capability it does not have. Those two commitments, rather than the collection mechanism, are what distinguish this system from its precedents.",
   ),
-
   h2("1.3 How Antas Improves Upon Existing Solutions"),
   body("Six differences separate Antas from the tools a Metro Manila resident already has."),
   numbered(
@@ -679,46 +700,30 @@ const content = [
 
   h2("References"),
   note(
-    "Placeholders carrying identifying details believed correct but not verified here. Replace each with a full APA entry once you have read the source, and delete any you do not use. Do not submit an entry you have not opened.",
+    "APA 7th edition, alphabetical by author surname. Every entry must be dated 2022 or later, and every entry must correspond to a citation used in the text. Delete any slot you do not fill. Author names, years, volume and issue numbers are left blank deliberately rather than guessed: a reference invented to complete a template is checkable, and is the single worst error this paper could contain.",
+  ),
+  h3("Journal articles and conference papers"),
+  body("____________ (20__). ____________. ____________, __(_), ___-___."),
+  body("____________ (20__). ____________. ____________, __(_), ___-___."),
+  body("____________ (20__). ____________. ____________, __(_), ___-___."),
+  body("____________ (20__). ____________. ____________, __(_), ___-___."),
+  note(
+    "Fill from the search briefs in Section 1.2. Format: Surname, A. A., & Surname, B. B. (Year). Title of the article in sentence case. Journal Name in Title Case, volume(issue), page-page. https://doi.org/...",
+  ),
+  h3("Government and institutional sources"),
+  body(
+    "National Disaster Risk Reduction and Management Council. (20__). ____________. Retrieved ____________, from ____________",
   ),
   body(
-    "[VERIFY] Goodchild, M. F. (2007). Citizens as sensors: The world of volunteered geographic information. GeoJournal, 69(4). Confirm volume, issue and page range.",
+    "Philippine Atmospheric, Geophysical and Astronomical Services Administration. (20__). ____________. Retrieved ____________, from ____________",
   ),
-  body(
-    "[VERIFY] Humanitarian OpenStreetMap Team. Volunteered mapping in disaster response. Organisational publications and case studies, including Philippine typhoon responses.",
+  note(
+    "These two are the safest entries to complete. Both are primary sources, both are inherently within the date window, and both are trivially verifiable by whoever marks this. Format for a web document: Organisation. (Year). Title of the document in sentence case. Retrieved Month Day, Year, from URL",
   ),
-  body(
-    "[VERIFY] MIT Urban Risk Lab. PetaBencana.id: Crowdsourced flood mapping for Jakarta. Retrieve the platform's own published description or an associated peer-reviewed evaluation.",
-  ),
-  body(
-    "[VERIFY] Metropolitan Manila Development Authority (MMDA). Flood control and flood monitoring publications.",
-  ),
-  body(
-    "[VERIFY] National Disaster Risk Reduction and Management Council (NDRRMC). Situational report on flooding in the National Capital Region. Cite the specific report and date used.",
-  ),
-  body(
-    "[VERIFY] Philippine Atmospheric, Geophysical and Astronomical Services Administration (PAGASA). Public weather and flood warning products, including rainfall warning levels.",
-  ),
-  body(
-    "[VERIFY] Project NOAH / Department of Science and Technology. Nationwide Operational Assessment of Hazards: flood hazard mapping for the Philippines.",
-  ),
-  body(
-    "[VERIFY] Ushahidi. Platform documentation and peer-reviewed evaluations of crowdsourced crisis mapping since 2008.",
-  ),
-  body(
-    "[VERIFY] Source on crisis informatics — the study of public information behaviour during disasters. Locate a foundational review and cite it in full.",
-  ),
-  body(
-    "[VERIFY] Source on credibility assessment of user-generated content during emergencies.",
-  ),
-  body(
-    "[VERIFY] Source on interface design for emergency or high-stress use.",
-  ),
-  body(
-    "[VERIFY] Source on mobile usability in outdoor and low-visibility conditions.",
-  ),
-  body(
-    "[VERIFY] Source on temporal decay and freshness of user-generated observations.",
+  h3("Platform and industry sources"),
+  body("____________ (20__). ____________. ____________"),
+  note(
+    "Optional. If you cite PetaBencana.id, cite a 2022-or-later publication or evaluation of it rather than the platform's founding material, which falls outside the window.",
   ),
 ].join("");
 
