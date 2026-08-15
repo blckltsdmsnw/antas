@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "seed": "tsx --env-file=.env.local scripts/seed.ts",
+    "unseed": "tsx --env-file=.env.local scripts/unseed.ts",
     "make-moderator": "tsx --env-file=.env.local scripts/make-moderator.ts"
   },
   "dependencies": {

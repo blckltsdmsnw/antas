@@ -1,6 +1,6 @@
 # Antas — where things stand
 
-Last updated: 2026-08-15, ~21:00 PHT.
+Last updated: 2026-08-15, ~21:30 PHT.
 
 Everything described here is committed and pushed to
 `github.com/blckltsdmsnw/antas`. Vercel auto-deploys `main`; a push takes about
@@ -88,11 +88,36 @@ Manila 16 districts, and **every other NCR city is still one placeholder
 centroid**. Adding ~1,700 invented barangays would be false precision, not
 progress.
 
-### 2. Seeded demo data on production — what is there, and how to remove it
+### 2. Seeded demo data — removed from production on 2026-08-15
 
-Production now carries **48 active pins** (22 around Marikina, 24 around
-Taguig), seeded on 2026-08-14 so clustering and the standing line have
-something to show. To add more:
+**Production carries no seeded data.** The 48 demo pins and the fabricated
+standing are gone, along with the 8 `@example.test` accounts that owned them.
+What remains is real: 8 accounts and 6 depth reports.
+
+They were removed because the link started being shared. Demo pins are harmless
+while the audience is you and misleading the moment it is not — and a fabricated
+standing is worse than misleading, since that badge asserts other people checked
+a reading that never existed.
+
+Use the script rather than the SQL; it is a dry run unless you pass `--yes`:
+
+```
+npx tsx --env-file=.env.hosted scripts/unseed.ts        # shows what it would delete
+npx tsx --env-file=.env.hosted scripts/unseed.ts --yes  # deletes
+```
+
+It prints the seeded accounts by name, the rows they own, **and what will be
+kept**, so the blast radius is visible before the delete rather than inferred
+afterwards — then re-counts from the database rather than trusting the cascade.
+
+**The counts here were stale, which is worth noticing.** This file said "the two
+real accounts and the one real photo report". Production actually holds 8 real
+accounts and 6 real reports — the extras are almost certainly anonymous SOS
+sessions and test reports made since. Nothing is wrong, but the numbers had
+drifted, and that is exactly what makes a hand-written `delete ... like` in the
+dashboard dangerous to trust.
+
+To seed again — a local database, or a demo nobody will read as real:
 
 ```
 npx tsx --env-file=.env.hosted scripts/seed.ts taguig 10
@@ -112,15 +137,10 @@ Those four rows are `source = 'user'` on purpose — standing deliberately ignor
 seeded rows — so at the database level they are indistinguishable from genuine
 reports. They are `status = 'hidden'`, so they never reach the map.
 
-Every seeded account is under `@example.test`, and the script prints the one it
-created. To remove all seeded demo data, reports and votes included:
-
-```sql
--- deletes depth_reports and report_updates by cascade
-delete from auth.users where email like 'seed-%@example.test';
-```
-
-That leaves the two real accounts and the one real photo report untouched.
+Every seeded account is under `@example.test` — the reporter as
+`seed-<ts>@example.test`, the standing voters as `seed-voter-<ts>-<n>@…` — and
+the script prints the one it created. `unseed.ts` above matches on that prefix,
+which is why the naming is not cosmetic.
 
 ---
 
