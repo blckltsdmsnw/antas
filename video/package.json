@@ -1,0 +1,23 @@
+{
+  "name": "antas-promo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Antas promotional video. A separate package on purpose - Remotion's renderer pulls in a headless browser and ffmpeg, and none of that belongs in the deployed application's dependency tree.",
+  "scripts": {
+    "capture": "node capture.mjs",
+    "studio": "remotion studio",
+    "render": "remotion render Promo out/antas-promo.mp4 --codec=h264"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.418",
+    "@remotion/media": "4.0.418",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.418"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "typescript": "5.9.3"
+  },
+  "//playwright": "Deliberately NOT a dependency here. capture.mjs resolves playwright from the repo root, where it is already installed with its browsers downloaded. A second copy would mean a second ~150MB browser download and two versions to keep in step."
+}

@@ -1,0 +1,12 @@
+node_modules/
+
+# Build outputs and footage. All of it is reproducible from source: the
+# captures come from `npm run capture` against the running app, and the mp4
+# from `npm run render`. Committing 11MB of video per re-render would bloat the
+# repository for files nobody reviews in a diff.
+out/
+public/captures/
+
+# Generated b-roll. Large, and licensing depends on which tool produced it -
+# keep it out of the repository and hand it over with the finished video.
+public/broll/
