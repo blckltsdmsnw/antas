@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, act, fireEvent } from "@testing-library/react";
 import { HoldToConfirm } from "./HoldToConfirm";
+import { PULSE_BEGUN } from "@/lib/haptics/pulse";
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
@@ -100,7 +101,10 @@ describe("HoldToConfirm haptics", () => {
     fireEvent.pointerDown(screen.getByRole("button"));
 
     expect(buzz).toHaveBeenCalledTimes(1);
-    expect(buzz).toHaveBeenCalledWith(20);
+    // Read from the module rather than written out here. The duration is tuned
+    // against real hardware and has already been raised once; a literal in this
+    // file would just have to be chased.
+    expect(buzz).toHaveBeenCalledWith(PULSE_BEGUN);
   });
 
   it("stays silent when the hold completes", () => {

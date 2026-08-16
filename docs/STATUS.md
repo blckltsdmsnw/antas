@@ -871,11 +871,37 @@ at each second were considered and not built; they would communicate progress,
 which is the ring's job, and the ring is readable whenever the screen is.
 
 **It is never the only channel.** iOS Safari has never shipped the Vibration API,
-so on a large share of these phones nothing happens at all. `vibrate()` is a
-silent no-op when unsupported and swallows a throwing implementation, because
-the alternative is an exception inside `handleConfirm` aborting an SOS over a
-decoration. `src/lib/haptics/pulse.ts` documents that as the one deliberate
-silent failure in the codebase.
+so on iPhones nothing happens at all. `vibrate()` is a silent no-op when
+unsupported and swallows a throwing implementation, because the alternative is
+an exception inside `handleConfirm` aborting an SOS over a decoration.
+`src/lib/haptics/pulse.ts` documents that as the one deliberate silent failure
+in the codebase.
+
+### Both phones were tested, and each said something different
+
+Elijah tried it the same evening. **The iPhone did nothing and the Android was
+barely perceptible.** One of those is the design working; the other was a real
+miscalibration.
+
+**iOS is not fixable and the workaround is already dead.** Safari has no
+Vibration API. Safari 17.4 added `<input type="checkbox" switch>`, which plays a
+system haptic when toggled, and libraries drove that from JavaScript by clicking
+a hidden one — **Apple closed it in iOS 26.5**, so on any current iPhone it does
+nothing either. It would not be worth restoring at any rate: it emits one fixed
+haptic, so *"press registered"* and *"signal sent"* would feel identical, and
+the entire value of the second buzz is that it cannot be mistaken for the first.
+Do not go looking for this again; the note is in `pulse.ts` too.
+
+**The Android weakness was mine.** Twenty milliseconds is below what most phone
+motors render convincingly — the motor has to spin up and stop again, so the
+shortest durations arrive weak or get clamped, and how weak depends on the
+hardware. Raised to **50ms** for the opening tick and **[80, 90, 80]** for the
+confirmation, which also widens the gap between them: one short tap, two firm
+beats, tellable apart by feel with the phone in a pocket. Verified at `[50]` in
+the running app.
+
+The durations now live only in `pulse.ts` — the test reads `PULSE_BEGUN` rather
+than repeating the number, since it has already had to be chased once.
 
 Verified three ways, because this repo has learned that green tests are not
 evidence:

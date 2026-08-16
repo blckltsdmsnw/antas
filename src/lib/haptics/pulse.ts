@@ -10,10 +10,19 @@
  * Two rules shape everything below.
  *
  * **It is never the only channel.** iOS Safari has never shipped the Vibration
- * API and shows no sign of doing so, so on a large share of the phones this is
- * built for nothing here happens at all. Every function is therefore a silent
- * no-op when unsupported, and the caller must be correct with no vibration
- * whatsoever. The progress ring is the primary channel and stays that way.
+ * API, so on every iPhone nothing here happens at all - confirmed on a real
+ * device on 2026-08-16, where the hold worked and stayed silent. Every function
+ * is therefore a silent no-op when unsupported, and the caller must be correct
+ * with no vibration whatsoever. The progress ring is the primary channel and
+ * stays that way.
+ *
+ * Do not go looking for the workaround; it has already been looked for. Safari
+ * 17.4 added `<input type="checkbox" switch>`, which plays a haptic when
+ * toggled, and libraries drove that from JavaScript by clicking a hidden one.
+ * **Apple closed it in iOS 26.5.** It would not be worth restoring even if it
+ * still worked: it emits one fixed system haptic, so "press registered" and
+ * "signal sent" would feel identical - and the whole point of the second buzz
+ * is that it cannot be mistaken for the first.
  *
  * **It never confirms something that did not happen.** A buzz on this screen is
  * read as news. `design.md` §12 refuses notifications that imply rescue is
@@ -27,10 +36,16 @@
 /**
  * "I have your press."
  *
- * One short beat at the start of the hold. It asserts nothing beyond the press
+ * One beat at the start of the hold. It asserts nothing beyond the press
  * itself, which is the most that is true at that instant.
+ *
+ * Fifty milliseconds, raised from twenty after testing on a real Android phone,
+ * where twenty was felt as barely anything. A duration is a request, not a
+ * guarantee: the motor has to spin up and stop again, so the shortest durations
+ * arrive weak or get clamped, and how weak depends entirely on the hardware. A
+ * pulse nobody notices is the same as no pulse.
  */
-export const PULSE_BEGUN = 20;
+export const PULSE_BEGUN = 50;
 
 /**
  * "It went out."
@@ -38,8 +53,12 @@ export const PULSE_BEGUN = 20;
  * Buzz, gap, buzz - fired only once the signal exists in the database. Two
  * beats rather than one long one so it cannot be mistaken for a second press
  * registering, and so the difference survives being felt through a pocket.
+ *
+ * Longer beats than the opening tick, deliberately, and not merely for
+ * strength: the two must stay tellable apart by feel alone at a moment when
+ * nobody is going to be studying the screen. One short tap, two firm beats.
  */
-export const PULSE_SENT: readonly number[] = [40, 80, 40];
+export const PULSE_SENT: readonly number[] = [80, 90, 80];
 
 /** A single duration in milliseconds, or an on/off pattern. */
 type Pattern = number | readonly number[];
