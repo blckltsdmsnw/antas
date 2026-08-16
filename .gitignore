@@ -45,3 +45,8 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# Word lock files. Created while a .docx under docs/ is open and deleted when it
+# closes, so committing one records a moment rather than a fact - and it turns
+# up as a phantom change for whoever pulls next.
+~$*
