@@ -66,7 +66,7 @@ const mockedSubmitSos = vi.mocked(submitSos);
 const HOLD_LABEL = /Pindutin nang 3 segundo/;
 
 function stubVibrate() {
-  const spy = vi.fn(() => true);
+  const spy = vi.fn<(pattern: number | number[]) => boolean>(() => true);
   Object.defineProperty(navigator, "vibrate", {
     value: spy,
     configurable: true,
@@ -152,8 +152,11 @@ describe("SOS haptics", () => {
     // assertion below would also pass on a page that never submitted at all.
     expect(await screen.findByRole("alert")).toBeInTheDocument();
     expect(buzz).not.toHaveBeenCalledWith([...PULSE_SENT]);
-    // The opening beat still fired - the press did happen.
-    expect(buzz).toHaveBeenCalledTimes(1);
+    // The hold ramp ran and was then cancelled, and that is all the phone was
+    // asked for. Nothing claimed the signal went anywhere.
+    for (const [pattern] of buzz.mock.calls) {
+      expect(Array.isArray(pattern) || pattern === 0).toBe(true);
+    }
   });
 
   it("stays silent when the photo upload fails", async () => {

@@ -865,10 +865,9 @@ rising water who believes their call went out waits instead of climbing. So the
 second pulse lives in `sos/page.tsx` after the write, not in `HoldToConfirm`,
 which has no idea whether the submission it triggered succeeded.
 
-**A continuous three-second buzz was rejected** — it says only "something is
-happening", where two distinct events say *begun* and *sent*. Escalating ticks
-at each second were considered and not built; they would communicate progress,
-which is the ring's job, and the ring is readable whenever the screen is.
+**The single opening beat was wrong, and was replaced by a ramp.** See below —
+the reasoning that rejected escalating ticks did not survive contact with a
+phone.
 
 **It is never the only channel.** iOS Safari has never shipped the Vibration API,
 so on iPhones nothing happens at all. `vibrate()` is a silent no-op when
@@ -900,8 +899,57 @@ confirmation, which also widens the gap between them: one short tap, two firm
 beats, tellable apart by feel with the phone in a pocket. Verified at `[50]` in
 the running app.
 
-The durations now live only in `pulse.ts` — the test reads `PULSE_BEGUN` rather
-than repeating the number, since it has already had to be chased once.
+The durations now live only in `pulse.ts` — the tests read the constants rather
+than repeating the numbers, since they have already had to be chased twice.
+
+### Then it was tested again, and the single beat turned out to be the mistake
+
+*"It's too weak. Just one vibrate then nothing after."* — and Chrome on iOS
+behaved exactly like Safari, which it must: **every browser on iOS runs WebKit**,
+so Chrome there is Safari with a different toolbar. There is no browser you can
+install on an iPhone that has the Vibration API.
+
+The Android half was a design error rather than a tuning one, and it is worth
+recording because the reasoning that produced it sounded good.
+
+**The argument that lost.** A continuous three-second buzz says only "something
+is happening", where two distinct events say *begun* and *sent* — so escalating
+ticks were considered and refused, on the grounds that they duplicate the
+progress ring. That is true and beside the point. The question a person holding
+the button has is not *"did it start"* but *"is it still going"*, and one tick
+followed by three seconds of silence answers the first while abandoning them on
+the second. **The ring only duplicates the buzz for somebody who can see the
+ring, and this exists precisely because they may be looking at the water.**
+
+**`PULSE_HOLD` is now six beats across the hold**, 700ms apart at the start and
+160ms apart at the end — a rhythm you can feel accelerating, which says *how far
+along* without anyone having to count. It is requested as a **single pattern**
+rather than a beat per interval tick: the phone schedules it, so it cannot drift
+or stutter when the main thread is busy, and one `vibrate(0)` cancels the
+remainder.
+
+**That cancel is load-bearing.** Lifting a thumb at one second cancels the SOS,
+and a phone still ticking for two seconds afterwards tells the person the
+opposite of what happened — the same lie as a confirming buzz for a signal that
+never sent, only earlier in the sequence. `stop()` therefore cancels, and the
+guard was confirmed red by removing it.
+
+Beats are 80–120ms; 20ms and 50ms were both reported as barely there.
+`PULSE_SENT` went to `[150, 100, 150]`, longer than **every** beat in the ramp,
+and a test pins that ordering — the confirmation is the one pattern carrying
+news and must never feel like the hold still counting.
+
+**A margin the tests would not have caught, found by watching the real page.**
+The ramp originally ended at 2940ms against a 3000ms hold. Firing calls `stop()`,
+which cancels any remaining vibration — so at 60ms of clearance the ramp's own
+last beat could be clipped by its own success, on a phone having a slow moment
+and nowhere else. It now ends at 2820ms, and `RAMP_HEADROOM_MS` pins 100ms of
+room.
+
+Verified on the running page with a real mouse press, loading fresh each time —
+because once the hold fires, `fired` blocks any further press, and the first
+attempt at this measured nothing at all for exactly that reason. Early release
+at 1174ms: ramp requested, then `0`. Full hold: ramp, then the cancel at fire.
 
 Verified three ways, because this repo has learned that green tests are not
 evidence:

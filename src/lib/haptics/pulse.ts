@@ -34,31 +34,65 @@
  */
 
 /**
- * "I have your press."
+ * "Still counting. Keep your thumb down."
  *
- * One beat at the start of the hold. It asserts nothing beyond the press
- * itself, which is the most that is true at that instant.
+ * Six beats over the three-second hold, accelerating: 900ms apart at the start,
+ * 160ms apart by the end. Read as `[on, off, on, off, ...]`.
  *
- * Fifty milliseconds, raised from twenty after testing on a real Android phone,
- * where twenty was felt as barely anything. A duration is a request, not a
- * guarantee: the motor has to spin up and stop again, so the shortest durations
- * arrive weak or get clamped, and how weak depends entirely on the hardware. A
- * pulse nobody notices is the same as no pulse.
+ * **This replaced a single beat at the press, and the single beat was wrong.**
+ * It was chosen on the reasoning that two distinct events - *begun* and *sent* -
+ * carry more than a continuous buzz saying merely "something is happening". True
+ * as far as it went, and it missed the actual question the person holding the
+ * button has, which is not "did it start" but "is it still going". One tick
+ * followed by three seconds of silence answers the first and abandons them on
+ * the second: Elijah's words for it were "just one vibrate then nothing after".
+ *
+ * A ramp is not the continuous buzz that was refused either. It says *how far
+ * along*, which is the thing the progress ring says to anybody who can see the
+ * ring - and the whole reason this exists is that they may be looking at the
+ * water instead. Speeding up is legible without counting.
+ *
+ * The last beat ends at 2820ms, 180ms clear of the three-second mark. That
+ * margin is not slack: firing the SOS calls `stop()`, which cancels any
+ * remaining vibration, so a ramp running too close to the end would have its
+ * final beat clipped by its own success on a phone having a slow moment.
+ * `pulse.test.ts` pins the headroom. Nothing marks the completion itself -
+ * that instant is "submitting", not "sent".
+ *
+ * Beat durations are 80-120ms, not the 20ms this shipped with first and not the
+ * 50ms that followed. A duration is a request, not a guarantee - the motor has
+ * to spin up and stop again, so short durations arrive weak or get clamped, by
+ * an amount that depends entirely on the hardware. Both earlier values were
+ * reported as barely there on a real phone.
  */
-export const PULSE_BEGUN = 50;
+export const PULSE_HOLD: readonly number[] = [
+  80, 700, 80, 620, 90, 460, 100, 300, 110, 160, 120,
+];
+
+/**
+ * Clearance the ramp must leave before the hold fires.
+ *
+ * Firing calls `stop()`, which cancels whatever is still playing. Without a
+ * margin the ramp's own last beat is the thing that gets cancelled - and it
+ * would only show up on a phone under load, which is not where anybody wants to
+ * discover it.
+ */
+export const RAMP_HEADROOM_MS = 100;
 
 /**
  * "It went out."
  *
- * Buzz, gap, buzz - fired only once the signal exists in the database. Two
- * beats rather than one long one so it cannot be mistaken for a second press
- * registering, and so the difference survives being felt through a pocket.
- *
- * Longer beats than the opening tick, deliberately, and not merely for
- * strength: the two must stay tellable apart by feel alone at a moment when
- * nobody is going to be studying the screen. One short tap, two firm beats.
+ * Two firm beats, fired only once the signal exists in the database. Each is
+ * longer than any beat in the ramp above, so it cannot be mistaken for the hold
+ * still counting - which matters more here than anywhere else, because this is
+ * the one pattern that carries news.
  */
-export const PULSE_SENT: readonly number[] = [80, 90, 80];
+export const PULSE_SENT: readonly number[] = [150, 100, 150];
+
+/** How long a pattern takes end to end, including its silences. */
+export function patternDurationMs(pattern: readonly number[]): number {
+  return pattern.reduce((total, span) => total + span, 0);
+}
 
 /** A single duration in milliseconds, or an on/off pattern. */
 type Pattern = number | readonly number[];
@@ -77,6 +111,19 @@ type Pattern = number | readonly number[];
  * so that path should be unreachable; it is handled anyway because the cost of
  * being wrong about it is a failed SOS.
  */
+/**
+ * Stop anything still playing.
+ *
+ * Load-bearing now that the hold requests a three-second pattern up front. A
+ * person who lifts their thumb at one second has cancelled the SOS, and a phone
+ * that carries on ticking in their hand for two more seconds is telling them
+ * the opposite - the same lie as a confirming buzz for a signal that never
+ * sent, just earlier in the sequence.
+ */
+export function stopPulse(): void {
+  vibrate(0);
+}
+
 export function vibrate(pattern: Pattern): boolean {
   if (typeof navigator === "undefined") return false;
   if (typeof navigator.vibrate !== "function") return false;

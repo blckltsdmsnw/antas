@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCopy } from "@/lib/i18n/context";
-import { PULSE_BEGUN, vibrate } from "@/lib/haptics/pulse";
+import { PULSE_HOLD, stopPulse, vibrate } from "@/lib/haptics/pulse";
 
-const HOLD_MS = 3000;
+/** Exported so the haptic ramp can be pinned to finish inside it. */
+export const HOLD_MS = 3000;
 const TICK_MS = 50;
 
 interface HoldToConfirmProps {
@@ -39,6 +40,10 @@ export function HoldToConfirm({ label, onConfirm }: HoldToConfirmProps) {
       clearInterval(timer.current);
       timer.current = null;
     }
+    // The ramp was requested as a single three-second pattern, so the phone
+    // will happily finish it after the thumb has gone. Letting it run on would
+    // tell somebody who just cancelled that their SOS is still counting down.
+    stopPulse();
     if (!fired.current) setProgress(0);
   }, []);
 
@@ -48,20 +53,20 @@ export function HoldToConfirm({ label, onConfirm }: HoldToConfirmProps) {
     if (timer.current !== null || fired.current) return;
 
     /**
-     * One beat, and only here.
+     * The whole three seconds, requested in one go.
      *
-     * The hold is the single place in this product where a person must keep
-     * doing something and wait, and they may be watching the water rather than
-     * the screen. This says the press registered - nothing more, because
-     * nothing more is true yet.
+     * One call rather than a beat per tick of the interval below: the phone
+     * schedules the rhythm itself, so it cannot drift or stutter if the main
+     * thread is busy - and `stop()` can cancel the remainder in a single call
+     * the instant the thumb lifts.
      *
-     * There is deliberately no beat when the hold completes. That instant is
-     * "submitting", not "sent", and a buzz there would fire identically whether
-     * the signal reached the database or the upload failed a second later. The
-     * confirming pulse lives on the page, after the write. Sitting behind the
-     * guard above, this also cannot repeat under key auto-repeat.
+     * Nothing marks the completion. That instant is "submitting", not "sent",
+     * and a beat there would feel the same whether the signal reached the
+     * database or the upload failed a second later. The confirming pattern
+     * lives on the page, after the write. Sitting behind the guard above, this
+     * also cannot restart under key auto-repeat.
      */
-    vibrate(PULSE_BEGUN);
+    vibrate(PULSE_HOLD);
 
     const startedAt = Date.now();
 

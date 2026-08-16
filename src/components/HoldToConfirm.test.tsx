@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, act, fireEvent } from "@testing-library/react";
 import { HoldToConfirm } from "./HoldToConfirm";
-import { PULSE_BEGUN } from "@/lib/haptics/pulse";
+import { PULSE_HOLD, PULSE_SENT } from "@/lib/haptics/pulse";
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
@@ -81,7 +81,7 @@ describe("HoldToConfirm", () => {
  */
 describe("HoldToConfirm haptics", () => {
   function stubVibrate() {
-    const spy = vi.fn(() => true);
+    const spy = vi.fn<(pattern: number | number[]) => boolean>(() => true);
     Object.defineProperty(navigator, "vibrate", {
       value: spy,
       configurable: true,
@@ -94,36 +94,21 @@ describe("HoldToConfirm haptics", () => {
     Reflect.deleteProperty(navigator, "vibrate");
   });
 
-  it("buzzes once when the press registers", () => {
+  it("requests the whole ramp when the press registers", () => {
     const buzz = stubVibrate();
     render(<HoldToConfirm label="Humingi ng tulong" onConfirm={() => {}} />);
 
     fireEvent.pointerDown(screen.getByRole("button"));
 
+    // One call, carrying the entire three-second rhythm. The phone schedules
+    // it, so it cannot drift or stutter when the main thread is busy.
     expect(buzz).toHaveBeenCalledTimes(1);
-    // Read from the module rather than written out here. The duration is tuned
-    // against real hardware and has already been raised once; a literal in this
-    // file would just have to be chased.
-    expect(buzz).toHaveBeenCalledWith(PULSE_BEGUN);
+    expect(buzz).toHaveBeenCalledWith([...PULSE_HOLD]);
   });
 
-  it("stays silent when the hold completes", () => {
-    const buzz = stubVibrate();
-    const onConfirm = vi.fn();
-    render(<HoldToConfirm label="Humingi ng tulong" onConfirm={onConfirm} />);
-
-    fireEvent.pointerDown(screen.getByRole("button"));
-    act(() => {
-      vi.advanceTimersByTime(3000);
-    });
-
-    expect(onConfirm).toHaveBeenCalledTimes(1);
-    // Still just the opening beat. Confirming the send is the page's job,
-    // after the row exists.
-    expect(buzz).toHaveBeenCalledTimes(1);
-  });
-
-  it("does not buzz again when the finger lifts early", () => {
+  it("cuts the ramp short the moment the finger lifts", () => {
+    // A cancelled SOS whose phone keeps ticking for another two seconds is
+    // telling the person the opposite of what happened.
     const buzz = stubVibrate();
     render(<HoldToConfirm label="Humingi ng tulong" onConfirm={() => {}} />);
 
@@ -134,13 +119,31 @@ describe("HoldToConfirm haptics", () => {
     });
     fireEvent.pointerUp(button);
 
-    expect(buzz).toHaveBeenCalledTimes(1);
+    expect(buzz).toHaveBeenLastCalledWith(0);
+  });
+
+  it("never emits the confirming pattern itself", () => {
+    // The component cannot know whether the submission it triggered succeeded,
+    // so it must not claim anything. Confirming the send is the page's job,
+    // after the row exists.
+    const buzz = stubVibrate();
+    const onConfirm = vi.fn();
+    render(<HoldToConfirm label="Humingi ng tulong" onConfirm={onConfirm} />);
+
+    fireEvent.pointerDown(screen.getByRole("button"));
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+    expect(buzz).not.toHaveBeenCalledWith([...PULSE_SENT]);
   });
 
   it("does not stutter under key auto-repeat", () => {
-    // Every repeat calls start(). Without the timer guard the phone would
-    // buzz twenty times in three seconds, which reads as a malfunction on the
-    // one control nobody can afford to distrust.
+    // Every repeat calls start(). Without the timer guard the phone would be
+    // handed a fresh three-second ramp twenty times over, restarting the
+    // rhythm on every keystroke - which reads as a malfunction on the one
+    // control nobody can afford to distrust.
     const buzz = stubVibrate();
     render(<HoldToConfirm label="Humingi ng tulong" onConfirm={() => {}} />);
 
@@ -152,7 +155,10 @@ describe("HoldToConfirm haptics", () => {
       });
     }
 
-    expect(buzz).toHaveBeenCalledTimes(1);
+    const ramps = buzz.mock.calls.filter(
+      ([pattern]) => Array.isArray(pattern) && pattern.length > 1,
+    );
+    expect(ramps).toHaveLength(1);
   });
 
   it("works on a phone that cannot vibrate at all", () => {
