@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCopy } from "@/lib/i18n/context";
+import { PULSE_BEGUN, vibrate } from "@/lib/haptics/pulse";
 
 const HOLD_MS = 3000;
 const TICK_MS = 50;
@@ -45,6 +46,23 @@ export function HoldToConfirm({ label, onConfirm }: HoldToConfirmProps) {
 
   function start() {
     if (timer.current !== null || fired.current) return;
+
+    /**
+     * One beat, and only here.
+     *
+     * The hold is the single place in this product where a person must keep
+     * doing something and wait, and they may be watching the water rather than
+     * the screen. This says the press registered - nothing more, because
+     * nothing more is true yet.
+     *
+     * There is deliberately no beat when the hold completes. That instant is
+     * "submitting", not "sent", and a buzz there would fire identically whether
+     * the signal reached the database or the upload failed a second later. The
+     * confirming pulse lives on the page, after the write. Sitting behind the
+     * guard above, this also cannot repeat under key auto-repeat.
+     */
+    vibrate(PULSE_BEGUN);
+
     const startedAt = Date.now();
 
     timer.current = setInterval(() => {

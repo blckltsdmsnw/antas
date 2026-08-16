@@ -1,6 +1,6 @@
 # Antas — where things stand
 
-Last updated: 2026-08-16, ~04:45 PHT.
+Last updated: 2026-08-16, ~18:30 PHT.
 
 Everything described here is committed and pushed to
 `github.com/blckltsdmsnw/antas`. Vercel auto-deploys `main`; a push takes about
@@ -845,6 +845,54 @@ pins belonged to an account that is neither Elijah's nor a seed. It was left
 untouched. This changes the standing assumption behind every destructive
 operation here: the database is no longer only test data.
 
+## The phone buzzes on the SOS hold — 2026-08-16
+
+Asked for the same day and built the same day. The hold is the one control in
+this product where somebody must keep doing something and wait, and they may be
+watching the water rather than the screen.
+
+**One short beat when the press registers, and a distinct two-beat pattern when
+the signal is actually written.** Nothing in between, and nothing on any failure
+path.
+
+The placement of the second beat is the whole design, and it is not where it
+looks like it should go. The obvious spot is the moment the three seconds
+complete — but at that instant nothing has been sent, and the buzz would fire
+identically whether the row reached the database or the upload failed a second
+later. A confirming buzz for an SOS that never sent is the harm `design.md` §12
+refuses in the notification channel, wearing a different coat: a person in
+rising water who believes their call went out waits instead of climbing. So the
+second pulse lives in `sos/page.tsx` after the write, not in `HoldToConfirm`,
+which has no idea whether the submission it triggered succeeded.
+
+**A continuous three-second buzz was rejected** — it says only "something is
+happening", where two distinct events say *begun* and *sent*. Escalating ticks
+at each second were considered and not built; they would communicate progress,
+which is the ring's job, and the ring is readable whenever the screen is.
+
+**It is never the only channel.** iOS Safari has never shipped the Vibration API,
+so on a large share of these phones nothing happens at all. `vibrate()` is a
+silent no-op when unsupported and swallows a throwing implementation, because
+the alternative is an exception inside `handleConfirm` aborting an SOS over a
+decoration. `src/lib/haptics/pulse.ts` documents that as the one deliberate
+silent failure in the codebase.
+
+Verified three ways, because this repo has learned that green tests are not
+evidence:
+
+- **Both new guards were confirmed red against the wrong code.** Firing the sent
+  pattern at hold completion broke *"stays silent when the hold completes"*;
+  firing it before the result check broke both failure-path tests in
+  `src/app/sos/page.test.tsx`.
+- **A real browser, a real press.** `navigator.vibrate` was recorded via an init
+  script and the control pressed with the mouse: nothing on load, `[20]` at
+  press, nothing more mid-hold or on early release — and **no confirming buzz
+  after a full three-second hold with no photo attached**, which is a failure
+  path.
+- `src/app/sos/page.test.tsx` is the first test this page has ever had. It exists
+  because the rule being enforced is invisible on screen: a buzz that should not
+  have happened leaves the page looking identical.
+
 ## Known issues, not fixed
 
 - **Hydration warning on `/report`** from a `caret-color` style Chromium injects
@@ -869,23 +917,15 @@ operation here: the database is no longer only test data.
 Distinct from `design.md` §12, which lists things refused on purpose. These were
 wanted and simply have not been done.
 
-- **Haptic feedback on the SOS hold.** Asked for on 2026-08-16: the phone should
-  vibrate while the three-second hold is being pressed. It fits that control
-  specifically — the hold is the one place in the product where somebody needs
-  to know something is happening while keeping their thumb down, and they may be
-  looking at the water rather than at the screen.
+**Nothing is open.** The list is empty: the English / Tagalog toggle and the
+local DRRMO numbers both closed on 2026-08-15 — the latter by the owner rather
+than by code — and the SOS hold's haptic feedback closed on 2026-08-16, the day
+it was asked for.
 
-  Worth thinking through before building. `navigator.vibrate` is unsupported on
-  iOS Safari, so it cannot be the only feedback and the existing progress ring
-  has to keep working alone. A continuous buzz for three seconds is also the
-  wrong shape: a short pulse at the start and a distinct one on fire says *begun*
-  and *sent*, rather than merely *something is happening*. And it must not fire
-  on the failure paths — releasing early, or a submission that errors — because
-  a confirming buzz for an SOS that did not send is the same class of harm as
-  the notifications refused in `design.md` §12.
-
-The English / Tagalog toggle and the local DRRMO numbers both closed on
-2026-08-15, the latter by the owner rather than by code.
+One product decision is still outstanding, but it is a choice rather than a
+backlog item: whether `hideReport` should delete the photograph too, or the
+`report-photos` bucket should stop being public and the map fetch signed URLs.
+See the 2026-08-16 section above.
 
 ## Things worth remembering about this codebase
 
@@ -919,7 +959,7 @@ asynchronously, assert the value twice and require both reads to agree.
 ## Verification commands
 
 ```
-npx vitest run src/                 # unit (260)
+npx vitest run src/                 # unit (274)
 npx playwright test                 # e2e (60)
 npx vitest run tests/integration    # integration (48) - needs local Supabase
 npm run build

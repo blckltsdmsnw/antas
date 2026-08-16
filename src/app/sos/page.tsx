@@ -13,6 +13,7 @@ import {
   needsLocationConfirmation,
 } from "@/lib/reports/accuracy";
 import { useCopy } from "@/lib/i18n/context";
+import { PULSE_SENT, vibrate } from "@/lib/haptics/pulse";
 import type { Copy } from "@/lib/i18n/strings";
 
 type PageErrorCode = SosErrorCode | "no_location" | "upload_failed";
@@ -134,6 +135,21 @@ export default function SosPage() {
     // signal instead of being told "naipadala na" and never hearing again.
     setSignalId(result.signalId);
     setStatus("sent");
+
+    /**
+     * The second beat, and the only one that means anything went out.
+     *
+     * It is placed after the row exists rather than when the hold completed,
+     * because every failure above returns before reaching here: no photo, no
+     * location, no anonymous session, a failed upload, a rejected insert. A
+     * buzz on any of those would confirm an SOS that does not exist, which is
+     * the notification harm in `design.md` §12 wearing a different coat.
+     *
+     * It still promises nothing beyond "this was recorded" - `sentBody` and
+     * `demoNotice` on the screen below both say outright that nobody is being
+     * dispatched.
+     */
+    vibrate(PULSE_SENT);
 
     /**
      * Only now, and never before.
