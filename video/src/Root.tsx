@@ -1,6 +1,13 @@
 import React from "react";
 import { Composition } from "remotion";
 import { PROMO_DURATION, Promo, type PromoProps } from "./Promo";
+import {
+  DEMO_DURATION,
+  Demo,
+  DemoWithPoster,
+  POSTER_FRAMES,
+  Thumbnail,
+} from "./Demo";
 
 /**
  * 1920x1080 because this is shown on a projector in a room, not on a phone.
@@ -10,8 +17,37 @@ import { PROMO_DURATION, Promo, type PromoProps } from "./Promo";
  * rather than changing this one.
  */
 export const Root: React.FC = () => (
-  <Composition
-    id="Promo"
+  <>
+    {/* The demonstration walkthrough - real footage, chaptered, narrated. */}
+    <Composition
+      id="Demo"
+      component={Demo}
+      durationInFrames={DEMO_DURATION}
+      fps={30}
+      width={1920}
+      height={1080}
+    />
+    {/* The Drive upload: the poster held for a second, then the video -
+        Drive thumbnails from early frames and ignores embedded cover art. */}
+    <Composition
+      id="DemoPoster"
+      component={DemoWithPoster}
+      durationInFrames={DEMO_DURATION + POSTER_FRAMES}
+      fps={30}
+      width={1920}
+      height={1080}
+    />
+    {/* One frame: the poster image. `npx remotion still Thumbnail`. */}
+    <Composition
+      id="Thumbnail"
+      component={Thumbnail}
+      durationInFrames={1}
+      fps={30}
+      width={1920}
+      height={1080}
+    />
+    <Composition
+      id="Promo"
     component={Promo}
     durationInFrames={PROMO_DURATION}
     fps={30}
@@ -25,5 +61,6 @@ export const Root: React.FC = () => (
         broll: { rain: null, dusk: null },
       } satisfies PromoProps
     }
-  />
+    />
+  </>
 );
