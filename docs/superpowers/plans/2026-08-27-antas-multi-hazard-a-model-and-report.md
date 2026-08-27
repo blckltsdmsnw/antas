@@ -484,9 +484,13 @@ export const hazard = dict(
     other3: "May nanganganib",
     // -- TO HERE ----------------------------------------------------------
 
-    // Medical severity 3 is the one case where filing a report is the wrong
-    // instinct and the screen must say so before anything else.
-    call911First: "Tumawag muna sa 911, pagkatapos i-report.",
+    // NOT "call 911". The owner reports that 911 does not connect in practice
+    // here, so that advice spends the minutes that matter on a call that will
+    // not land. The barangay is the real dispatcher for a medical emergency -
+    // it can send someone, or a vehicle, to bring the patient to a hospital.
+    // No number: the app does not know sixteen barangay hotlines, and a
+    // resident already knows how to reach their own.
+    tellBarangay: "Ipaalam din sa barangay ninyo.",
   },
   {
     pickPrompt: "What is happening?",
@@ -520,7 +524,7 @@ export const hazard = dict(
     other2: "Somebody hurt",
     other3: "Somebody in danger",
 
-    call911First: "Call 911 first, then report.",
+    tellBarangay: "Tell your barangay too.",
   },
 );
 ```
@@ -577,6 +581,18 @@ existing `errInvalidDepth`:
 | `errMissingSeverity` | "Pumili kung ano ang nakikita mo." | "Choose what you can see." |
 | `errDepthNotAllowed` | "Lalim ng tubig ay para lang sa baha." | "Water depth is only for a flood." |
 | `reportDoneNotOnMap` | "Naipadala sa barangay. Hindi ito ilalagay sa mapa." | "Sent to the barangay. It will not be drawn on the map." |
+
+**Also in this task, and change it in both halves:** `demoBanner` currently
+ends *"Sa totoong emergency, tumawag sa 911."* / *"In a real emergency, call
+911."* The owner reports 911 does not connect in practice, which makes that
+sentence actively harmful on the one screen where it matters. Replace the
+second sentence only — the first ("no real rescue service receives these
+signals") stays, because it is still true:
+
+| half | new text |
+|---|---|
+| tl | "Walang tunay na rescue service na nakakatanggap ng mga signal na ito. Sa totoong emergency, direktang tawagan ang inyong barangay." |
+| en | "No real rescue service receives these signals. In a real emergency, contact your barangay directly." |
 
 - [ ] **Step 4: Run test and typecheck**
 
@@ -1618,8 +1634,11 @@ Render:
     `s of SEVERITIES` a `<button className="btn severity-choice"
     aria-pressed={severity === s} onClick={() => setSeverity(s)}>` reading
     `severityWord(hazard, s, copy.hazard)`.
-  - `hazard === "medical" && severity === 3` → `copy.hazard.call911First` in
-    a `notice`, above the submit button.
+  - `hazard === "medical" || hazard === "accident"` → `copy.hazard.tellBarangay`
+    in a `notice`, above the submit button. Shown for every severity, not only
+    the worst: the barangay is the pathway for these two whatever the level,
+    and a person deciding whether this is "bad enough" is exactly who should
+    be told to call anyway.
 - Photo capture and submit stay exactly where they are.
 
 **Send is disabled until the report is complete**: `hazard !== null && (hazard
