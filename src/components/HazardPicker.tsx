@@ -15,7 +15,7 @@ export function HazardPicker({ onPick }: { onPick: (h: HazardType) => void }) {
   const copy = useCopy();
   return (
     <div className="hazard-picker">
-      <h2 className="task-title">{copy.hazard.pickPrompt}</h2>
+      <h1 className="task-title">{copy.hazard.pickPrompt}</h1>
       <div className="hazard-grid">
         {HAZARDS.map((h) => (
           <button

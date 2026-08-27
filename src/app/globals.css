@@ -457,6 +457,22 @@ h3 {
   font-size: 15px;
 }
 
+/* The report screen's hazard-correction control rides the same line as its
+   heading rather than stacking a full-width button under it - a resident who
+   mis-tapped the hazard still needs a way back, but the approved flood screen
+   was measured without one and must not grow taller because it exists now. */
+.task-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.task-header-back {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 /* --------------------------------------------------------------------------
    Depth gauge - a body, not a column.
 

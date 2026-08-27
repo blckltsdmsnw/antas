@@ -224,25 +224,27 @@ export default function ReportPage() {
 
   return (
     <main className="task-page">
-      <h1 className="task-title">{copy.screens.reportTitle}</h1>
-      <p className="task-lede">{copy.screens.reportLede}</p>
-
-      <button
-        type="button"
-        className="btn btn-quiet"
-        onClick={() => {
-          setHazard(null);
-          setSeverity(null);
-        }}
-      >
-        {copy.hazard.back}
-      </button>
+      <div className="task-header">
+        <h1 className="task-title">
+          {hazard === "flood" ? copy.screens.reportTitle : copy.hazard.severityPrompt}
+        </h1>
+        <button
+          type="button"
+          className="quiet-link task-header-back"
+          onClick={() => {
+            setHazard(null);
+            setSeverity(null);
+          }}
+        >
+          {copy.hazard.back}
+        </button>
+      </div>
+      {hazard === "flood" && <p className="task-lede">{copy.screens.reportLede}</p>}
 
       {hazard === "flood" ? (
         <DepthSlider value={depth} onChange={setDepth} />
       ) : (
         <>
-          <h2 className="task-title">{copy.hazard.severityPrompt}</h2>
           {SEVERITIES.map((s) => (
             <button
               key={s}

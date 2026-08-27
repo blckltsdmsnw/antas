@@ -94,6 +94,22 @@ describe("severity is derived for flood", () => {
       expect(data!.severity).toBe(severityOfDepth(depth));
     }
   });
+
+  it("defaults hazard_type to flood, and derives severity from depth, when a writer sends neither", async () => {
+    // newIncident always passes hazard_type, so it never exercises the
+    // column's `default 'flood'`. buildReportRow sets hazard_type now, but a
+    // seed script or an older, not-yet-redeployed writer might not - this is
+    // the column default and the depth-to-severity trigger cooperating for a
+    // writer that knows nothing about hazards at all.
+    const { data, error } = await admin
+      .from("depth_reports")
+      .insert({ reporter_id: reporterId, location: MALANDAY, depth: "chest" })
+      .select("hazard_type, severity")
+      .single();
+    if (error) throw error;
+    expect(data!.hazard_type).toBe("flood");
+    expect(data!.severity).toBe(3);
+  });
 });
 
 describe("the hazard constraints", () => {
