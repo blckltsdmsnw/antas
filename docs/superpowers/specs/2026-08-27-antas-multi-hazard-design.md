@@ -248,7 +248,41 @@ pre-bucketed counts so no raw incident rows travel to the browser to be counted:
 hand-written SVG against 100KB+ of dependency, in an app that must open fast
 offline on a cheap phone.
 
-## 7. The public map
+## 7. Hazard icons, and which visual variable means what
+
+One `HazardIcon` component, hand-drawn SVG in the manner of `AntasMark`, used at
+three sizes so a fire looks identical wherever it is met:
+
+| Where | Size | Job |
+|---|---|---|
+| Report picker | large, above the word | recognise the choice before reading it |
+| Map pin | small, inside the pin | know what it is without tapping |
+| Board and queue cards | small badge beside the severity | scan a column at a glance |
+
+Glyphs are conventional and dull on purpose — a flame, a wave, a cracked ground
+line, a car, a medical cross, an exclamation for *other*. The audience this UI
+was approved for recognises the obvious symbol, not the elegant one.
+
+### The rule
+
+- **Icon carries *what*** — flood, fire, earthquake
+- **Colour carries *how bad*** — the existing depth palette, reused as a
+  severity palette
+
+Flood keeps its five-step ramp exactly. Other hazards take three steps from the
+same palette: severity 1 the pale end, 3 the deep end. One palette, one meaning
+throughout — darker is worse, whatever the hazard — and flood simply has finer
+gradations because it can be measured more precisely.
+
+Colouring by hazard instead was rejected: it would strip the map's colours of
+their severity meaning, which is what makes the map readable at a glance during
+a flood.
+
+This also repairs an existing accessibility fault. Depth is currently
+communicated by colour alone, so a colour-blind reader gets no signal at all.
+Icon plus colour gives two independent channels.
+
+## 8. The public map
 
 Cluster behaviour generalises: a cluster takes its **highest severity** member,
 exactly as it took its deepest. Flood keeps its five-step depth ramp; other
