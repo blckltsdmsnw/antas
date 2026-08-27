@@ -1,9 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { clusterByProximity, CLUSTER_RADIUS_PX } from "./cluster";
 import type { DepthLevel } from "@/lib/depth/scale";
+import { severityOfDepth } from "@/lib/hazard/severity";
 
+// Severity is derived from depth, exactly as `set_report_severity()` (0028)
+// and severity.ts do for real reports. A fixture that hardcoded severity
+// independent of depth would let a cluster's worst-severity selection and its
+// depth silently disagree about which member is "worst" - the same class of
+// bug this file exists to catch.
 function point(id: string, x: number, y: number, depth: DepthLevel = "knee") {
-  return { id, x, y, depth, hazard: "flood" as const, severity: 1 as const };
+  return { id, x, y, depth, hazard: "flood" as const, severity: severityOfDepth(depth) };
 }
 
 describe("clusterByProximity", () => {
@@ -135,11 +141,27 @@ describe("clusterByProximity", () => {
     expect(cluster.depth).toBe("chest");
   });
 
-  it("has no depth once a non-flood member joins", () => {
+  it("has no depth once the worst member is not flood", () => {
+    const [cluster] = clusterByProximity([
+      { id: "a", key: "a", x: 0, y: 0, severity: 1, hazard: "flood", depth: "ankle" },
+      { id: "b", key: "b", x: 2, y: 2, severity: 3, hazard: "fire", depth: null },
+    ]);
+    expect(cluster.depth).toBeNull();
+  });
+
+  it("keeps hazard, severity and depth describing the same worst member, even when that member is flood in a mixed cluster", () => {
+    // The case three separate checks missed: a chest-deep flood (severity 3)
+    // clustered with a smoky fire (severity 1). The worst member is the flood
+    // report, so the cluster must describe THAT one report consistently -
+    // never "flood" hazard paired with a null depth, which sends every reader
+    // (FloodMap's aria-label, StreetHistory) into severityWord("flood", ...),
+    // which throws by design.
     const [cluster] = clusterByProximity([
       { id: "a", key: "a", x: 0, y: 0, severity: 3, hazard: "flood", depth: "chest" },
       { id: "b", key: "b", x: 2, y: 2, severity: 1, hazard: "fire", depth: null },
     ]);
-    expect(cluster.depth).toBeNull();
+    expect(cluster.hazard).toBe("flood");
+    expect(cluster.severity).toBe(3);
+    expect(cluster.depth).toBe("chest");
   });
 });

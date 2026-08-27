@@ -104,19 +104,24 @@ export function StreetHistory({ point, onSelect }: StreetHistoryProps) {
     : reports.reduce((worst, report) => (report.severity > worst.severity ? report : worst));
 
   const worstColor =
-    allFlood && worst.depth !== null ? DEPTH_VAR[worst.depth] : SEVERITY_VAR[worst.severity];
+    worst.depth !== null ? DEPTH_VAR[worst.depth] : SEVERITY_VAR[worst.severity];
 
   return (
     <section className="history-sheet">
       <h2 className="sheet-count">{copy.screens.historyCount(reports.length)}</h2>
 
       {/* The worst case leads. Someone reading this is deciding whether to walk
-          down the street, and the average depth is not what would stop them. */}
+          down the street, and the average depth is not what would stop them.
+          Branches on `worst.depth`, not `allFlood`: `worst` is a single real
+          report, and depth is only ever non-null for a flood report, so this
+          is the same one-member consistency `cluster.ts` enforces - a worst
+          report picked by severity from a mixed street must never be read
+          through `severityWord` when it turns out to be the flood one. */}
       <p className="deepest">
         <span className="deepest-dot" style={{ background: worstColor }} />
-        {!allFlood && <HazardIcon hazard={worst.hazard_type} size="sm" />}
+        {worst.depth === null && <HazardIcon hazard={worst.hazard_type} size="sm" />}
         <span className="deepest-label">
-          {allFlood && worst.depth !== null ? (
+          {worst.depth !== null ? (
             copy.screens.historyDeepest(depthName(worst.depth, copy.map))
           ) : (
             <>

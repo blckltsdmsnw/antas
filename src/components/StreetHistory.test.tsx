@@ -91,6 +91,41 @@ describe("StreetHistory", () => {
     ).toBeInTheDocument();
   });
 
+  it("reads the deepest report by its own depth even when a fire on the same street outranks nothing", async () => {
+    // Regression: a chest-deep flood (severity 3) clustered on a street with a
+    // smoky fire (severity 1). The flood is the worst report, so `worst` here
+    // is a flood row, and rendering it must go through `depthName`, never
+    // `severityWord("flood", ...)` - which throws by design. See cluster.ts.
+    mockRpc([
+      {
+        id: "1",
+        hazard_type: "flood",
+        severity: 3,
+        depth: "chest",
+        reported_at: "2026-08-01T00:00:00Z",
+        photo_path: null,
+        lat: 14.65,
+        lon: 121.1,
+        distance_m: 10,
+      },
+      {
+        id: "2",
+        hazard_type: "fire",
+        severity: 1,
+        depth: null,
+        reported_at: "2026-08-02T00:00:00Z",
+        photo_path: null,
+        lat: 14.65,
+        lon: 121.1,
+        distance_m: 20,
+      },
+    ]);
+
+    render(<StreetHistory point={{ lat: 14.65, lon: 121.1 }} onSelect={vi.fn()} />);
+
+    expect(await screen.findByText("Pinakamalalim: Hanggang dibdib")).toBeInTheDocument();
+  });
+
   it("opens a report when its row is pressed, passing the photo through", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
