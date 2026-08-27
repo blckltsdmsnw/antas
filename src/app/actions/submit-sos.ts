@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { validateLocation, type ReportErrorCode } from "@/lib/reports/validate";
+import { validateLocation, type LocationErrorCode } from "@/lib/reports/validate";
 import { scoreSignal } from "@/lib/scoring/score";
 import { openMeteoProvider } from "@/lib/env/open-meteo";
 import { buildSosRow, type SosInput } from "@/lib/sos/row";
@@ -12,15 +12,17 @@ import { buildSosRow, type SosInput } from "@/lib/sos/row";
 export type { SosInput };
 
 /**
- * `invalid_depth` is deliberately absent.
+ * `invalid_depth`, `missing_hazard`, `depth_not_allowed` and
+ * `missing_severity` are deliberately absent.
  *
- * It comes with `ReportErrorCode`, and an SOS can no longer produce it: the
- * sender is never asked for a depth, so there is no depth to be invalid. Naming
- * the two codes that can actually occur keeps the page from carrying a message
- * for a failure that cannot happen.
+ * They come with `ReportErrorCode`, and an SOS can no longer produce them: the
+ * sender is never asked for a hazard, a depth or a severity, so none of those
+ * fields can be invalid or missing. Naming only the codes that can actually
+ * occur keeps the page from carrying a message for a failure that cannot
+ * happen. `LocationErrorCode` is `validate.ts`'s own name for this same set.
  */
 export type SosErrorCode =
-  | Exclude<ReportErrorCode, "invalid_depth">
+  | LocationErrorCode
   | "not_signed_in"
   | "already_active"
   | "insert_failed";

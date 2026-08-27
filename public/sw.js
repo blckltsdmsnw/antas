@@ -38,7 +38,7 @@
 //
 // Bump this whenever a deploy must reach people immediately rather than on
 // their second load.
-const VERSION = "antas-v2";
+const VERSION = "antas-v3";
 const SHELL = `${VERSION}-shell`;
 
 /**

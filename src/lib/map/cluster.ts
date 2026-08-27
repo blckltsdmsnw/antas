@@ -1,4 +1,6 @@
 import { depthRank, type DepthLevel } from "@/lib/depth/scale";
+import type { HazardType, Severity } from "@/lib/hazard/types";
+import { worstSeverity } from "@/lib/hazard/severity";
 
 /**
  * Screen-space clustering for map pins.
@@ -13,7 +15,9 @@ export interface Clusterable {
   id: string;
   x: number;
   y: number;
-  depth: DepthLevel;
+  hazard: HazardType;
+  severity: Severity;
+  depth: DepthLevel | null;
 }
 
 export interface Cluster<T extends Clusterable = Clusterable> {
@@ -21,8 +25,15 @@ export interface Cluster<T extends Clusterable = Clusterable> {
   key: string;
   x: number;
   y: number;
-  /** The deepest member's level - never an average. See `deepestOf`. */
-  depth: DepthLevel;
+  /** The worst member's severity - never an average. See `worstSeverity`. */
+  severity: Severity;
+  /** The hazard of the member carrying that worst severity. The deterministic
+   *  sort makes the tie stable when more than one member ties for it. */
+  hazard: HazardType;
+  /** The worst member's depth - present only when that member is a flood
+   *  report. Hazard, severity and depth all describe the SAME member, the
+   *  worst one, so "hazard is flood" always implies depth is non-null. */
+  depth: DepthLevel | null;
   members: T[];
 }
 
@@ -67,34 +78,37 @@ export function clusterByProximity<T extends Clusterable>(
     }
   }
 
-  return clusters.map((cluster) => ({
-    key: cluster.members
-      .map((member) => member.id)
-      .sort()
-      .join(","),
-    x: cluster.x,
-    y: cluster.y,
-    depth: deepestOf(cluster.members),
-    members: cluster.members,
-  }));
+  return clusters.map((cluster) => {
+    const severity = worstSeverity(cluster.members.map((member) => member.severity));
+    // Severity has three steps and depth has five, so a severity tie can hide
+    // a shallower flood reading in front of a deeper one (chest and
+    // above_head are both severity 3). Among members at the worst severity,
+    // prefer the deepest flood; only fall back to sorted order when none of
+    // them is flood, where there is no depth to compare.
+    const atWorst = cluster.members.filter((member) => member.severity === severity);
+    const floodsAtWorst = atWorst.filter((member) => member.hazard === "flood");
+    const worst =
+      floodsAtWorst.length > 0
+        ? floodsAtWorst.reduce((deepest, member) =>
+            depthRank(member.depth!) > depthRank(deepest.depth!) ? member : deepest,
+          )
+        : atWorst[0];
+
+    return {
+      key: cluster.members
+        .map((member) => member.id)
+        .sort()
+        .join(","),
+      x: cluster.x,
+      y: cluster.y,
+      severity,
+      hazard: worst.hazard,
+      depth: worst.hazard === "flood" ? worst.depth : null,
+      members: cluster.members,
+    };
+  });
 }
 
 function mean(values: number[]): number {
   return values.reduce((total, value) => total + value, 0) / values.length;
-}
-
-/**
- * The worst case wins.
- *
- * Averaging would be actively dangerous: eleven ankle-deep reports and one
- * above-head report would render pale blue, and the map would tell someone a
- * street is passable at the exact moment it is not. Same rule the street
- * history uses for "Pinakamalalim".
- */
-function deepestOf(members: Clusterable[]): DepthLevel {
-  return members.reduce(
-    (worst, member) =>
-      depthRank(member.depth) > depthRank(worst) ? member.depth : worst,
-    members[0].depth,
-  );
 }

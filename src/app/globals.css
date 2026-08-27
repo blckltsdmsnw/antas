@@ -457,6 +457,22 @@ h3 {
   font-size: 15px;
 }
 
+/* The report screen's hazard-correction control rides the same line as its
+   heading rather than stacking a full-width button under it - a resident who
+   mis-tapped the hazard still needs a way back, but the approved flood screen
+   was measured without one and must not grow taller because it exists now. */
+.task-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.task-header-back {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 /* --------------------------------------------------------------------------
    Depth gauge - a body, not a column.
 
@@ -811,6 +827,14 @@ button.quiet-link {
   box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.12);
 }
 
+/* The one line that ties the ramp above to the severity colours the hazard
+   rows below reuse - same rule, one palette. */
+.legend-note {
+  margin: 8px 0;
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
 /* Anchor a link styled as a button — needs the text centred like a real one. */
 a.btn {
   text-decoration: none;
@@ -1038,6 +1062,9 @@ a.btn {
 }
 
 .pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 20px;
   height: 20px;
   padding: 0;
@@ -1058,10 +1085,19 @@ a.btn {
   border-radius: 50%;
 }
 
+/* The icon says WHAT a pin is; colour still says HOW BAD. On the plain dot it
+   sits centred; on a photo pin - see below - the photo already fills the
+   button, so the icon becomes a small badge instead. */
+.pin-hazard {
+  display: flex;
+  color: #fff;
+  pointer-events: none;
+}
+
 /* A photo pin shows the photograph.
    The previous version marked it with a ring gap, which nobody decoded - the
    whole point is knowing which pins are worth tapping before you tap them.
-   Square, so shape carries "has photo" and colour still carries depth. */
+   Square, so shape carries "has photo" and colour still carries how bad. */
 .pin--photo {
   width: 40px;
   height: 40px;
@@ -1073,6 +1109,20 @@ a.btn {
   padding: 0;
 }
 
+.pin--photo .pin-hazard {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--pin-color, var(--accent));
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.4);
+}
+
 .pin-thumb {
   display: block;
   width: 100%;
@@ -1081,12 +1131,13 @@ a.btn {
 }
 
 /* Cluster: one target where several pins would otherwise overlap.
-   Takes its deepest member's colour - averaging would let eleven ankle-deep
+   Takes its worst member's colour - averaging would let eleven ankle-deep
    reports hide one above-head report behind a reassuring pale blue. */
 .pin-cluster {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 3px;
   width: 34px;
   height: 34px;
   padding: 0;
@@ -1273,6 +1324,7 @@ a.btn {
 [data-map-theme="dark"] .detail-sub,
 [data-map-theme="dark"] .detail-clock,
 [data-map-theme="dark"] .weather-temp,
+[data-map-theme="dark"] .legend-note,
 [data-map-theme="dark"] .legend-row {
   color: var(--panel-ink-muted);
 }
@@ -1954,7 +2006,8 @@ a.btn {
 }
 
 .my-report-where,
-.my-report-when {
+.my-report-when,
+.my-report-severity {
   margin: 2px 0 0;
   font-size: 14px;
   color: var(--ink-muted);
@@ -3196,3 +3249,49 @@ a.btn {
 }
 
 .report-actions .btn { flex: 1 1 auto; }
+
+/* Six targets, two columns, none smaller than a thumb. */
+.hazard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.hazard-choice {
+  appearance: none;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.hazard-choice:hover { border-color: var(--ink-muted); }
+
+/* Never the item a cramped flex row squeezes first - the legend rows, the
+   street history list, and the report detail card all set this beside text
+   that already has its own `flex: 1` or `overflow: hidden`. */
+.hazard-icon { flex: none; }
+
+/* Three severity words, stacked, as tall as the depth slider's rows. */
+.severity-choice {
+  width: 100%;
+  min-height: 56px;
+  margin-top: 8px;
+  text-align: left;
+}
+
+.severity-choice[aria-pressed="true"] {
+  border-color: var(--ink);
+  background: var(--raised);
+}

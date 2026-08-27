@@ -22,7 +22,12 @@ export const screens = dict(
     reportBackToMap: "Bumalik sa mapa",
 
     reportPhotoPrompt: "Magdagdag ng larawan ng tubig",
+    reportPhotoPromptOther: "Magdagdag ng larawan",
     reportPhotoNote: "Opsyonal. Makikita ito ng lahat sa mapa.",
+    // For medical and accident, which never reach the map - see sos.ts's
+    // photoNote, whose second sentence this reuses verbatim so the promise
+    // matches what `reportDoneNotOnMap` says two taps later.
+    reportPhotoNoteBarangayOnly: "Opsyonal. Ang barangay lang ang makakakita nito.",
     reportPhotoOpen: "Kumuha ng larawan",
     reportPhotoRemove: "Alisin ang larawan",
     yourPhoto: "Ang larawang kinuha mo",
@@ -41,6 +46,10 @@ export const screens = dict(
     cancel: "Kanselahin",
 
     errInvalidDepth: "Pumili ng lalim ng tubig.",
+    errMissingHazard: "Pumili kung ano ang nangyayari.",
+    errMissingSeverity: "Pumili kung ano ang nakikita mo.",
+    errDepthNotAllowed: "Lalim ng tubig ay para lang sa baha.",
+    reportDoneNotOnMap: "Naipadala sa barangay. Hindi ito ilalagay sa mapa.",
     errInvalidCoordinates: "Hindi mabasa ang lokasyon mo.",
     errOutsidePilotArea: "Sa ngayon, Metro Manila lang ang saklaw ng Antas.",
     errNotSignedIn: "Mag-sign in muna bago mag-report.",
@@ -50,7 +59,7 @@ export const screens = dict(
     // says the emergency route is still open, which is true - suspension
     // withdraws the ability to contribute, never the ability to ask for help.
     errSuspended:
-      "Naka-hold ang account mo dahil sa mga naunang report na hindi napatunayang totoo. Hindi ka muna makakapag-report ng lalim ng tubig. Kung nasa panganib ka, gamitin pa rin ang Tulong o tumawag sa 911.",
+      "Naka-hold ang account mo dahil sa mga naunang report na hindi napatunayang totoo. Hindi ka muna makakapag-report. Kung nasa panganib ka, gamitin pa rin ang Tulong o tawagan ang inyong barangay.",
     errNoLocation: "Buksan ang location para makapag-report.",
     errUploadFailed: "Hindi naipadala ang larawan. Subukan ulit.",
 
@@ -235,7 +244,7 @@ export const screens = dict(
 
     demoOnly: "Demonstrasyon lamang.",
     demoBanner:
-      "Walang tunay na rescue service na nakakatanggap ng mga signal na ito. Sa totoong emergency, tumawag sa 911.",
+      "Walang tunay na rescue service na nakakatanggap ng mga signal na ito. Sa totoong emergency, direktang tawagan ang inyong barangay.",
   },
   {
     reportTitle: "How deep is the water?",
@@ -248,7 +257,9 @@ export const screens = dict(
     reportBackToMap: "Back to the map",
 
     reportPhotoPrompt: "Add a photo of the water",
+    reportPhotoPromptOther: "Add a photo",
     reportPhotoNote: "Optional. Everyone on the map can see it.",
+    reportPhotoNoteBarangayOnly: "Optional. Only the barangay can see it.",
     reportPhotoOpen: "Take a photo",
     reportPhotoRemove: "Remove the photo",
     yourPhoto: "The photo you took",
@@ -267,6 +278,10 @@ export const screens = dict(
     cancel: "Cancel",
 
     errInvalidDepth: "Choose a water depth.",
+    errMissingHazard: "Choose what is happening.",
+    errMissingSeverity: "Choose what you can see.",
+    errDepthNotAllowed: "Water depth is only for a flood.",
+    reportDoneNotOnMap: "Sent to the barangay. It will not be drawn on the map.",
     errInvalidCoordinates: "Your location could not be read.",
     errOutsidePilotArea: "For now, Antas only covers Metro Manila.",
     errNotSignedIn: "Sign in before reporting.",
@@ -275,7 +290,7 @@ export const screens = dict(
     // emergency route stays open in both languages - that sentence is the point
     // of the message, not a footnote to it.
     errSuspended:
-      "Your account is on hold because earlier reports could not be shown to be true. You cannot report water depth for now. If you are in danger, still use Help or call 911.",
+      "Your account is on hold because earlier reports could not be shown to be true. You cannot report for now. If you are in danger, still use Help or contact your barangay.",
     errNoLocation: "Turn on location to report.",
     errUploadFailed: "The photo was not sent. Try again.",
 
@@ -456,6 +471,6 @@ export const screens = dict(
     // Kept as blunt as the Tagalog. This sits on a moderator's screen all day,
     // and the whole point is that it cannot fade into furniture.
     demoBanner:
-      "No real rescue service receives these signals. In a real emergency, call 911.",
+      "No real rescue service receives these signals. In a real emergency, contact your barangay directly.",
   },
 );

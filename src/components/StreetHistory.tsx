@@ -4,15 +4,21 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { MapReport } from "@/components/FloodMap";
 import { depthRank, type DepthLevel } from "@/lib/depth/scale";
-import { DEPTH_VAR } from "@/lib/depth/presentation";
+import { DEPTH_VAR, SEVERITY_VAR } from "@/lib/depth/presentation";
 import { depthName } from "@/lib/depth/name";
+import type { HazardType, Severity } from "@/lib/hazard/types";
+import { hazardName, severityWord } from "@/lib/hazard/name";
+import { worstSeverity } from "@/lib/hazard/severity";
+import { HazardIcon } from "@/components/HazardIcon";
 import { reportPhotoUrl } from "@/lib/reports/photo";
 import { relativeTime } from "@/lib/time/relative";
 import { useCopy } from "@/lib/i18n/context";
 
 interface NearbyReport {
   id: string;
-  depth: DepthLevel;
+  hazard_type: HazardType;
+  severity: Severity;
+  depth: DepthLevel | null;
   reported_at: string;
   photo_path: string | null;
   lat: number;
@@ -30,6 +36,8 @@ const STREET_RADIUS_M = 150;
 function toMapReport(row: NearbyReport): MapReport {
   return {
     id: row.id,
+    hazard: row.hazard_type,
+    severity: row.severity,
     depth: row.depth,
     lat: row.lat,
     lon: row.lon,
@@ -81,29 +89,63 @@ export function StreetHistory({ point, onSelect }: StreetHistoryProps) {
     );
   }
 
-  const deepest = reports.reduce((worst, report) =>
-    depthRank(report.depth) > depthRank(worst.depth) ? report : worst,
-  );
+  // "Pinakamalalim" (deepest) is a claim about water, and only makes sense
+  // while every report on this street is flood. The moment one is not, the
+  // worst case is read off the shared severity scale instead - see
+  // `cluster.ts`, which this mirrors exactly: severity has three steps and
+  // depth has five, so a severity tie can hide a shallower flood reading in
+  // front of a deeper one (chest and above_head are both severity 3). Among
+  // members at the worst severity, prefer the deepest flood; only fall back
+  // to the first when none of them is flood, where there is no depth to
+  // compare.
+  const severity = worstSeverity(reports.map((report) => report.severity));
+  const atWorst = reports.filter((report) => report.severity === severity);
+  const floodsAtWorst = atWorst.filter((report) => report.hazard_type === "flood");
+  const worst =
+    floodsAtWorst.length > 0
+      ? floodsAtWorst.reduce((deepest, report) =>
+          depthRank(report.depth!) > depthRank(deepest.depth!) ? report : deepest,
+        )
+      : atWorst[0];
+
+  const worstColor =
+    worst.depth !== null ? DEPTH_VAR[worst.depth] : SEVERITY_VAR[worst.severity];
 
   return (
     <section className="history-sheet">
       <h2 className="sheet-count">{copy.screens.historyCount(reports.length)}</h2>
 
       {/* The worst case leads. Someone reading this is deciding whether to walk
-          down the street, and the average depth is not what would stop them. */}
+          down the street, and the average depth is not what would stop them.
+          Branches on `worst.depth`: `worst` is a single real
+          report, and depth is only ever non-null for a flood report, so this
+          is the same one-member consistency `cluster.ts` enforces - a worst
+          report picked by severity from a mixed street must never be read
+          through `severityWord` when it turns out to be the flood one. */}
       <p className="deepest">
-        <span
-          className="deepest-dot"
-          style={{ background: DEPTH_VAR[deepest.depth] }}
-        />
+        <span className="deepest-dot" style={{ background: worstColor }} />
+        {worst.depth === null && <HazardIcon hazard={worst.hazard_type} size="sm" />}
         <span className="deepest-label">
-          {copy.screens.historyDeepest(depthName(deepest.depth, copy.map))}
+          {worst.depth !== null ? (
+            copy.screens.historyDeepest(depthName(worst.depth, copy.map))
+          ) : (
+            <>
+              {hazardName(worst.hazard_type, copy.hazard)} ·{" "}
+              {severityWord(worst.hazard_type, worst.severity, copy.hazard)}
+            </>
+          )}
         </span>
       </p>
 
       <ul className="report-list">
         {reports.map((report) => {
           const thumb = reportPhotoUrl(report.photo_path);
+          const rowColor =
+            report.depth !== null ? DEPTH_VAR[report.depth] : SEVERITY_VAR[report.severity];
+          const rowLabel =
+            report.depth !== null
+              ? depthName(report.depth, copy.map)
+              : hazardName(report.hazard_type, copy.hazard);
           return (
             <li key={report.id}>
               <button
@@ -111,13 +153,13 @@ export function StreetHistory({ point, onSelect }: StreetHistoryProps) {
                 className="report-row"
                 onClick={() => onSelect(toMapReport(report))}
               >
-                <span
-                  className="report-swatch"
-                  style={{ background: DEPTH_VAR[report.depth] }}
-                />
-                <span className="report-label">
-                  {depthName(report.depth, copy.map)}
-                </span>
+                <span className="report-swatch" style={{ background: rowColor }} />
+                {/* The word follows right after, so the icon carries no title -
+                    see `HazardIcon`. */}
+                {report.depth === null && (
+                  <HazardIcon hazard={report.hazard_type} size="sm" />
+                )}
+                <span className="report-label">{rowLabel}</span>
                 <span className="report-when">
                   {relativeTime(report.reported_at, copy.screens)}
                 </span>

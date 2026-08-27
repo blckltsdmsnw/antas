@@ -60,6 +60,7 @@ beforeEach(() => {
 describe("ReportPage", () => {
   it("renders the heading and the slider at its default level", () => {
     render(<ReportPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Baha" }));
 
     expect(
       screen.getByRole("heading", { name: "Gaano kalalim ang tubig?" }),
@@ -82,10 +83,13 @@ describe("ReportPage", () => {
     mockedSubmitReport.mockResolvedValue({ ok: true, warnings: [] });
 
     render(<ReportPage />);
+    await user.click(screen.getByRole("button", { name: "Baha" }));
     await user.click(screen.getByRole("button", { name: "I-report" }));
 
     await waitFor(() => {
       expect(mockedSubmitReport).toHaveBeenCalledWith({
+        hazard: "flood",
+        severity: null,
         depth: "knee",
         lat: 14.65,
         lon: 121.1,
@@ -111,6 +115,7 @@ describe("ReportPage", () => {
     });
 
     render(<ReportPage />);
+    await user.click(screen.getByRole("button", { name: "Baha" }));
     await user.click(screen.getByRole("button", { name: "I-report" }));
 
     const alert = await screen.findByRole("alert");
@@ -129,6 +134,7 @@ describe("ReportPage", () => {
     });
 
     render(<ReportPage />);
+    await user.click(screen.getByRole("button", { name: "Baha" }));
     await user.click(screen.getByRole("button", { name: "I-report" }));
 
     const alert = await screen.findByRole("alert");
@@ -151,6 +157,7 @@ describe("ReportPage", () => {
     mockedSubmitReport.mockResolvedValue({ ok: true, warnings: [] });
 
     render(<ReportPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Baha" }));
     const button = screen.getByRole("button", { name: "I-report" });
 
     fireEvent.click(button);
@@ -181,6 +188,7 @@ describe("ReportPage", () => {
     });
 
     render(<ReportPage />);
+    await user.click(screen.getByRole("button", { name: "Baha" }));
     await user.click(screen.getByRole("button", { name: "I-report" }));
 
     expect(
@@ -198,6 +206,7 @@ describe("ReportPage", () => {
     mockedSubmitReport.mockResolvedValue({ ok: true, warnings: [] });
 
     render(<ReportPage />);
+    await user.click(screen.getByRole("button", { name: "Baha" }));
     await user.click(screen.getByRole("button", { name: "I-report" }));
     await user.click(
       await screen.findByRole("button", { name: "Ituloy — tama ang lugar" }),
@@ -207,6 +216,8 @@ describe("ReportPage", () => {
     // included, so the moderator sees the same uncertainty they did.
     await waitFor(() => {
       expect(mockedSubmitReport).toHaveBeenCalledWith({
+        hazard: "flood",
+        severity: null,
         depth: "knee",
         lat: 14.5,
         lon: 121.05,
@@ -225,6 +236,7 @@ describe("ReportPage", () => {
     });
 
     render(<ReportPage />);
+    await user.click(screen.getByRole("button", { name: "Baha" }));
     await user.click(screen.getByRole("button", { name: "I-report" }));
     await user.click(await screen.findByRole("button", { name: "Kanselahin" }));
 

@@ -4,6 +4,8 @@ import { buildReportRow } from "./row";
 describe("buildReportRow", () => {
   it("converts validated input into a PostGIS row", () => {
     const row = buildReportRow("user-123", {
+      hazard: "flood",
+      severity: 2,
       depth: "waist",
       lat: 14.65,
       lon: 121.1,
@@ -13,6 +15,8 @@ describe("buildReportRow", () => {
     expect(row).toEqual({
       reporter_id: "user-123",
       location: "SRID=4326;POINT(121.1 14.65)",
+      hazard_type: "flood",
+      severity: 2,
       depth: "waist",
       gps_accuracy_m: 9,
       photo_path: null,
@@ -22,6 +26,8 @@ describe("buildReportRow", () => {
 
   it("carries a photo path through, and normalises its absence to null", () => {
     const withPhoto = buildReportRow("user-123", {
+      hazard: "flood",
+      severity: 2,
       depth: "waist",
       lat: 14.65,
       lon: 121.1,
@@ -33,6 +39,8 @@ describe("buildReportRow", () => {
     // undefined would be dropped from the insert entirely rather than stored
     // as NULL, so an omitted photo has to become an explicit null here.
     const without = buildReportRow("user-123", {
+      hazard: "flood",
+      severity: 2,
       depth: "waist",
       lat: 14.65,
       lon: 121.1,
@@ -43,6 +51,8 @@ describe("buildReportRow", () => {
 
   it("puts longitude before latitude in the point literal", () => {
     const row = buildReportRow("user-123", {
+      hazard: "flood",
+      severity: 1,
       depth: "knee",
       lat: 14.7,
       lon: 121.06,
@@ -50,5 +60,20 @@ describe("buildReportRow", () => {
     });
 
     expect(row.location).toBe("SRID=4326;POINT(121.06 14.7)");
+  });
+
+  it("carries a non-flood hazard's severity through with a null depth", () => {
+    const row = buildReportRow("user-123", {
+      hazard: "fire",
+      severity: 3,
+      depth: null,
+      lat: 14.65,
+      lon: 121.1,
+      gpsAccuracyM: 9,
+    });
+
+    expect(row.hazard_type).toBe("fire");
+    expect(row.severity).toBe(3);
+    expect(row.depth).toBeNull();
   });
 });

@@ -1,4 +1,6 @@
 import { isDepthLevel, type DepthLevel } from "@/lib/depth/scale";
+import { isHazardType, isSeverity, type HazardType, type Severity } from "@/lib/hazard/types";
+import { severityOfDepth } from "@/lib/hazard/severity";
 
 /**
  * Metro Manila (the National Capital Region), as a bounding box.
@@ -21,6 +23,11 @@ export const PILOT_BOUNDS = Object.freeze({
 export const LOW_GPS_ACCURACY_M = 100;
 
 export interface ReportInput {
+  /** Raw, as it arrives at the server action. Narrowed by isHazardType. */
+  hazard: unknown;
+  /** Raw. Ignored for flood, required otherwise. Narrowed by isSeverity. */
+  severity: unknown;
+  /** Empty string when the hazard is not flood. */
   depth: string;
   lat: number;
   lon: number;
@@ -34,14 +41,23 @@ export interface ReportInput {
 }
 
 export type ReportErrorCode =
+  | "missing_hazard"
   | "invalid_depth"
+  | "depth_not_allowed"
+  | "missing_severity"
   | "invalid_coordinates"
   | "outside_pilot_area";
 
 export type ReportWarningCode = "low_gps_accuracy";
 
 export type ValidationResult =
-  | { ok: true; depth: DepthLevel; warnings: ReportWarningCode[] }
+  | {
+      ok: true;
+      hazard: HazardType;
+      severity: Severity;
+      depth: DepthLevel | null;
+      warnings: ReportWarningCode[];
+    }
   | { ok: false; errors: ReportErrorCode[] };
 
 export interface LocationInput {
@@ -50,10 +66,11 @@ export interface LocationInput {
   gpsAccuracyM: number | null;
 }
 
-/** Every code except `invalid_depth`, which this function cannot produce - it
- *  is never given a depth to judge. Narrowing it here means an SOS caller does
- *  not have to carry a message for a failure that can never reach it. */
-export type LocationErrorCode = Exclude<ReportErrorCode, "invalid_depth">;
+/** The three hazard codes join invalid_depth in what an SOS can never see. */
+export type LocationErrorCode = Exclude<
+  ReportErrorCode,
+  "invalid_depth" | "missing_hazard" | "depth_not_allowed" | "missing_severity"
+>;
 
 export type LocationResult =
   | { ok: true; warnings: ReportWarningCode[] }
@@ -93,22 +110,38 @@ export function validateLocation(input: LocationInput): LocationResult {
 export function validateReport(input: ReportInput): ValidationResult {
   const errors: ReportErrorCode[] = [];
 
-  if (!isDepthLevel(input.depth)) {
-    errors.push("invalid_depth");
+  if (!isHazardType(input.hazard)) {
+    errors.push("missing_hazard");
+  }
+  const hazard = isHazardType(input.hazard) ? input.hazard : null;
+
+  let depth: DepthLevel | null = null;
+  let severity: Severity | null = null;
+
+  if (hazard === "flood") {
+    if (!isDepthLevel(input.depth)) errors.push("invalid_depth");
+    else {
+      depth = input.depth;
+      severity = severityOfDepth(depth);
+    }
+  } else if (hazard !== null) {
+    if (input.depth !== "") errors.push("depth_not_allowed");
+    if (!isSeverity(input.severity)) errors.push("missing_severity");
+    else severity = input.severity;
   }
 
   const location = validateLocation(input);
-  if (!location.ok) {
-    errors.push(...location.errors);
-  }
+  if (!location.ok) errors.push(...location.errors);
 
-  if (errors.length > 0) {
+  if (errors.length > 0 || hazard === null || severity === null) {
     return { ok: false, errors };
   }
 
   return {
     ok: true,
-    depth: input.depth as DepthLevel,
+    hazard,
+    severity,
+    depth,
     warnings: location.ok ? location.warnings : [],
   };
 }

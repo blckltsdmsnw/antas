@@ -16,7 +16,11 @@ import { cacheAge, mayShowCached, type CacheAge } from "./staleness";
  * draw a pin.
  */
 
-const KEY = "antas:last-reports";
+// v2: a snapshot saved before hazards existed has no `hazard` or `severity`,
+// and restoring it would hand `HazardIcon` an undefined hazard. The file's own
+// rule is that anything unreadable is too old, so a new key discards the old
+// shape cleanly instead of trying to patch it up.
+const KEY = "antas:last-reports:v2";
 
 interface Snapshot {
   savedAt: string;

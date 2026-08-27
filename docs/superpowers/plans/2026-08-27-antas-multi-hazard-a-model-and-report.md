@@ -370,10 +370,11 @@ git commit -m "feat: map flood's body scale onto the shared severity rank"
   `severityWord(h, s, copy.hazard)`; three new `copy.screens` error strings
   and `copy.screens.reportDoneNotOnMap`
 
-**GATE.** The Tagalog severity words below are the reviewer's draft revised by
-one question: *what would a barangay tanod want to know?* They are not final.
-**Do not merge this task until the owner has corrected them.** Ship the English
-and the shape; hold the commit for his words.
+**GATE SATISFIED 2026-08-27.** The owner reviewed the Tagalog severity words
+and corrected them: *naipit* rather than *nakulong* for trapped, and
+*Kailangan ng tanod* confirmed. "Iba pa" level 2 was additionally changed from
+"May nasaktan" — which duplicated Aksidente level 2 verbatim — to
+"Kailangan ng tulong". The words below are final. Implement them exactly.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -462,31 +463,39 @@ export const hazard = dict(
     hazardMedical: "Medikal",
     hazardOther: "Iba pa",
 
-    // -- OWNER TO CORRECT FROM HERE ---------------------------------------
+    // -- Owner-corrected 2026-08-27. "naipit" is the word a person uses for
+    // trapped, not "nakulong". "Iba pa" escalates tanod -> tulong ->
+    // nanganganib; its level 2 previously duplicated Aksidente level 2 word
+    // for word, which would have made two different reports read identically
+    // in the console. -----------------------------------------------------
     fire1: "May usok, walang apoy",
     fire2: "May apoy sa isang bahay",
     fire3: "Kumakalat sa ibang bahay",
 
     earthquake1: "Walang nasira",
     earthquake2: "May nasirang gusali",
-    earthquake3: "May gumuho o nakulong",
+    earthquake3: "May gumuho o naipit",
 
     accident1: "Walang nasaktan",
     accident2: "May nasaktan",
-    accident3: "May nakulong o malubha",
+    accident3: "May naipit o malubha",
 
     medical1: "May sakit, gising",
     medical2: "Hindi makatayo",
     medical3: "Walang malay",
 
     other1: "Kailangan ng tanod",
-    other2: "May nasaktan",
-    other3: "May nanganganib",
-    // -- TO HERE ----------------------------------------------------------
+    other2: "Kailangan ng tulong",
+    other3: "May nanganganib na tao",
 
-    // Medical severity 3 is the one case where filing a report is the wrong
-    // instinct and the screen must say so before anything else.
-    call911First: "Tumawag muna sa 911, pagkatapos i-report.",
+
+    // NOT "call 911". The owner reports that 911 does not connect in practice
+    // here, so that advice spends the minutes that matter on a call that will
+    // not land. The barangay is the real dispatcher for a medical emergency -
+    // it can send someone, or a vehicle, to bring the patient to a hospital.
+    // No number: the app does not know sixteen barangay hotlines, and a
+    // resident already knows how to reach their own.
+    tellBarangay: "Ipaalam din sa barangay ninyo.",
   },
   {
     pickPrompt: "What is happening?",
@@ -517,10 +526,10 @@ export const hazard = dict(
     medical3: "Unconscious",
 
     other1: "Needs a tanod",
-    other2: "Somebody hurt",
-    other3: "Somebody in danger",
+    other2: "Help is needed",
+    other3: "Somebody is in danger",
 
-    call911First: "Call 911 first, then report.",
+    tellBarangay: "Tell your barangay too.",
   },
 );
 ```
@@ -578,17 +587,24 @@ existing `errInvalidDepth`:
 | `errDepthNotAllowed` | "Lalim ng tubig ay para lang sa baha." | "Water depth is only for a flood." |
 | `reportDoneNotOnMap` | "Naipadala sa barangay. Hindi ito ilalagay sa mapa." | "Sent to the barangay. It will not be drawn on the map." |
 
+**Also in this task, and change it in both halves:** `demoBanner` currently
+ends *"Sa totoong emergency, tumawag sa 911."* / *"In a real emergency, call
+911."* The owner reports 911 does not connect in practice, which makes that
+sentence actively harmful on the one screen where it matters. Replace the
+second sentence only — the first ("no real rescue service receives these
+signals") stays, because it is still true:
+
+| half | new text |
+|---|---|
+| tl | "Walang tunay na rescue service na nakakatanggap ng mga signal na ito. Sa totoong emergency, direktang tawagan ang inyong barangay." |
+| en | "No real rescue service receives these signals. In a real emergency, contact your barangay directly." |
+
 - [ ] **Step 4: Run test and typecheck**
 
 Run: `npx vitest run src/lib/hazard/name.test.ts && npx tsc --noEmit`
 Expected: PASS, and a clean typecheck — the proof that both halves are complete.
 
-- [ ] **Step 5: STOP. Get the owner's wording.**
-
-Show him the block marked OWNER TO CORRECT. Replace it with his words.
-Re-run Step 4. Only then:
-
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add src/lib/i18n/strings/hazard.ts src/lib/i18n/strings/screens.ts src/lib/i18n/strings/index.ts src/lib/hazard/name.ts src/lib/hazard/name.test.ts
@@ -739,7 +755,18 @@ as $fn$
   select h in ('flood', 'fire', 'earthquake');
 $fn$;
 
+-- GRANTED, not merely revoked. `reports_near` is SECURITY INVOKER - correctly,
+-- it has been since 0013 - so the call to public_hazard() inside it runs with
+-- the CALLER's privileges. Revoking from public without granting to anyone
+-- makes reports_near uncallable by every role including anon, and
+-- src/app/page.tsx:117 is the public map. The first draft of this migration
+-- did exactly that.
+--
+-- report_priority above is revoked-only and safe, because it is called only
+-- from SECURITY DEFINER functions, which run as the owner and bypass the grant
+-- check. That is the distinction: an invoker-mode caller needs the grant.
 revoke execute on function public_hazard(hazard_type) from public;
+grant  execute on function public_hazard(hazard_type) to anon, authenticated, service_role;
 
 -- 6. report_priority moves from depth to severity --------------------------------
 --
@@ -969,8 +996,30 @@ Expected: `0`, `0`, and a list that still includes `my_reports`,
 `reporter_standing`, `is_suspended` — those must be present and, because the
 table was not renamed, still valid.
 
-Then call each untouched function once so a broken body surfaces here and not
-in production:
+Then CALL every function this migration creates or recreates, **as the roles
+that will actually call them** — not as superuser, and not by inspecting
+`pg_proc` metadata. Checking shapes and `prosecdef` flags is what let a missing
+grant through the first time: the function existed, had the right signature,
+and was uncallable.
+
+```bash
+docker exec supabase_db_app psql -U postgres -d postgres -c "
+  set role anon;
+  select count(*) from reports_near(14.65, 121.10, 5000);
+  reset role;
+  set role authenticated;
+  select count(*) from reports_near(14.65, 121.10, 5000);
+  reset role;
+  select report_priority(3::smallint, now());
+  select public_hazard('flood');
+  select corroborating_reports(14.65, 121.10, 500, 60);"
+```
+
+Expected: five results, no errors. A `permission denied` here is the bug this
+step exists to catch.
+
+Then the functions this migration deliberately does NOT touch, whose bodies
+name `depth_reports` and are re-parsed at call time:
 
 ```bash
 docker exec supabase_db_app psql -U postgres -d postgres -tAc "
@@ -1618,8 +1667,11 @@ Render:
     `s of SEVERITIES` a `<button className="btn severity-choice"
     aria-pressed={severity === s} onClick={() => setSeverity(s)}>` reading
     `severityWord(hazard, s, copy.hazard)`.
-  - `hazard === "medical" && severity === 3` → `copy.hazard.call911First` in
-    a `notice`, above the submit button.
+  - `hazard === "medical" || hazard === "accident"` → `copy.hazard.tellBarangay`
+    in a `notice`, above the submit button. Shown for every severity, not only
+    the worst: the barangay is the pathway for these two whatever the level,
+    and a person deciding whether this is "bad enough" is exactly who should
+    be told to call anyway.
 - Photo capture and submit stay exactly where they are.
 
 **Send is disabled until the report is complete**: `hazard !== null && (hazard
@@ -1810,6 +1862,71 @@ queue, in both languages. Confirm the flame and the words.
 ```bash
 git add src/components/ReportCard.tsx
 git commit -m "feat: the console shows what kind of report it is"
+```
+
+---
+
+### Task 11: /ako survives a non-flood report
+
+**Added after Task 9 found it.** The plan's file list never included `/ako`,
+and the screen is broken for anyone who files a fire: `my_reports()`
+(`0015_my_reports.sql:19-28`) returns `depth` with **no `hazard_type`**, and
+after 0028 a non-flood report's depth is NULL. `ako/page.tsx` types it
+`depth: DepthLevel` and paints `DEPTH_VAR[report.depth]` at :232 and
+`depthName` at :239 — a colourless swatch and an empty label.
+
+**Files:**
+- Create: `supabase/migrations/0029_my_reports_hazard.sql`
+- Modify: `src/app/ako/page.tsx`
+- Test: `tests/integration/hazards.test.ts` (extend)
+
+**Interfaces:**
+- Consumes: `hazard_type`, `severity` on `depth_reports` (0028); `hazardName`,
+  `severityWord`, `HazardIcon`, `SEVERITY_VAR`
+- Produces: `my_reports()` returning `hazard_type` and `severity`
+
+- [ ] **Step 1: Read 0015 in full**, then write `0029_my_reports_hazard.sql`.
+`my_reports()` changes return shape, so it must be **dropped and recreated** —
+`create or replace` cannot change a `returns table`. **Dropping a function
+drops its grants**; restate them exactly as 0015 had them. This is the trap
+0013 documents and the one that cost a fix round in 0028.
+
+The new shape adds `hazard_type hazard_type` and `severity smallint` beside the
+existing columns. Nothing else about the function changes — same barangay
+scope, same ordering, same security mode.
+
+- [ ] **Step 2: Apply and prove it**
+
+```bash
+npx supabase migration up --local
+docker exec supabase_db_app psql -U postgres -d postgres -c "
+  set role authenticated; select * from my_reports() limit 1;"
+```
+
+Calling it as `authenticated` is the point — a missing grant looks exactly like
+a working function until somebody who is not superuser calls it.
+
+- [ ] **Step 3: Branch the client.** In `src/app/ako/page.tsx`, `MyReport`
+gains `hazard_type: HazardType` and `severity: Severity`, and `depth` becomes
+`DepthLevel | null`. Flood renders exactly as it does today — same swatch,
+same `depthName`. Every other hazard renders `HazardIcon` plus
+`hazardName` and `severityWord`, with the swatch colour from `SEVERITY_VAR`.
+Follow the branching shape `src/components/ReportDetail.tsx` already uses so
+the two screens agree.
+
+- [ ] **Step 4: Test it.** Extend `tests/integration/hazards.test.ts` with a
+case asserting `my_reports()` returns the hazard and severity for a non-flood
+report owned by the caller.
+
+- [ ] **Step 5: Look at it.** Open `/ako` in both languages with a flood and a
+fire filed by the same account. The fire must show its hazard and severity
+word, no depth, and a coloured swatch.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add supabase/migrations/0029_my_reports_hazard.sql src/app/ako/page.tsx tests/
+git commit -m "fix: /ako shows a fire as a fire"
 ```
 
 ---

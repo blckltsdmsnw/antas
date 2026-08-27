@@ -14,6 +14,7 @@ import { mapThemeFor, type MapTheme } from "@/lib/map/theme";
 import type { CurrentWeather } from "@/lib/env/current-weather";
 import { createClient } from "@/lib/supabase/client";
 import type { DepthLevel } from "@/lib/depth/scale";
+import type { HazardType, Severity } from "@/lib/hazard/types";
 import { restoreSnapshot, saveSnapshot } from "@/lib/offline/snapshot";
 import type { CacheAge } from "@/lib/offline/staleness";
 import { offlineNotice } from "@/lib/offline/notice";
@@ -40,7 +41,9 @@ const PANEL = "#253044";
 
 interface NearbyRow {
   id: string;
-  depth: DepthLevel;
+  hazard_type: HazardType;
+  severity: Severity;
+  depth: DepthLevel | null;
   lat: number;
   lon: number;
   photo_path: string | null;
@@ -135,6 +138,8 @@ export default function HomePage() {
           const rows = (data ?? []) as NearbyRow[];
           const fresh = rows.map((row) => ({
             id: row.id,
+            hazard: row.hazard_type,
+            severity: row.severity,
             depth: row.depth,
             lat: row.lat,
             lon: row.lon,

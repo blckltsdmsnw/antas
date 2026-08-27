@@ -1,4 +1,5 @@
 import type { DepthLevel } from "@/lib/depth/scale";
+import type { Severity } from "@/lib/hazard/types";
 
 /**
  * How the depth scale is *shown*. Kept out of `scale.ts`, which stays a pure
@@ -23,6 +24,24 @@ export const DEPTH_VAR: Record<DepthLevel, string> = {
   waist: "var(--depth-waist)",
   chest: "var(--depth-chest)",
   above_head: "var(--depth-above-head)",
+};
+
+/**
+ * The three-step severity scale, spending the SAME palette flood already
+ * owns rather than inventing a second one. One palette, one meaning: darker
+ * is worse, whatever the hazard. Flood keeps its own five-step ramp above -
+ * these are only reached once a cluster or report is not purely flood.
+ */
+export const SEVERITY_HEX: Record<Severity, string> = {
+  1: DEPTH_HEX.ankle,
+  2: DEPTH_HEX.waist,
+  3: DEPTH_HEX.above_head,
+};
+
+export const SEVERITY_VAR: Record<Severity, string> = {
+  1: DEPTH_VAR.ankle,
+  2: DEPTH_VAR.waist,
+  3: DEPTH_VAR.above_head,
 };
 
 /**

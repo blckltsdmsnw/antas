@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import { validateReport, PILOT_BOUNDS } from "./validate";
 
 const valid = {
+  hazard: "flood",
+  severity: null,
   depth: "knee",
   lat: 14.65,
   lon: 121.1,
@@ -18,6 +20,43 @@ describe("validateReport", () => {
     const result = validateReport({ ...valid, depth: "shoulder" });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.errors).toContain("invalid_depth");
+  });
+
+  it("requires a hazard", () => {
+    const r = validateReport({ ...valid, hazard: undefined });
+    expect(!r.ok && r.errors).toContain("missing_hazard");
+  });
+
+  it("rejects a hazard it does not know", () => {
+    const r = validateReport({ ...valid, hazard: "typhoon" });
+    expect(!r.ok && r.errors).toContain("missing_hazard");
+  });
+
+  it("requires a depth for flood", () => {
+    const r = validateReport({ ...valid, hazard: "flood", depth: "" });
+    expect(!r.ok && r.errors).toContain("invalid_depth");
+  });
+
+  it("forbids a depth on anything but flood", () => {
+    const r = validateReport({ ...valid, hazard: "fire", depth: "chest", severity: 2 });
+    expect(!r.ok && r.errors).toContain("depth_not_allowed");
+  });
+
+  it("derives a flood's severity from its depth", () => {
+    const r = validateReport({ ...valid, hazard: "flood", depth: "chest", severity: null });
+    expect(r.ok && r.severity).toBe(3);
+    expect(r.ok && r.depth).toBe("chest");
+  });
+
+  it("requires a severity for a non-flood hazard", () => {
+    const r = validateReport({ ...valid, hazard: "fire", depth: "", severity: null });
+    expect(!r.ok && r.errors).toContain("missing_severity");
+  });
+
+  it("accepts a fire with a severity and no depth", () => {
+    const r = validateReport({ ...valid, hazard: "fire", depth: "", severity: 2 });
+    expect(r.ok && r.severity).toBe(2);
+    expect(r.ok && r.depth).toBeNull();
   });
 
   it("rejects coordinates outside the pilot area", () => {
@@ -45,6 +84,8 @@ describe("validateReport", () => {
 
   it("reports every problem at once rather than the first", () => {
     const result = validateReport({
+      hazard: "flood",
+      severity: null,
       depth: "shoulder",
       lat: 8.2,
       lon: 124.5,
