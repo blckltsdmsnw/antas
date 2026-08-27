@@ -41,6 +41,10 @@ export const screens = dict(
     cancel: "Kanselahin",
 
     errInvalidDepth: "Pumili ng lalim ng tubig.",
+    errMissingHazard: "Pumili kung ano ang nangyayari.",
+    errMissingSeverity: "Pumili kung ano ang nakikita mo.",
+    errDepthNotAllowed: "Lalim ng tubig ay para lang sa baha.",
+    reportDoneNotOnMap: "Naipadala sa barangay. Hindi ito ilalagay sa mapa.",
     errInvalidCoordinates: "Hindi mabasa ang lokasyon mo.",
     errOutsidePilotArea: "Sa ngayon, Metro Manila lang ang saklaw ng Antas.",
     errNotSignedIn: "Mag-sign in muna bago mag-report.",
@@ -235,7 +239,7 @@ export const screens = dict(
 
     demoOnly: "Demonstrasyon lamang.",
     demoBanner:
-      "Walang tunay na rescue service na nakakatanggap ng mga signal na ito. Sa totoong emergency, tumawag sa 911.",
+      "Walang tunay na rescue service na nakakatanggap ng mga signal na ito. Sa totoong emergency, direktang tawagan ang inyong barangay.",
   },
   {
     reportTitle: "How deep is the water?",
@@ -267,6 +271,10 @@ export const screens = dict(
     cancel: "Cancel",
 
     errInvalidDepth: "Choose a water depth.",
+    errMissingHazard: "Choose what is happening.",
+    errMissingSeverity: "Choose what you can see.",
+    errDepthNotAllowed: "Water depth is only for a flood.",
+    reportDoneNotOnMap: "Sent to the barangay. It will not be drawn on the map.",
     errInvalidCoordinates: "Your location could not be read.",
     errOutsidePilotArea: "For now, Antas only covers Metro Manila.",
     errNotSignedIn: "Sign in before reporting.",
@@ -456,6 +464,6 @@ export const screens = dict(
     // Kept as blunt as the Tagalog. This sits on a moderator's screen all day,
     // and the whole point is that it cannot fade into furniture.
     demoBanner:
-      "No real rescue service receives these signals. In a real emergency, call 911.",
+      "No real rescue service receives these signals. In a real emergency, contact your barangay directly.",
   },
 );

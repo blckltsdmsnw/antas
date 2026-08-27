@@ -5,6 +5,7 @@ import { guide } from "./guide";
 import { sos } from "./sos";
 import { map } from "./map";
 import { screens } from "./screens";
+import { hazard } from "./hazard";
 
 /**
  * Every string in the product, in one place.
@@ -14,7 +15,7 @@ import { screens } from "./screens";
  * nothing else. `sos.ts` and `guide.ts` in particular are meant to be read
  * end-to-end by a person, not grepped.
  */
-const DICTS = { shell, guide, sos, map, screens } as const;
+const DICTS = { shell, guide, sos, map, screens, hazard } as const;
 
 type Dicts = typeof DICTS;
 
@@ -30,7 +31,7 @@ export type Copy = {
 /**
  * Built fresh per call rather than memoised into two frozen objects.
  *
- * There are five namespaces and the work is five property reads; caching it
+ * There are six namespaces and the work is six property reads; caching it
  * would trade nothing for a module-level mutable that has to be reasoned about
  * during server rendering, where two requests in different languages can be in
  * flight at once.
@@ -42,5 +43,6 @@ export function copyFor(lang: Lang): Copy {
     sos: pick(sos, lang),
     map: pick(map, lang),
     screens: pick(screens, lang),
+    hazard: pick(hazard, lang),
   };
 }
