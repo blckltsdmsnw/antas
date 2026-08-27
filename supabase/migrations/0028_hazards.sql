@@ -108,7 +108,16 @@ as $fn$
   select h in ('flood', 'fire', 'earthquake');
 $fn$;
 
+-- Revoked from PUBLIC, but reports_near calls this function and reports_near
+-- is security invoker (correctly - it has been since 0013). An invoker-mode
+-- caller runs its inner calls as itself, so anon/authenticated/service_role
+-- each need their own execute grant here or reports_near becomes uncallable
+-- by every role. This is unlike report_priority below, which is safe to
+-- leave revoked-with-no-grant only because every caller of it is security
+-- definer and runs as the owning role, bypassing this check entirely. Do not
+-- copy that pattern here.
 revoke execute on function public_hazard(hazard_type) from public;
+grant  execute on function public_hazard(hazard_type) to anon, authenticated, service_role;
 
 -- 6. report_priority moves from depth to severity --------------------------------
 --
