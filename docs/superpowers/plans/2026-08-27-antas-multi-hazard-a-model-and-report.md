@@ -370,10 +370,11 @@ git commit -m "feat: map flood's body scale onto the shared severity rank"
   `severityWord(h, s, copy.hazard)`; three new `copy.screens` error strings
   and `copy.screens.reportDoneNotOnMap`
 
-**GATE.** The Tagalog severity words below are the reviewer's draft revised by
-one question: *what would a barangay tanod want to know?* They are not final.
-**Do not merge this task until the owner has corrected them.** Ship the English
-and the shape; hold the commit for his words.
+**GATE SATISFIED 2026-08-27.** The owner reviewed the Tagalog severity words
+and corrected them: *naipit* rather than *nakulong* for trapped, and
+*Kailangan ng tanod* confirmed. "Iba pa" level 2 was additionally changed from
+"May nasaktan" — which duplicated Aksidente level 2 verbatim — to
+"Kailangan ng tulong". The words below are final. Implement them exactly.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -462,27 +463,31 @@ export const hazard = dict(
     hazardMedical: "Medikal",
     hazardOther: "Iba pa",
 
-    // -- OWNER TO CORRECT FROM HERE ---------------------------------------
+    // -- Owner-corrected 2026-08-27. "naipit" is the word a person uses for
+    // trapped, not "nakulong". "Iba pa" escalates tanod -> tulong ->
+    // nanganganib; its level 2 previously duplicated Aksidente level 2 word
+    // for word, which would have made two different reports read identically
+    // in the console. -----------------------------------------------------
     fire1: "May usok, walang apoy",
     fire2: "May apoy sa isang bahay",
     fire3: "Kumakalat sa ibang bahay",
 
     earthquake1: "Walang nasira",
     earthquake2: "May nasirang gusali",
-    earthquake3: "May gumuho o nakulong",
+    earthquake3: "May gumuho o naipit",
 
     accident1: "Walang nasaktan",
     accident2: "May nasaktan",
-    accident3: "May nakulong o malubha",
+    accident3: "May naipit o malubha",
 
     medical1: "May sakit, gising",
     medical2: "Hindi makatayo",
     medical3: "Walang malay",
 
     other1: "Kailangan ng tanod",
-    other2: "May nasaktan",
-    other3: "May nanganganib",
-    // -- TO HERE ----------------------------------------------------------
+    other2: "Kailangan ng tulong",
+    other3: "May nanganganib na tao",
+
 
     // NOT "call 911". The owner reports that 911 does not connect in practice
     // here, so that advice spends the minutes that matter on a call that will
@@ -521,8 +526,8 @@ export const hazard = dict(
     medical3: "Unconscious",
 
     other1: "Needs a tanod",
-    other2: "Somebody hurt",
-    other3: "Somebody in danger",
+    other2: "Help is needed",
+    other3: "Somebody is in danger",
 
     tellBarangay: "Tell your barangay too.",
   },
@@ -599,12 +604,7 @@ signals") stays, because it is still true:
 Run: `npx vitest run src/lib/hazard/name.test.ts && npx tsc --noEmit`
 Expected: PASS, and a clean typecheck — the proof that both halves are complete.
 
-- [ ] **Step 5: STOP. Get the owner's wording.**
-
-Show him the block marked OWNER TO CORRECT. Replace it with his words.
-Re-run Step 4. Only then:
-
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add src/lib/i18n/strings/hazard.ts src/lib/i18n/strings/screens.ts src/lib/i18n/strings/index.ts src/lib/hazard/name.ts src/lib/hazard/name.test.ts
