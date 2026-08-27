@@ -5,6 +5,9 @@ import { createClient } from "@/lib/supabase/client";
 import { decideReport } from "@/app/actions/decide-report";
 import { type DepthLevel } from "@/lib/depth/scale";
 import { depthName } from "@/lib/depth/name";
+import type { HazardType, Severity } from "@/lib/hazard/types";
+import { hazardName, severityWord } from "@/lib/hazard/name";
+import { HazardIcon } from "@/components/HazardIcon";
 import {
   HIDE_REASONS,
   hideReasonLabel,
@@ -23,7 +26,9 @@ import { useCopy } from "@/lib/i18n/context";
 export interface QueueReport {
   id: string;
   barangay: string | null;
-  depth: DepthLevel;
+  hazard_type: HazardType;
+  severity: Severity;
+  depth: DepthLevel | null;
   status: string;
   priority: string;
   reported_at: string;
@@ -137,7 +142,12 @@ export function ReportCard({
         <span className="report-band" data-band={band}>
           {bandLabel}
         </span>
-        <strong>{depthName(report.depth, copy.map)}</strong>
+        <HazardIcon hazard={report.hazard_type} size="sm" />
+        <strong>
+          {report.hazard_type === "flood"
+            ? depthName(report.depth!, copy.map)
+            : `${hazardName(report.hazard_type, copy.hazard)} · ${severityWord(report.hazard_type, report.severity, copy.hazard)}`}
+        </strong>
         <span className="report-meta">
           {report.barangay ?? copy.screens.signalNoBarangay} ·{" "}
           {timestampLabel(report.reported_at, copy.screens)} ·{" "}
