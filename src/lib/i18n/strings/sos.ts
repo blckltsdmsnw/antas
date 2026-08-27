@@ -20,7 +20,8 @@ import { dict } from "../dict";
  *   still says outright that nobody is necessarily coming.
  * - It must not soften the demonstration notice. "Walang tunay na rescue
  *   service na nakakatanggap nito" is the sentence that stops somebody relying
- *   on this instead of calling 911, and it stays exactly that blunt.
+ *   on this instead of contacting their barangay - the route that actually
+ *   reaches somebody - and it stays exactly that blunt.
  *
  * `progress.test.ts` asserts these against the sentences they must never
  * produce, in both languages.

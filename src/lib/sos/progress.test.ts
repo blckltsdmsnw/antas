@@ -77,7 +77,7 @@ describe.each([
     expect(opened.detail).toMatch(/hindi ito nangangahulugang|does not mean/i);
   });
 
-  it("points a dismissed sender at a number that does reach somebody", () => {
+  it("points a dismissed sender at the barangay, which does reach somebody", () => {
     // Being turned down here must not read as being out of options.
     expect(progressText("dismissed", copy).detail).toContain("barangay");
   });
