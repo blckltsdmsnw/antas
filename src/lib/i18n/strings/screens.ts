@@ -54,7 +54,7 @@ export const screens = dict(
     // says the emergency route is still open, which is true - suspension
     // withdraws the ability to contribute, never the ability to ask for help.
     errSuspended:
-      "Naka-hold ang account mo dahil sa mga naunang report na hindi napatunayang totoo. Hindi ka muna makakapag-report ng lalim ng tubig. Kung nasa panganib ka, gamitin pa rin ang Tulong o tumawag sa 911.",
+      "Naka-hold ang account mo dahil sa mga naunang report na hindi napatunayang totoo. Hindi ka muna makakapag-report ng lalim ng tubig. Kung nasa panganib ka, gamitin pa rin ang Tulong o tawagan ang inyong barangay.",
     errNoLocation: "Buksan ang location para makapag-report.",
     errUploadFailed: "Hindi naipadala ang larawan. Subukan ulit.",
 
@@ -283,7 +283,7 @@ export const screens = dict(
     // emergency route stays open in both languages - that sentence is the point
     // of the message, not a footnote to it.
     errSuspended:
-      "Your account is on hold because earlier reports could not be shown to be true. You cannot report water depth for now. If you are in danger, still use Help or call 911.",
+      "Your account is on hold because earlier reports could not be shown to be true. You cannot report water depth for now. If you are in danger, still use Help or contact your barangay.",
     errNoLocation: "Turn on location to report.",
     errUploadFailed: "The photo was not sent. Try again.",
 

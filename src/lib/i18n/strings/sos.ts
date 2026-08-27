@@ -29,7 +29,7 @@ export const sos = dict(
   {
     title: "Humingi ng tulong",
     demoNotice:
-      "Demonstrasyon lamang ito. Walang tunay na rescue service na nakakatanggap nito. Sa totoong emergency, tumawag sa 911.",
+      "Demonstrasyon lamang ito. Walang tunay na rescue service na nakakatanggap nito. Sa totoong emergency, direktang tawagan ang inyong barangay.",
 
     photoReady: "May larawan na. Handa nang ipadala.",
     photoPrompt: "Kailangan ng larawan ng tubig ngayon",
@@ -80,14 +80,14 @@ export const sos = dict(
       "Tinasa nilang totoo ang report mo. Hindi pa rin ito nangangahulugang may susundo sa iyo.",
     dismissedHeadline: "Hindi itinuloy ang report na ito",
     dismissedDetail:
-      "Sinuri ito ng barangay at hindi itinuloy. Kung nasa panganib ka pa rin, tumawag sa 911.",
+      "Sinuri ito ng barangay at hindi itinuloy. Kung nasa panganib ka pa rin, tawagan ang inyong barangay.",
     resolvedHeadline: "Markado nang tapos",
     resolvedDetail: "Isinara na ito ng barangay.",
   },
   {
     title: "Ask for help",
     demoNotice:
-      "This is a demonstration only. No real rescue service receives this. In a real emergency, call 911.",
+      "This is a demonstration only. No real rescue service receives this. In a real emergency, contact your barangay directly.",
 
     photoReady: "Photo taken. Ready to send.",
     photoPrompt: "A photo of the water right now is required",
@@ -144,7 +144,7 @@ export const sos = dict(
       "They judged your report to be real. This still does not mean anyone is coming for you.",
     dismissedHeadline: "This report was not taken forward",
     dismissedDetail:
-      "The barangay reviewed it and did not take it forward. If you are still in danger, call 911.",
+      "The barangay reviewed it and did not take it forward. If you are still in danger, contact your barangay.",
     resolvedHeadline: "Marked as finished",
     resolvedDetail: "The barangay has closed this.",
   },

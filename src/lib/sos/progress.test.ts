@@ -79,7 +79,7 @@ describe.each([
 
   it("points a dismissed sender at a number that does reach somebody", () => {
     // Being turned down here must not read as being out of options.
-    expect(progressText("dismissed", copy).detail).toContain("911");
+    expect(progressText("dismissed", copy).detail).toContain("barangay");
   });
 });
 
