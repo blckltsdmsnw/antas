@@ -2006,7 +2006,8 @@ a.btn {
 }
 
 .my-report-where,
-.my-report-when {
+.my-report-when,
+.my-report-severity {
   margin: 2px 0 0;
   font-size: 14px;
   color: var(--ink-muted);

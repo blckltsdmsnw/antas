@@ -4,8 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { type DepthLevel } from "@/lib/depth/scale";
-import { DEPTH_VAR } from "@/lib/depth/presentation";
+import { DEPTH_VAR, SEVERITY_VAR } from "@/lib/depth/presentation";
 import { depthName } from "@/lib/depth/name";
+import type { HazardType, Severity } from "@/lib/hazard/types";
+import { hazardName, severityWord } from "@/lib/hazard/name";
+import { HazardIcon } from "@/components/HazardIcon";
 import { useCopy } from "@/lib/i18n/context";
 import type { Copy } from "@/lib/i18n/strings";
 import { reportPhotoUrl } from "@/lib/reports/photo";
@@ -29,7 +32,11 @@ import { PhoneField } from "@/components/PhoneField";
 
 interface MyReport {
   id: string;
-  depth: DepthLevel;
+  hazard_type: HazardType;
+  severity: Severity;
+  // Flood's own detail (0028). Null for every other hazard - see
+  // `severityWord`, which carries their words instead.
+  depth: DepthLevel | null;
   reported_at: string;
   photo_path: string | null;
   lat: number;
@@ -229,15 +236,39 @@ export default function AkoPage() {
                     ) : (
                       <span
                         className="my-report-swatch"
-                        style={{ background: DEPTH_VAR[report.depth] }}
+                        style={{
+                          background:
+                            report.depth !== null
+                              ? DEPTH_VAR[report.depth]
+                              : SEVERITY_VAR[report.severity],
+                        }}
                         aria-hidden="true"
                       />
                     )}
 
                     <div className="my-report-body">
-                      <p className="my-report-depth">
-                        {depthName(report.depth, copy.map)}
-                      </p>
+                      {/* Flood renders exactly as before - same swatch, same
+                          depthName. Every other hazard has no depth to show,
+                          so it shows what it is and how bad instead, the same
+                          branch ReportDetail already makes for the map sheet. */}
+                      {report.depth !== null ? (
+                        <p className="my-report-depth">
+                          {depthName(report.depth, copy.map)}
+                        </p>
+                      ) : (
+                        <>
+                          <p
+                            className="my-report-depth"
+                            style={{ display: "flex", alignItems: "center", gap: "6px" }}
+                          >
+                            <HazardIcon hazard={report.hazard_type} size="sm" />
+                            {hazardName(report.hazard_type, copy.hazard)}
+                          </p>
+                          <p className="my-report-severity">
+                            {severityWord(report.hazard_type, report.severity, copy.hazard)}
+                          </p>
+                        </>
+                      )}
                       <p className="my-report-where">
                         {report.barangay ?? copy.screens.akoUnknownPlace}
                       </p>

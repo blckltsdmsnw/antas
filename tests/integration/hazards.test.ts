@@ -9,6 +9,7 @@ const opts = { auth: { persistSession: false, autoRefreshToken: false } };
 const admin = createClient(url, serviceKey, opts);
 const modClient = createClient(url, anonKey, opts);
 const outsiderClient = createClient(url, anonKey, opts);
+const reporterClient = createClient(url, anonKey, opts);
 
 let moderatorId: string;
 let outsiderId: string;
@@ -52,6 +53,7 @@ beforeAll(async () => {
     email: o.email,
     password: PASSWORD,
   });
+  await reporterClient.auth.signInWithPassword({ email: r.email, password: PASSWORD });
 });
 
 async function newIncident(row: {
@@ -172,6 +174,18 @@ describe("the public map", () => {
     const row = (data as { id: string; hazard_type: string; severity: number }[])
       .find((r) => r.id === id);
     expect(row).toMatchObject({ hazard_type: "fire", severity: 2 });
+  });
+});
+
+describe("my_reports (0029)", () => {
+  it("returns the hazard and severity for a non-flood report owned by the caller, with depth null", async () => {
+    const id = await newIncident({ hazard_type: "fire", depth: null, severity: 2 });
+    const { data, error } = await reporterClient.rpc("my_reports");
+    expect(error).toBeNull();
+    const row = (
+      data as { id: string; hazard_type: string; severity: number; depth: string | null }[]
+    ).find((r) => r.id === id);
+    expect(row).toMatchObject({ hazard_type: "fire", severity: 2, depth: null });
   });
 });
 
