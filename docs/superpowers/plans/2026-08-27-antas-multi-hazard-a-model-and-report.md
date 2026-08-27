@@ -1866,6 +1866,71 @@ git commit -m "feat: the console shows what kind of report it is"
 
 ---
 
+### Task 11: /ako survives a non-flood report
+
+**Added after Task 9 found it.** The plan's file list never included `/ako`,
+and the screen is broken for anyone who files a fire: `my_reports()`
+(`0015_my_reports.sql:19-28`) returns `depth` with **no `hazard_type`**, and
+after 0028 a non-flood report's depth is NULL. `ako/page.tsx` types it
+`depth: DepthLevel` and paints `DEPTH_VAR[report.depth]` at :232 and
+`depthName` at :239 — a colourless swatch and an empty label.
+
+**Files:**
+- Create: `supabase/migrations/0029_my_reports_hazard.sql`
+- Modify: `src/app/ako/page.tsx`
+- Test: `tests/integration/hazards.test.ts` (extend)
+
+**Interfaces:**
+- Consumes: `hazard_type`, `severity` on `depth_reports` (0028); `hazardName`,
+  `severityWord`, `HazardIcon`, `SEVERITY_VAR`
+- Produces: `my_reports()` returning `hazard_type` and `severity`
+
+- [ ] **Step 1: Read 0015 in full**, then write `0029_my_reports_hazard.sql`.
+`my_reports()` changes return shape, so it must be **dropped and recreated** —
+`create or replace` cannot change a `returns table`. **Dropping a function
+drops its grants**; restate them exactly as 0015 had them. This is the trap
+0013 documents and the one that cost a fix round in 0028.
+
+The new shape adds `hazard_type hazard_type` and `severity smallint` beside the
+existing columns. Nothing else about the function changes — same barangay
+scope, same ordering, same security mode.
+
+- [ ] **Step 2: Apply and prove it**
+
+```bash
+npx supabase migration up --local
+docker exec supabase_db_app psql -U postgres -d postgres -c "
+  set role authenticated; select * from my_reports() limit 1;"
+```
+
+Calling it as `authenticated` is the point — a missing grant looks exactly like
+a working function until somebody who is not superuser calls it.
+
+- [ ] **Step 3: Branch the client.** In `src/app/ako/page.tsx`, `MyReport`
+gains `hazard_type: HazardType` and `severity: Severity`, and `depth` becomes
+`DepthLevel | null`. Flood renders exactly as it does today — same swatch,
+same `depthName`. Every other hazard renders `HazardIcon` plus
+`hazardName` and `severityWord`, with the swatch colour from `SEVERITY_VAR`.
+Follow the branching shape `src/components/ReportDetail.tsx` already uses so
+the two screens agree.
+
+- [ ] **Step 4: Test it.** Extend `tests/integration/hazards.test.ts` with a
+case asserting `my_reports()` returns the hazard and severity for a non-flood
+report owned by the caller.
+
+- [ ] **Step 5: Look at it.** Open `/ako` in both languages with a flood and a
+fire filed by the same account. The fire must show its hazard and severity
+word, no depth, and a coloured swatch.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add supabase/migrations/0029_my_reports_hazard.sql src/app/ako/page.tsx tests/
+git commit -m "fix: /ako shows a fire as a fire"
+```
+
+---
+
 ## Definition of done for Plan A
 
 - `npm test` green, `npx tsc --noEmit` clean, `npm run build` succeeds
