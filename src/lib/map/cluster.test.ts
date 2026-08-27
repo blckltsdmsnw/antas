@@ -149,6 +149,32 @@ describe("clusterByProximity", () => {
     expect(cluster.depth).toBeNull();
   });
 
+  it("picks the deeper flood when two members tie at the worst severity", () => {
+    // chest and above_head are both severity 3 - the tie the naive
+    // `find(m => m.severity === severity)` resolves by sort order, not depth.
+    // "a" sorts before "b", so a buggy pick would report "chest" and hide the
+    // above-head reading behind a shallower, reassuring number.
+    const clusters = clusterByProximity(
+      [point("a", 100, 100, "chest"), point("b", 104, 102, "above_head")],
+      CLUSTER_RADIUS_PX,
+    );
+
+    expect(clusters).toHaveLength(1);
+    expect(clusters[0].depth).toBe("above_head");
+  });
+
+  it("picks the deeper flood at the shallow end of a severity tie too", () => {
+    // ankle and knee are both severity 1 - same failure mode, other end of
+    // the scale.
+    const clusters = clusterByProximity(
+      [point("a", 100, 100, "ankle"), point("b", 104, 102, "knee")],
+      CLUSTER_RADIUS_PX,
+    );
+
+    expect(clusters).toHaveLength(1);
+    expect(clusters[0].depth).toBe("knee");
+  });
+
   it("keeps hazard, severity and depth describing the same worst member, even when that member is flood in a mixed cluster", () => {
     // The case three separate checks missed: a chest-deep flood (severity 3)
     // clustered with a smoky fire (severity 1). The worst member is the flood

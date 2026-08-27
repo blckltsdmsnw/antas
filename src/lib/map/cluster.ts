@@ -1,4 +1,4 @@
-import type { DepthLevel } from "@/lib/depth/scale";
+import { depthRank, type DepthLevel } from "@/lib/depth/scale";
 import type { HazardType, Severity } from "@/lib/hazard/types";
 import { worstSeverity } from "@/lib/hazard/severity";
 
@@ -80,9 +80,19 @@ export function clusterByProximity<T extends Clusterable>(
 
   return clusters.map((cluster) => {
     const severity = worstSeverity(cluster.members.map((member) => member.severity));
-    // First member at the worst severity, in the deterministic sorted order
-    // `cluster.members` already carries - so a tie always resolves the same way.
-    const worst = cluster.members.find((member) => member.severity === severity)!;
+    // Severity has three steps and depth has five, so a severity tie can hide
+    // a shallower flood reading in front of a deeper one (chest and
+    // above_head are both severity 3). Among members at the worst severity,
+    // prefer the deepest flood; only fall back to sorted order when none of
+    // them is flood, where there is no depth to compare.
+    const atWorst = cluster.members.filter((member) => member.severity === severity);
+    const floodsAtWorst = atWorst.filter((member) => member.hazard === "flood");
+    const worst =
+      floodsAtWorst.length > 0
+        ? floodsAtWorst.reduce((deepest, member) =>
+            depthRank(member.depth!) > depthRank(deepest.depth!) ? member : deepest,
+          )
+        : atWorst[0];
 
     return {
       key: cluster.members
