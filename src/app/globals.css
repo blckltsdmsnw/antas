@@ -3080,3 +3080,119 @@ a.btn {
   color: var(--ink-muted);
   font-size: 14px;
 }
+
+/* Two queues on one desk.
+   Underline rather than a pill row: the console is a working screen, not a
+   navigation surface, and the tabs should read as two views of the same list
+   instead of two destinations. */
+.console-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  margin: 4px 0 8px;
+}
+
+.console-tab {
+  appearance: none;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 12px;
+  margin-bottom: -1px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.console-tab[data-active="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+/* The count is the point of the inactive tab: it is how a moderator working an
+   SOS knows whether a backlog is building behind it. */
+.console-tab-count {
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--raised);
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A queue row, matching .signal-card - same reasoning: the coloured band gives
+   each entry its identity, and ten boxed rectangles would be a wall. */
+.report-card {
+  border-bottom: 1px solid var(--line);
+  background: var(--ground);
+}
+
+.report-head {
+  appearance: none;
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  align-items: baseline;
+  padding: 16px 4px;
+}
+
+.report-head:hover { background: var(--raised); }
+
+.report-band {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* Contested first, and coloured as the thing needing a person rather than as
+   the deepest water: a flagged ankle reading outranks a routine chest one. */
+.report-band[data-band="flagged"] { background: #fef3c7;            color: #78350f; }
+.report-band[data-band="urgent"]  { background: var(--danger-tint); color: var(--danger); }
+.report-band[data-band="watch"]   { background: var(--raised);      color: var(--ink); }
+.report-band[data-band="routine"] { background: var(--raised);      color: var(--ink-muted); }
+
+.report-meta {
+  grid-column: 1 / -1;
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+
+.report-body {
+  padding: 4px 4px 20px;
+}
+
+.report-photo {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  border-radius: var(--radius-control);
+  margin-bottom: 12px;
+}
+
+.report-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.report-actions .btn { flex: 1 1 auto; }

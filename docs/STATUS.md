@@ -1,6 +1,6 @@
 # Antas — where things stand
 
-Last updated: 2026-08-16, ~18:30 PHT.
+Last updated: 2026-08-27, ~15:05 PHT.
 
 Everything described here is committed and pushed to
 `github.com/blckltsdmsnw/antas`. Vercel auto-deploys `main`; a push takes about
@@ -966,6 +966,77 @@ evidence:
 - `src/app/sos/page.test.tsx` is the first test this page has ever had. It exists
   because the rule being enforced is invisible on screen: a buzz that should not
   have happened leaves the page looking identical.
+
+## The review, and what it changed — 2026-08-27 (migration `0027`)
+
+Mr. Peralta reviewed the working system and returned five recommendations. Four
+are built and one is recorded as scope. The paper carries the same split in
+§2.6, deliberately: a report that describes intentions in the present tense is
+not a report a reader can check.
+
+**Built.**
+
+1. **A dashboard for submitted reports.** `/console` now holds two queues as
+   tabs — SOS, still the default, and depth reports. Each tab carries its own
+   count, so a backlog building behind the queue in view is visible without
+   going to look for it. `report_queue()` is security definer for the same
+   reason `moderator_queue()` is: `0002` makes only `active` reports publicly
+   readable, so a **flagged** report — the one most needing a decision — is
+   invisible to every role at the RLS layer.
+2. **Priority and categorisation.** Three bands computed in SQL from severity
+   and age: `urgent` (chest-deep or deeper, under six hours), `watch`,
+   `routine`. Contested reports sort above all of them regardless of depth,
+   because a contested report is waiting on a person rather than on the water.
+   **Six hours is `MAX_CACHE_AGE_HOURS`**, not a new number — the same age at
+   which the map already refuses to draw a cached pin. If that constant moves,
+   move `report_priority()` with it.
+   No trust score, on purpose: a depth reading has no rainfall or elevation
+   behind it, and a number computed from severity and age alone would present
+   an ordering rule as an assessment.
+3. **The built-in camera on `/report`.** One line — the page passed
+   `source="native"` and now uses the in-page viewfinder `/sos` has always
+   used. Native mode opens a picker that offers the gallery beside the camera,
+   which put "attach any photo you already had" one tap from a report about a
+   specific street. **No screen passes `native` any more**; the mode and its
+   tests are kept because the argument for it still holds elsewhere.
+   Consequence worth knowing: `video/capture-console.mjs` films `/report` via
+   Playwright's `filechooser`. That path no longer exists — re-filming that
+   scene needs the fake-camera y4m trick `/sos` uses.
+4. **The contact number, reachable from a report.** It was already collected
+   (`0022`) and already surfaced for SOS; what did not exist was any path from
+   a depth report to the person who filed it. `report_detail()` now carries it,
+   is absent from the queue listing, and writes a `report_events` row on every
+   call — because the record of who saw a number is the record of who could
+   have called it. Still unverified numbers; still labelled as such.
+
+**Not built: expanding beyond flood** to fire, earthquake and accidents. Adopted
+as scope and argued in §2.6 of the paper. The short version: the data model is
+not flood-*themed*, it is flood-*shaped* — severity is a five-step scale named
+for where water reaches on a body, clustering takes a cluster's deepest member,
+and the trust score weighs rainfall and elevation. A body-part gauge cannot
+describe a structural collapse and rainfall is not evidence about an earthquake.
+A real multi-hazard version needs a hazard type on every row, a severity
+vocabulary per hazard, a scoring path per hazard or an honest refusal to score,
+new map semantics, and every string in both languages. And **antas means
+level** — the product is named for the measurement it takes.
+
+**Three bugs the tests did not catch, found by opening the screen.**
+
+- The `<h1>` read "Mga SOS" above the report queue. It names the desk now
+  ("Konsola" / "Console"); the tabs name the queues.
+- A photo path resolving to nothing rendered a broken-image glyph, which reads
+  as "this report has no photo" — a different fact from "the file was expected
+  and could not be fetched". It says the second one now. This is the same
+  lesson `0024` taught on the SOS side.
+- The imprecise-location warning interpolated `formatAccuracy(null)`, which
+  returns the words "hindi alam", producing *"mga hindi alam ang puwedeng
+  pagkakamali"* — not a sentence. An unknown fix and a poor one now get
+  different wording.
+
+Verified by driving the running app in both languages, not only by the suite:
+the hide decision through the server action (status `hidden`, audit row with
+reason and prior status), the audited detail call, the band ordering, and the
+viewfinder on `/report` with zero file inputs left on the page.
 
 ## Known issues, not fixed
 

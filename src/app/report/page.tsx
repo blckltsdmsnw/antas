@@ -231,7 +231,18 @@ export default function ReportPage() {
           note={copy.screens.reportPhotoNote}
           openLabel={copy.screens.reportPhotoOpen}
           variant="secondary"
-          source="native"
+          /*
+           * The in-page viewfinder, not the phone's camera app.
+           *
+           * This read `source="native"` until Mr. Peralta reviewed the system
+           * and asked that reports be captured with the built-in camera rather
+           * than uploaded. Native mode opens a file picker, and every browser
+           * that shows it also offers the gallery beside it - so "take a photo"
+           * was one tap away from "attach any photo you already had". Live mode
+           * is the honest reading of the instruction, and it is the same
+           * anti-abuse argument SOS has always made; the only reason report was
+           * ever exempt is that a depth photo is optional.
+           */
           onCapture={(file) =>
             setPhoto({ file, url: URL.createObjectURL(file) })
           }

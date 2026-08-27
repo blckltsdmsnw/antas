@@ -23,13 +23,17 @@ interface PhotoCaptureProps {
   variant?: "primary" | "secondary";
   /**
    * "native" hands off to the phone's own camera app via a file input.
-   * Cleaner, better quality, correct rotation, and no permission dance - the
-   * right default wherever a photo is merely useful.
+   * Cleaner, better quality, correct rotation, and no permission dance.
    *
-   * "live" keeps the in-page viewfinder, which SOS needs: it is an anti-abuse
-   * measure, not a UI choice. `capture="environment"` is only a hint, and
-   * plenty of browsers happily offer the gallery instead - which would let
-   * someone attach a downloaded picture to a fake rescue request.
+   * "live" keeps the in-page viewfinder. It is an anti-abuse measure, not a UI
+   * choice: `capture="environment"` is only a hint, and plenty of browsers
+   * happily offer the gallery beside it - which would let someone attach a
+   * downloaded picture to a fake rescue request.
+   *
+   * No screen passes "native" any more. `/report` did until the system was
+   * reviewed and captured-not-uploaded was asked for by name; the mode is kept
+   * because the argument for it is still sound wherever a photo is merely
+   * useful, and its tests still pin the hand-off.
    */
   source?: "live" | "native";
 }

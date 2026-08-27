@@ -145,7 +145,10 @@ export const screens = dict(
     loginEmailPlaceholder: "ikaw@halimbawa.com",
 
     // -- Moderator console ---------------------------------------------------
-    consoleTitle: "Mga SOS",
+    // The heading names the desk, not a queue. It read "Mga SOS" while the
+    // console held only one, and stayed on screen above the report queue once
+    // it held two - a heading contradicting the list under it.
+    consoleTitle: "Konsola",
     consoleLoading: "Naglo-load...",
     consoleEmpty:
       "Walang aktibong SOS sa barangay mo. Kung wala kang nakikita at inaasahan mong mayroon, tiyakin na moderator ka ng tamang barangay.",
@@ -179,6 +182,56 @@ export const screens = dict(
     dismissDuplicate: "Doble - naiulat na ito",
     dismissResolved: "Naayos na",
     dismissInsufficient: "Kulang ang impormasyon",
+
+    // -- Dashboard ng mga report ---------------------------------------------
+    // Ang console ay may dalawang tab mula nang hilingin ang dashboard para sa
+    // mga isinumiteng report. "Antas" ang tawag sa priyoridad, hindi "score":
+    // walang sinusukat na ebidensya sa likod nito - lalim at kung gaano
+    // kabago, at iyon lang ang sinasabi nito.
+    tabSos: "Mga SOS",
+    tabReports: "Mga report",
+    reportsEmpty:
+      "Walang report na naghihintay ng pagsusuri sa barangay mo.",
+    reportsCount: (n: number) => `${n} report`,
+
+    priorityUrgent: "Kagyat",
+    priorityWatch: "Bantayan",
+    priorityRoutine: "Karaniwan",
+    priorityFlagged: "May kwestiyon",
+
+    reportAnswers: (n: number) => `${n} sagot`,
+    reportNoAnswers: "wala pang sagot",
+    reportOpen: "Buksan ang report",
+    reportClose: "Isara",
+    reportPhone: "Numero ng nag-report",
+    reportNoPhoneGiven: "Walang naibigay na numero ang nag-report.",
+    reportCall: (phone: string) => `Tawagan ${phone}`,
+    reportPhoneUnverified:
+      "Hindi pa na-verify ang numerong ito - ito ang ibinigay mismo ng nag-report.",
+    reportDirections: "Direksyon papunta rito",
+    reportStanding: (confirmed: number, wrong: number) =>
+      `${confirmed} nakumpirma, ${wrong} hindi totoo`,
+    reportVague: (accuracy: string) =>
+      `Malabo ang lokasyon: mga ${accuracy} ang puwedeng pagkakamali.`,
+    // A separate sentence, not the one above with "hindi alam" dropped into it.
+    // `formatAccuracy(null)` returns those words, and the result read "mga
+    // hindi alam ang puwedeng pagkakamali" - which is not a sentence. An
+    // unknown fix and a poor one are different facts and need different words.
+    reportVagueUnknown:
+      "Hindi alam kung gaano katumpak ang lokasyon ng report na ito.",
+    reportPhotoNone: "Walang larawan ang report na ito.",
+
+    reportKeep: "Panatilihin",
+    reportHide: "Itago sa mapa",
+    reportHideReason: "Dahilan ng pagtatago",
+    reportDecided: "Naitala ang desisyon.",
+    reportDecideNoReason: "Pumili ng dahilan bago itago.",
+    reportDecideFailed: "Hindi naitala ang desisyon. Subukan ulit.",
+
+    hideNotTrue: "Hindi totoo",
+    hideDuplicate: "Doble - naiulat na ito",
+    hideStale: "Luma na - iba na ang tubig",
+    hideWrongPlace: "Mali ang lugar",
 
     demoOnly: "Demonstrasyon lamang.",
     demoBanner:
@@ -316,7 +369,7 @@ export const screens = dict(
     loginEmail: "Email",
     loginEmailPlaceholder: "you@example.com",
 
-    consoleTitle: "SOS signals",
+    consoleTitle: "Console",
     consoleLoading: "Loading...",
     // Names the likeliest cause rather than leaving an empty queue to be read
     // as "nothing is happening" - the queue matches on barangay exactly, and a
@@ -358,6 +411,46 @@ export const screens = dict(
     dismissDuplicate: "Duplicate - already reported",
     dismissResolved: "Already resolved",
     dismissInsufficient: "Not enough information",
+
+    tabSos: "SOS signals",
+    tabReports: "Depth reports",
+    reportsEmpty: "No reports are waiting for review in your barangay.",
+    reportsCount: (n: number) => `${n} reports`,
+
+    priorityUrgent: "Urgent",
+    priorityWatch: "Watch",
+    priorityRoutine: "Routine",
+    priorityFlagged: "Contested",
+
+    reportAnswers: (n: number) => `${n} answers`,
+    reportNoAnswers: "no answers yet",
+    reportOpen: "Open the report",
+    reportClose: "Close",
+    reportPhone: "Reporter's number",
+    reportNoPhoneGiven: "The reporter gave no number.",
+    reportCall: (phone: string) => `Call ${phone}`,
+    reportPhoneUnverified:
+      "This number is unverified - it is what the reporter typed in.",
+    reportDirections: "Directions to here",
+    reportStanding: (confirmed: number, wrong: number) =>
+      `${confirmed} confirmed, ${wrong} false`,
+    reportVague: (accuracy: string) =>
+      `Imprecise location: it could be off by about ${accuracy}.`,
+    reportVagueUnknown:
+      "How precise this report's location is was never recorded.",
+    reportPhotoNone: "This report has no photo.",
+
+    reportKeep: "Keep",
+    reportHide: "Hide from the map",
+    reportHideReason: "Reason for hiding",
+    reportDecided: "The decision was recorded.",
+    reportDecideNoReason: "Choose a reason before hiding.",
+    reportDecideFailed: "The decision was not recorded. Try again.",
+
+    hideNotTrue: "Not true",
+    hideDuplicate: "Duplicate - already reported",
+    hideStale: "Stale - the water has moved on",
+    hideWrongPlace: "Wrong place",
 
     demoOnly: "Demonstration only.",
     // Kept as blunt as the Tagalog. This sits on a moderator's screen all day,
