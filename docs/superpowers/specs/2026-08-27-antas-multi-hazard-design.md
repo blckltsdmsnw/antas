@@ -1,7 +1,9 @@
 # Antas, beyond flood — design
 
 **Date:** 2026-08-27
-**Status:** approved in conversation, not yet implemented
+**Status:** Plan A implemented and deployed 2026-08-28. Plans B and C
+(master admin, board, roster, assignment, graph) approved and not yet built.
+This is a **demonstration build** — see "Status: a demonstration build" below.
 **Origin:** Mr. Peralta's review of the working system, plus the follow-up
 discussion about the master admin.
 
@@ -24,9 +26,18 @@ out of the discussion afterwards.
 1. **The resident UI stays as approved.** Mr. Peralta approved it as usable by
    old and young alike. Reporting gains exactly one tap. No new kind of screen
    reaches a resident.
-2. **Antas sends no rescue**, and still says so. Assigning a responder records
-   a tasking; it does not dispatch, does not notify the responder
-   automatically, and never tells a resident that help is coming.
+2. **Antas sends no rescue**, and still says so *to residents*. The public
+   screens keep that statement, because the deployed app has real users and
+   they must not be told help is coming.
+
+   **Decided by the owner, 2026-08-28: the responder feature is built for
+   demonstration.** Earlier drafts of this spec agonised over whether assigning
+   a responder edges toward dispatch, and repeatedly narrowed the design to
+   avoid the question. That is settled: build what Mr. Peralta asked for. The
+   master admin assigns a responder, the responder sees the incident, and the
+   flow is demonstrated end to end. Whether a barangay can really send a vehicle
+   is an operational question about a future deployment, not a design question
+   about this build. Do not re-litigate it in Plan B.
 3. **Filipino and English, or the build fails.** Every new string exists in
    both. A missing translation is a type error, never a fallback.
 4. **Security lives in Postgres**, not in application code. Every new
@@ -300,12 +311,25 @@ their worst moment to their whole neighbourhood. Those incidents still reach the
 board and the assigned responder in full; they are simply not drawn for the
 public. `reports_near` filters accordingly.
 
+## Status: a demonstration build
+
+Recorded 2026-08-28. This system is coursework with a working deployment, not a
+procured emergency service. The master admin board, the responder roster and the
+assignment flow exist to demonstrate the workflow Mr. Peralta described. They
+are not claimed to be an operational dispatch capability, and the paper should
+describe them as demonstrated rather than in service.
+
+The practical consequence for whoever builds Plan B: **implement the flow as
+specified and do not narrow it out of caution about dispatch.** The honesty
+constraint that governs the resident-facing screens is unchanged; it does not
+extend to withholding features from the console.
+
 ## Out of scope, deliberately
 
 - Responder logins with their own separate app — access is by assignment, and
   that is enough for this system.
-- Automatic notification of responders. Nothing is sent; the barangay console
-  shows who to ring.
+- Automatic notification of responders. Nothing is sent; the console shows who
+  to ring. This is a scope choice, not a safety hedge.
 - Merging `incidents` and `sos_signals` into one table.
 - PHIVOLCS earthquake corroboration.
 - Renaming the product.
