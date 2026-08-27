@@ -27,7 +27,18 @@
  *    about the transport.
  */
 
-const VERSION = "antas-v1";
+// Bumped to purge a stale shell. The shell is cache-first, so a returning
+// visitor gets the HTML cached on their previous visit - and that HTML names
+// the previous build's hashed JavaScript. After a deploy the app therefore
+// runs one version behind for exactly one load, which is invisible until a
+// release changes something visible: the CARTO key landed, and the map kept
+// drawing watermarked tiles because the old bundle was still asking for
+// unkeyed ones. `activate` deletes every cache not prefixed with this string,
+// so changing it evicts the old shell on the next visit.
+//
+// Bump this whenever a deploy must reach people immediately rather than on
+// their second load.
+const VERSION = "antas-v2";
 const SHELL = `${VERSION}-shell`;
 
 /**
