@@ -123,6 +123,7 @@ async function main() {
     return {
       reporter_id: reporterId,
       location: `SRID=4326;POINT(${hotspot.lon + jitter()} ${hotspot.lat + jitter()})`,
+      hazard_type: "flood" as const,
       depth: DEPTH_LEVELS[level],
       source: "seed" as const,
       reported_at: new Date(Date.now() - hoursAgo * 3_600_000).toISOString(),
@@ -172,6 +173,7 @@ async function seedStanding(reporterId: string) {
       .insert({
         reporter_id: reporterId,
         location: `SRID=4326;POINT(${HOTSPOTS[0].lon} ${HOTSPOTS[0].lat})`,
+        hazard_type: "flood" as const,
         depth: "knee" as const,
         source: "user" as const,
         status: "hidden" as const,

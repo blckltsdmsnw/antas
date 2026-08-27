@@ -104,5 +104,9 @@ describe("reports_near", () => {
     expect(typeof row.lon).toBe("number");
     expect(row.lat).toBeCloseTo(NEAR_POINT.lat, 4);
     expect(row.lon).toBeCloseTo(NEAR_POINT.lon, 4);
+    // nearReportId was inserted with depth "chest" and no hazard_type; 0028's
+    // trigger and default fill both in.
+    expect(row.hazard_type).toBe("flood");
+    expect(row.severity).toBe(3);
   });
 });
