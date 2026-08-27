@@ -1,0 +1,29 @@
+flowchart LR
+    sos["SOS received<br/>photo · GPS · optional note"]
+
+    subgraph evidence["Six groups of evidence"]
+        c["Corroboration<br/>nearby reports"]
+        r["Rainfall<br/>last 24h"]
+        e["Elevation<br/>vs surroundings"]
+        h["Reporter history<br/>confirmed · false"]
+        q["Evidence quality<br/>live photo · reused?"]
+        b["Behaviour<br/>account age"]
+        c ~~~ h
+        r ~~~ q
+        e ~~~ b
+    end
+
+    score["Score 0-100"]
+    band{"Confidence"}
+    queue["Moderator queue<br/>ranked, never filtered"]
+
+    sos --> evidence --> score --> band
+    band -->|high| queue
+    band -->|medium| queue
+    band -->|low| queue
+
+    unknown["Provider unreachable<br/>photo unfetchable<br/>question never asked"]
+    unknown -.->|"scores as unknown,<br/>never as evidence against"| score
+
+    style unknown fill:#e0f2fe,stroke:#0284c7
+    style queue fill:#dcfce7,stroke:#166534

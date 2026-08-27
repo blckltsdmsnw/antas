@@ -1,3 +1,18 @@
+> ## ⚠ THIS FILE DOES NOT BUILD THE SUBMITTED DOCUMENT
+>
+> `build-docx.mjs` does **not** read this file. It carries its own copy of the
+> prose inline, and that copy is newer and more complete than this one — it has
+> numbered subsections, a literature review with eight citation slots, named
+> personas, and a references section that this file lacks.
+>
+> **Editing prose here changes nothing in `Antas-Research-Report.docx`.**
+> Prose edits go in `build-docx.mjs`.
+>
+> **Keep this file anyway.** It holds the only copy of the four mermaid diagram
+> sources (Figures 1–4). The generated `.docx` has placeholders reading
+> `[ Figure N — paste the rendered diagram here ]`, so those diagrams still have
+> to be rendered from the blocks below and pasted in by hand.
+
 # Antas — Street-Level Flood Depth Reporting for Metro Manila
 
 **Empirical Software Innovation & Interface Prototyping**
@@ -485,6 +500,6 @@ through formal user research.
 Claims in Sections II–IV are checkable in the repository at
 `github.com/blckltsdmsnw/antas`: `docs/STATUS.md` records what was built and
 why, `docs/design/design.md` §12 lists every refused feature with its reasoning,
-and the test suite (260 unit, 60 end-to-end) encodes the safety rules as
+and the test suite (388 unit, 60 end-to-end) encodes the safety rules as
 assertions — including tests that the interface never promises rescue, in either
 language.

@@ -1,0 +1,68 @@
+erDiagram
+    profiles {
+        uuid id PK
+        text barangay
+        text phone
+        timestamptz suspended_at
+    }
+    depth_reports {
+        uuid id PK
+        uuid reporter_id FK
+        geography location
+        depth_level depth
+        text photo_path
+        text status
+        timestamptz reported_at
+    }
+    sos_signals {
+        uuid id PK
+        uuid reporter_id FK
+        geography location
+        depth_level depth "nullable - never asked"
+        text photo_path
+        sos_status status
+        integer trust_score
+        text confidence
+        text photo_sha256
+    }
+    env_snapshots {
+        uuid sos_id PK
+        double rainfall_24h_mm
+        double elevation_m
+        boolean provider_ok
+    }
+    report_updates {
+        uuid id PK
+        uuid report_id FK
+        uuid reporter_id FK
+        report_state state
+    }
+    signal_events {
+        bigint id PK
+        uuid sos_id FK
+        uuid actor_id FK
+        text event_type
+    }
+    reputation {
+        uuid user_id PK
+        integer confirmed_count
+        integer false_report_count
+    }
+    moderators {
+        uuid user_id PK
+        text barangay
+        text role
+    }
+    barangays {
+        text name PK
+        geography centroid
+    }
+
+    profiles ||--o{ depth_reports : files
+    profiles ||--o{ sos_signals : sends
+    profiles ||--o{ report_updates : answers
+    profiles ||--|| reputation : accrues
+    profiles ||--o| moderators : "may be"
+    depth_reports ||--o{ report_updates : "is asked about"
+    sos_signals ||--|| env_snapshots : "scored against"
+    sos_signals ||--o{ signal_events : audits

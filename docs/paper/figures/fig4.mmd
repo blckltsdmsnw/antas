@@ -1,0 +1,21 @@
+flowchart TD
+    map["MAP<br/>default screen"]
+
+    map -->|search| place["Fly to a place"]
+    map -->|locate| self["Fly to my position"]
+    map -->|tap pin| detail["REPORT DETAIL<br/>photo · depth · age"]
+    map -->|tap street| hist["Street history"]
+    detail --> fresh["Kumusta na?<br/>gone · same · deeper"]
+
+    map --> tabs{"Tab bar"}
+    tabs --> guide["GABAY<br/>hotlines first, then<br/>go bag, before, during"]
+    tabs --> report["I-REPORT<br/>raised centre action"]
+    tabs --> me["AKO<br/>my reports · phone · sign out"]
+    tabs --> sos["TULONG<br/>emergency"]
+
+    report --> gauge["Body-scale gauge<br/>+ optional photo"] --> sent["Recorded,<br/>visible on the map"]
+    sos --> photo["Live photo<br/>gallery refused"] --> hold["Hold 3 seconds"] --> signal["Sent · status<br/>updates live"]
+
+    style map fill:#e0f2fe,stroke:#0284c7
+    style sos fill:#fee2e2,stroke:#991b1b
+    style report fill:#dbeafe,stroke:#1e40af

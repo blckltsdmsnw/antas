@@ -1,0 +1,33 @@
+flowchart TB
+    subgraph device["Phone (browser / installed PWA)"]
+        map["Map, report form, SOS<br/>MapLibre GL · client components"]
+        sw["Service worker<br/>caches shell + guide"]
+    end
+
+    subgraph next["Next.js App Router"]
+        rsc["Server components<br/>resolve language, render HTML"]
+        act["Server actions<br/>submit report · submit SOS · decide"]
+    end
+
+    subgraph sb["Supabase"]
+        pg[("PostgreSQL<br/>9 tables · 17 functions")]
+        rls{{"Row Level Security<br/>the enforcement point"}}
+        store[["Storage<br/>sos-photos (private)<br/>report-photos (public)"]]
+        rt["Realtime<br/>live queue + status"]
+    end
+
+    ext["Open-Meteo<br/>rainfall · elevation"]
+    tiles["CARTO basemap tiles"]
+
+    map --> rsc
+    map --> act
+    map -.-> sw
+    map --> tiles
+    act --> rls
+    rsc --> rls
+    rls --> pg
+    act --> store
+    rt --> map
+    act --> ext
+
+    style rls fill:#fde68a,stroke:#92400e

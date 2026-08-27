@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 
@@ -43,21 +43,36 @@ const esc = (s) =>
  */
 function runs(text, { size = 24, italic = false, mono = false } = {}) {
   const font = mono ? "Courier New" : "Times New Roman";
-  return text
-    .split(/(\*\*[^*]+\*\*)/g)
-    .filter(Boolean)
-    .map((part) => {
-      const bold = part.startsWith("**") && part.endsWith("**");
-      const inner = bold ? part.slice(2, -2) : part;
-      const props =
-        `<w:rFonts w:ascii="${font}" w:hAnsi="${font}" w:cs="${font}" w:eastAsia="${font}"/>` +
-        `<w:sz w:val="${size}"/><w:szCs w:val="${size}"/>` +
-        (bold ? "<w:b/>" : "") +
-        (italic ? "<w:i/>" : "");
-      // xml:space preserve, or Word eats the spaces around bold spans.
-      return `<w:r><w:rPr>${props}</w:rPr><w:t xml:space="preserve">${esc(inner)}</w:t></w:r>`;
-    })
-    .join("");
+
+  // A state machine rather than a single split: ** and * toggle independently,
+  // so a bold reference line can carry an italic journal title inside it. The
+  // paragraph-level `italic` option is the starting state, which lets note()
+  // still come out italic throughout.
+  let bold = false;
+  let ital = italic;
+  const out = [];
+
+  for (const part of text.split(/(\*\*|\*)/g)) {
+    if (part === "**") {
+      bold = !bold;
+      continue;
+    }
+    if (part === "*") {
+      ital = !ital;
+      continue;
+    }
+    if (part === "") continue;
+
+    const props =
+      `<w:rFonts w:ascii="${font}" w:hAnsi="${font}" w:cs="${font}" w:eastAsia="${font}"/>` +
+      `<w:sz w:val="${size}"/><w:szCs w:val="${size}"/>` +
+      (bold ? "<w:b/>" : "") +
+      (ital ? "<w:i/>" : "");
+    // xml:space preserve, or Word eats the spaces around emphasised spans.
+    out.push(`<w:r><w:rPr>${props}</w:rPr><w:t xml:space="preserve">${esc(part)}</w:t></w:r>`);
+  }
+
+  return out.join("");
 }
 
 function para(text, opts = {}) {
@@ -153,16 +168,66 @@ function table(widths, rows, { headerRow = true } = {}) {
   );
 }
 
-/** A figure the author pastes an image into, plus its numbered caption. */
+/**
+ * Figure images, rendered from the mermaid sources in figures/*.mmd.
+ *
+ * Scaled to the printable width - Letter minus 1in margins each side - and the
+ * height derived from each image's own pixel ratio so nothing is stretched.
+ * EMU: 914400 per inch.
+ */
+const FIG_DIR = join(OUT_DIR, "figures");
+const PRINT_WIDTH_EMU = Math.round(6.5 * 914400);
+
+/** PNG intrinsic size, read from the IHDR chunk. No image library needed. */
+function pngSize(path) {
+  const b = readFileSync(path);
+  if (b.readUInt32BE(0) !== 0x89504e47) throw new Error(`not a PNG: ${path}`);
+  return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
+}
+
+const figures = [1, 2, 3, 4].map((n) => {
+  const file = join(FIG_DIR, `fig${n}.png`);
+  const { w, h } = pngSize(file);
+  return {
+    n,
+    file,
+    rid: `rId${100 + n}`,
+    cx: PRINT_WIDTH_EMU,
+    cy: Math.round((PRINT_WIDTH_EMU * h) / w),
+  };
+});
+
+/** An inline image run, wrapped in its own centred paragraph. */
+function figureImage(f) {
+  const drawing =
+    `<w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0" ` +
+    `xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">` +
+    `<wp:extent cx="${f.cx}" cy="${f.cy}"/>` +
+    `<wp:docPr id="${f.n}" name="Figure ${f.n}"/>` +
+    `<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">` +
+    `<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
+    `<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
+    `<pic:nvPicPr><pic:cNvPr id="${f.n}" name="fig${f.n}.png"/><pic:cNvPicPr/></pic:nvPicPr>` +
+    `<pic:blipFill>` +
+    `<a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="${f.rid}"/>` +
+    `<a:stretch><a:fillRect/></a:stretch>` +
+    `</pic:blipFill>` +
+    `<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${f.cx}" cy="${f.cy}"/></a:xfrm>` +
+    `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>` +
+    `</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing>`;
+
+  return (
+    `<w:p><w:pPr>` +
+    `<w:spacing w:before="240" w:after="80" w:line="276" w:lineRule="auto"/>` +
+    `<w:jc w:val="center"/></w:pPr>` +
+    `<w:r>${drawing}</w:r></w:p>`
+  );
+}
+
+/** A figure: the rendered diagram, then its numbered caption. */
 function figure(n, caption) {
   return (
-    para(`[ Figure ${n} — paste the rendered diagram here ]`, {
-      align: "center",
-      italic: true,
-      size: 22,
-      before: 240,
-      after: 80,
-    }) +
+    figureImage(figures[n - 1]) +
     para(`Figure ${n}. ${caption}`, {
       align: "center",
       size: 20,
@@ -174,10 +239,16 @@ function figure(n, caption) {
 
 const content = [
   // --- Front matter, centred, matching the reference's title block --------
-  title("Antas: A Street-Level Flood Depth Reporting System for Metro Manila"),
-  centred("Elijah Olores"),
+  title("Antas: A Street-Level Flood Depth Reporting System"),
+  title("for"),
+  title("Metro Manila"),
+  centred("Gerald Elijah Olores"),
   centred("Centro Escolar University"),
-  centred("Empirical Software Innovation and Interface Prototyping"),
+  centred("Empirical Software Innovation"),
+  centred("and"),
+  centred("Interface Prototyping"),
+  centred("Research Adviser"),
+  centred("Dr. Eliza B. Ayo"),
   centred("2026"),
   para("", { before: 200, after: 0 }),
 
@@ -189,16 +260,16 @@ const content = [
     "During a flood, the question a Metro Manila resident actually needs answered is narrow and local: is the water on my street passable right now? Every information source available to them answers a different question.",
   ),
   body(
-    "Official warnings operate at the scale of a river basin or a city. They are authoritative about rainfall and river level, and silent about the two hundred metres between a person and the main road. A resident who knows the Marikina River is at second alarm still does not know whether the corner of their own street is ankle-deep or waist-deep. [VERIFY: cite PAGASA's public warning products and their spatial granularity.]",
+    "Official warnings operate at the scale of a river basin or a city. They are authoritative about rainfall and river level, and silent about the two hundred metres between a person and the main road. A resident who knows the Marikina River is at second alarm still does not know whether the corner of their own street is ankle-deep or waist-deep. PAGASA issues its flood products by river basin: its national flood picture resolves to a table of eighteen major river basins, in which the capital region appears as the entry NCR/Pasig Marikina Laguna de Bay. Its bulletins are graded on river discharge crossing Alert, Alarm and Critical water levels within a flood warning zone, and are disseminated to local, municipal, and provincial government offices (PAGASA, n.d.).",
   ),
   body(
     "The gap is filled informally, by neighbours posting photographs and short messages to Facebook groups and Messenger threads. That channel is fast, local, and genuinely useful, and it fails in three specific ways. First, it is unstructured: a post saying baha na dito cannot be compared, sorted, or aged, and two posts an hour apart cannot be told apart for currency. Second, it is not addressable by location, because a post attaches to a group rather than to a coordinate, so a reader cannot ask what is happening on their own street. Third, it carries no notion of staleness: a photograph taken three hours ago looks exactly like one taken three minutes ago, and floodwater moves in far less than three hours.",
   ),
   body(
-    "The consequence is a decision made on bad information. A resident either waits longer than necessary, or walks into water deeper than they expected. Six inches of moving water is enough to knock an adult off their feet, and floodwater hides open drains and live cables. The cost of the missing information is not inconvenience; it is a person stepping into a street they believed was passable. [VERIFY: one industry or government statistic on the scale of urban flooding in Metro Manila. NDRRMC situational reports and MMDA flood-control publications are the credible primary sources.]",
+    "The consequence is a decision made on bad information. A resident either waits longer than necessary, or walks into water deeper than they expected. Six inches of moving water is enough to knock an adult off their feet, and floodwater can be electrically charged by downed or underground power lines (National Weather Service, n.d.). The cost of the missing information is not inconvenience; it is a person stepping into a street they believed was passable. The scale of the exposure is not marginal. In the combined effects of the Southwest Monsoon and Tropical Cyclones Butchoy and Carina in July 2024, the NDRRMC recorded 189,771 families, or 754,446 persons, affected in the National Capital Region alone, of whom 584,867 were served outside evacuation centres (NDRRMC, 2024).",
   ),
   body(
-    "[VERIFY: at least one peer-reviewed source, dated 2022 or later, on crowdsourced or participatory disaster reporting. See the search brief under Section 1.2A. Recent work on PetaBencana.id, the crowdsourced flood-mapping platform in Jakarta, is the closest published comparison to this project.]",
+    "Platforms built on resident reporting are already documented as viable at city scale. Esparza et al. (2024) show that crowdsourced flood reports improve inundation monitoring of road networks precisely in the blind spots where no flood gauge exists, reducing the number of physical sensors required by 32 per cent. Chow et al. (2023) report that volunteers marking flooded street segments across the Houston metropolitan area produced 399 to 479 data points per day, of which 85.9 per cent fell within one metre of a calibrated hydraulic model. Chow et al. describe their study as a preliminary assessment and recommend caution in interpreting the volunteered data against a hydraulic model, so it is cited here as evidence of collection at scale rather than as an endorsement of accuracy. In that platform volunteers marked street segments as flooded without recording a depth, which the researchers reconstructed afterwards from an elevation model. Antas instead asks the contributor for the depth directly, on a fixed five-level scale, trading reach for comparability between reports. Residents in Metro Manila already have the channel habit this depends on: Facebook reaches 81.9 per cent of the population and Messenger 56.2 per cent (Kemp, 2025).",
   ),
   body(
     "There is a clear need for a tool that collects what residents already report informally, but does so in a structured, located, and time-stamped form, and that is honest about the limits of what it knows. This is the gap Antas aims to fill.",
@@ -208,95 +279,178 @@ const content = [
   body(
     "The literature relevant to Antas falls into five areas: the recent record of crowdsourced disaster reporting platforms, the problem of trusting citizen-contributed data, the Philippine flood and warning context, the design of interfaces used under stress, and the handling of information that decays with time. Each entry states what the source establishes and which decision in this system it supports.",
   ),
-  note(
-    "TO COMPLETE BEFORE SUBMISSION. Each entry gives an APA citation line to be filled in, followed by its discussion paragraph. The citation lines are deliberately blank where author, year, title and venue belong: those details are not invented here, because a fabricated reference is checkable and is worse than a missing one. Each entry carries a search brief naming the terms and venues most likely to surface a suitable source. All sources must be dated 2022 or later. The requirement is a minimum of three; more slots are provided than needed, so the strongest can be kept and the rest deleted.",
-  ),
-  note(
-    "A note on the date restriction. The foundational works in this field - the paper that named volunteered geographic information, and the first crisis-mapping platforms - all fall well outside the window. Do not cite them, and do not cite anything that merely quotes them. Cite instead a recent review, replication or application that restates the concept from within the window, which is standard practice when a date range is imposed and is what the search terms below are written to find.",
-  ),
 
   h3("A. Crowdsourced and Participatory Disaster Reporting"),
-  body("**Citation 1:** ____________ (20__). ____________. ____________, __(_), ___-___."),
-  note(
-    "Search brief: Google Scholar, filtered 2022 onward. Terms: crowdsourced flood reporting; participatory flood mapping; volunteered geographic information flood; citizen reporting urban flooding. Venues likely to carry it: International Journal of Disaster Risk Reduction; Natural Hazards; ISCRAM conference proceedings; Sustainability. Search also for recent work on PetaBencana.id, the crowdsourced flood-mapping platform operating in Jakarta, which is the closest precedent to this project.",
+  body(
+    "**Esparza, M., Farahmand, H., Liu, X., & Mostafav, A. (2024). Enhancing inundation monitoring of road networks using crowdsourced flood reports. *Urban Informatics, 3*(1), Article 25. https://doi.org/10.1007/s44212-024-00055-7**",
   ),
   body(
-    "**What this source must establish, and how it connects to Antas.** That resident-contributed flood observations are viable at city scale, and how such a platform handles report volume and geographic coverage. This is the empirical warrant for the premise of the project: a person standing in floodwater is an instrument no rain gauge can replace, because the gauge measures rainfall while the resident measures the street. Where the source describes free-form reporting, note the contrast: Antas constrains input to a fixed five-level depth scale, trading reach for comparability between reports.",
+    "Esparza et al. supply the empirical warrant for the premise of this project. Studying the Houston road network, they find that resident-submitted reports improve inundation monitoring precisely where no gauge exists, reducing the number of physical sensors required by 32 per cent. The finding matters because a person standing in floodwater is an instrument no rain gauge can replace: the gauge measures rainfall, the resident measures the street.",
   ),
 
-  body("**Citation 2:** ____________ (20__). ____________. ____________, __(_), ___-___."),
-  note(
-    "Search brief: terms: social media disaster response; citizen sensing emergency management; crisis informatics review. A recent review article is ideal here, because it restates the foundational position from within the date window.",
+  body(
+    "**Chow, T. E., Chien, J., & Meitzen, K. (2023). Validating the quality of volunteered geographic information (VGI) for flood modeling of Hurricane Harvey in Houston, Texas. *Hydrology, 10*(5), Article 113. https://doi.org/10.3390/hydrology10050113**",
   ),
   body(
-    "**What this source must establish, and how it connects to Antas.** That members of the public already share hazard information during a crisis through whatever channels they have, and that formal systems succeed by structuring that behaviour rather than replacing it. This justifies the product's basic shape: residents already post flood photographs to Facebook groups, and the contribution of Antas is structure, location and time, not the impulse to share.",
+    "Chow et al. address the question Esparza et al. leave open, which is whether volunteered readings are accurate rather than merely plentiful. Volunteers marking flooded street segments across the Houston metropolitan area produced between 399 and 479 data points a day, and 85.9 per cent of those segments fell within one metre of a calibrated hydraulic model. The authors are careful about what this shows: they call the study a preliminary assessment and recommend caution in interpreting volunteered data against a model, so it is cited here for collection at scale rather than as a warrant for accuracy. One detail bears directly on the design of Antas. Their volunteers marked segments as flooded without recording a depth, which the researchers reconstructed afterwards from an elevation model; Antas asks the contributor for the depth directly, on a fixed five-level scale, trading reach for comparability between reports.",
+  ),
+
+  body(
+    "**Feng, Y., Brenner, C., & Sester, M. (2020). Flood severity mapping from volunteered geographic information by interpreting water level from images containing people: A case study of Hurricane Harvey. *ISPRS Journal of Photogrammetry and Remote Sensing, 169*, 301-319. https://doi.org/10.1016/j.isprsjprs.2020.09.011**",
+  ),
+  body(
+    "Feng et al. provide the precedent for reading flood depth against a human body. They estimate water level from photographs containing people, banding the result as ankle, knee, hip or chest. That establishes the body as a workable reference object for depth, which is the premise of the five-level scale used here. Two differences are worth stating rather than glossing. Their bands are applied by annotators to photographs, whereas Antas asks the person standing in the water; and their scale has four levels where this one has five, the above-head level having no counterpart in their work. This source also falls outside the 2022 window applied elsewhere in this review; it is included because the recent literature using body-referenced depth bands cites it as the origin.",
+  ),
+
+  body(
+    "**Nielsen, A. B., Landwehr, D., Nicolai, J., Patil, T., & Raju, E. (2024). Social media and crowdsourcing in disaster risk management: Trends, gaps, and insights from the current state of research. *Risk, Hazards & Crisis in Public Policy, 15*(2), 104-127. https://doi.org/10.1002/rhc3.12297**",
+  ),
+  body(
+    "Nielsen et al. review 237 studies published between 2008 and 2023 on social media and crowdsourcing in disaster risk management, establishing that public information sharing during disasters is a documented and studied phenomenon rather than an assumption of this project. This justifies the product's basic shape: residents already post flood photographs to Facebook groups, and the contribution of Antas is structure, location and time, not the impulse to share.",
+  ),
+
+  body(
+    "**Cicek, D., & Kantarci, B. (2023). Use of mobile crowdsensing in disaster management: A systematic review, challenges, and open issues. *Sensors, 23*(3), Article 1699. https://doi.org/10.3390/s23031699**",
+  ),
+  body(
+    "Cicek and Kantarci draw a distinction between crowdsourcing, which they characterise as gathering unstructured crowd intelligence through social media, and crowdsensing, a more structured type of data generation by crowds. Antas sits on the structured side of that line by design. The review also names a crowd-as-reporters pattern in which a member of the public submits an observation that is then checked, which is the shape of the moderator queue in Section 2.4. Note the scope limit: this review deliberately excludes work scoped solely to social media, so it is cited for the structured-versus-unstructured distinction and not as evidence about informal sharing behaviour.",
   ),
 
   h3("B. Trust, Verification and Data Quality"),
-  body("**Citation 3:** ____________ (20__). ____________. ____________, __(_), ___-___."),
-  note(
-    "Search brief: terms: credibility assessment user-generated content disaster; trust crowdsourced data quality; verification citizen reports emergency. Venues: IEEE Access; International Journal of Disaster Risk Reduction; ACM CSCW proceedings.",
+  body(
+    "**Lowrie, C., Kruczkiewicz, A., McClain, S. N., Nielsen, M., & Mason, S. J. (2022). Evaluating the usefulness of VGI from Waze for the reporting of flash floods. *Scientific Reports, 12*(1), Article 5268. https://doi.org/10.1038/s41598-022-08751-7**",
   ),
   body(
-    "**What this source must establish, and how it connects to Antas.** How the reliability of an unverified report from an unknown person can be estimated, using signals such as corroboration by nearby reports, the contributor's history, and consistency with independent environmental data. This is the direct justification for the six-group trust score in Section 2.4, and specifically for combining reporter history with environmental corroboration rather than relying on either alone.",
+    "This source addresses how the reliability of an unverified report from an unknown person can be estimated. Lowrie et al. establish two of the three signals the Antas trust score relies on: clustering of reports relative to authoritative sources, and a per-contributor credibility score. They are explicit that they did not test the third, stating that their research has not included digital elevation models, atmospheric data, or streamflow gauges, all of which would be valuable additions. The environmental-corroboration group in Section 2.4 therefore rests on Safaei-Moghadam et al. rather than on this source, and the distinction is stated here rather than blurred.",
   ),
 
-  body("**Citation 4:** ____________ (20__). ____________. ____________, __(_), ___-___."),
-  note(
-    "Search brief: terms: misinformation during disasters; rumour propagation emergency social media; outdated information crisis communication.",
+  body(
+    "**Safaei-Moghadam, A., Tarboton, D., & Minsker, B. (2023). Estimating the likelihood of roadway pluvial flood based on crowdsourced traffic data and depression-based DEM analysis. *Natural Hazards and Earth System Sciences, 23*(1), 1-19. https://doi.org/10.5194/nhess-23-1-2023**",
   ),
   body(
-    "**What this source must establish, and how it connects to Antas.** That false or outdated information spreads readily during an emergency, and that corrections travel more slowly than the claims they correct. This supports two refusals recorded in Section 4.2: free-text comments beneath a depth reading, and any label describing floodwater as safe. In a system nobody moderates, a reassuring comment outlives the conditions that produced it.",
+    "Safaei-Moghadam et al. supply the environmental half of the trust score. They note that the Waze app has no pre-qualification for users to post a report, and consequently not all flood-labelled alerts are reliable as flood observations. Their response is to require a cluster of more than two flood alerts near a mapped depression, and to cross-check alert timing against rainfall and alert location against elevation data. Those are precisely the corroboration, rainfall and elevation groups in Section 2.4.",
+  ),
+  body(
+    "**Gheyas, I., Asghar, M. R., Schneider, S., & Woodward, A. (2025). *Establishing trust in crowdsourced data* (arXiv:2511.03016). arXiv. https://arxiv.org/abs/2511.03016**",
+  ),
+  body(
+    "Gheyas et al. show that a contributor-reputation mechanism can weight submissions without excluding contributors, filtering guesses while prioritising consistent contributors. This supports two decisions at once: the reputation record of confirmed and false reports, and the rule that a low-confidence emergency signal is ranked lower but never filtered out. This is a preprint and has not been peer reviewed, which is stated here rather than left for a reader to discover.",
+  ),
+
+  body(
+    "**Hilberts, S., Govers, M., Petelos, E., & Evers, S. (2025). The impact of misinformation on social media in the context of natural disasters: Narrative review. *JMIR Infodemiology, 5*, Article e70413. https://doi.org/10.2196/70413**",
+  ),
+  body(
+    "Hilberts et al. establish that false or outdated information spreads readily during an emergency, and that corrections travel more slowly than the claims they correct. This supports two refusals recorded in Section 4.2: free-text comments beneath a depth reading, and any label describing floodwater as safe. In a system nobody moderates, a reassuring comment outlives the conditions that produced it.",
   ),
 
   h3("C. The Philippine Flood Context"),
   body(
-    "**Citation 5:** Philippine Atmospheric, Geophysical and Astronomical Services Administration. (20__). ____________. Retrieved from ____________",
-  ),
-  note(
-    "Search brief: PAGASA's own website, 2022 onward. Look for the published description of rainfall warning levels and flood bulletins. A government primary source is both easy to verify and inherently current, which makes it the safest way to satisfy the date restriction.",
+    "**Philippine Atmospheric, Geophysical and Astronomical Services Administration. (n.d.). *Flood information*. Retrieved August 15, 2026, from https://www.pagasa.dost.gov.ph/flood**",
   ),
   body(
-    "**What this source must establish, and how it connects to Antas.** That official warnings are issued by basin and by area rather than by street. This is the primary-source basis for the central claim of the problem statement: the warnings are authoritative at the scale of a river system and silent at the scale of a doorstep. Antas does not compete with them; it answers the question they are not designed to answer.",
+    "This is the primary source for the spatial unit at which official warnings are issued. PAGASA organises its flood products around eighteen major river basins and disseminates them to local, municipal, and provincial government offices. The finest spatial unit reached by any public PAGASA product examined here is the city or municipality: its regional forecast names conditions over Metro Manila and then lists constituent cities, the whole of Marikina appearing as one unit. That is the primary-source basis for the central claim of the problem statement, stated as a demonstrated coarse granularity rather than as a denial that any street-level product exists. Antas does not compete with these warnings; it answers the question they are not designed to answer.",
   ),
 
   body(
-    "**Citation 6:** National Disaster Risk Reduction and Management Council. (20__). ____________. Retrieved from ____________",
-  ),
-  note(
-    "Search brief: NDRRMC situational reports for a named flooding event in the National Capital Region, 2022 onward. Cite the specific report and its date. The southwest monsoon flooding of July 2024 falls within the window and is well documented.",
+    "**Philippine Atmospheric, Geophysical and Astronomical Services Administration. (n.d.). *Legend*. Retrieved August 15, 2026, from https://pagasa.dost.gov.ph/learnings/legend**",
   ),
   body(
-    "**What this source must establish, and how it connects to Antas.** Affected-population or displacement figures for a recent flooding event in Metro Manila. This supplies the scale statistic the problem statement needs, and the primary record is preferable to a news summary of it.",
+    "This page carries the published definitions of the colour-coded rainfall warnings, and states the spatial unit explicitly: the General Flood Advisory is issued for non-telemetered river basins and issued to the public on a regional basis. The impact language is spatially generic in the same way, warning that flooding is possible in low-lying areas and near river channels, which names a category of place rather than a place. Note that this page carries no publication date; the date given is a retrieval date.",
+  ),
+
+  body(
+    "**National Disaster Risk Reduction and Management Council. (2024). *SitRep no. 46 for the combined effects of Southwest Monsoon and TCs Butchoy and Carina (2024)*. Retrieved August 15, 2026, from https://ndrrmc.gov.ph/attachments/article/4259/SitRep_No_46_for_the_Combined_Effects_of_Southwest_Monsoon_and_TCs_BUTCHOY_and_CARINA_2024.pdf**",
+  ),
+  body(
+    "SitRep No. 46 is the final report in its series, so its figures are post-validation. It records 189,771 families, or 754,446 persons, affected in the National Capital Region, of whom 584,867 were served outside evacuation centres. That is the scale statistic the problem statement rests on, taken from the primary record rather than from a news summary of it. The report number and date matter: the National Capital Region count rose from 125,491 persons in SitRep No. 17 on 26 July to 754,446 in SitRep No. 46 a month later, so an earlier report in the same series would understate the event several times over.",
+  ),
+
+  body(
+    "**World Bank. (2020). *Concept project information document (PID): Pasig-Marikina River Basin Flood Management Project (P171897)* (Report No. PIDC27692). World Bank Group. https://documents.worldbank.org/curated/en/851731580982488098/pdf/Concept-Project-Information-Document-PID-Pasig-Marikina-River-Basin-Flood-Management-Project-P171897.pdf**",
+  ),
+  body(
+    "The World Bank's project assessment establishes that flooding in the Pasig-Marikina basin is a chronic structural condition rather than a sequence of exceptional events: parts of the basin flood already during rainfall events with a five-year return period. The NDRRMC situational report supplies the scale of one severe event; this supplies the recurrence that makes a standing tool worth building rather than an emergency broadcast.",
   ),
 
   h3("D. Interface Design for Use Under Stress"),
-  body("**Citation 7:** ____________ (20__). ____________. ____________, __(_), ___-___."),
-  note(
-    "Search brief: terms: emergency application usability; user interface design high stress; mobile usability outdoor sunlight legibility; touch target size mobile accessibility. Venues: ACM CHI proceedings; International Journal of Human-Computer Studies; Applied Ergonomics.",
+  body(
+    "**Knysh, A., & Pohrebniak, T. (2026). Mental health app crisis support assessment framework: Development and pilot testing. *Frontiers in Digital Health, 8*, Article 1814547. https://doi.org/10.3389/fdgth.2026.1814547**",
   ),
   body(
-    "**What this source must establish, and how it connects to Antas.** That people under stress fall back on routine actions, hold less in working memory, and do not discover controls hidden behind gestures. Two decisions rest on this: the emergency control is a plainly labelled tab rather than a long-press on the ordinary report button, and depth is expressed in body parts so that no arithmetic conversion is required. Where the source also covers outdoor legibility and touch target sizing, it additionally supports the light-only interface and the 48-pixel minimum target.",
+    "This source establishes that attention narrows in a crisis, and that every additional step in a path raises the chance the task is abandoned. Knysh and Pohrebniak find that each additional navigation tap or ambiguous label increases the risk that a user abandons the task entirely, and criticise crisis interfaces built from pale, small, hierarchy-free text. Two decisions rest on this: the emergency control is a plainly labelled tab rather than a long-press on the ordinary report button, and depth is expressed in body parts so that no arithmetic conversion is required. The limit of this warrant should be stated. The older claim that stress makes people revert to habitual actions is not asserted here, because recent primary work fails to replicate that effect; the argument rests on interaction cost under narrowed attention instead. The source lists adequate touch targets as a criterion but gives no numeric value and does not address outdoor viewing, so the 48-pixel target rests on the WCAG 2.2 recommendation below rather than on this source. The light-only interface is not derived from either source: it is a design judgement about reading a screen outdoors in daylight, and is recorded here as a judgement rather than dressed as a standard.",
+  ),
+
+  body(
+    "**World Wide Web Consortium. (2024). *Web Content Accessibility Guidelines (WCAG) 2.2* (W3C Recommendation). Retrieved August 15, 2026, from https://www.w3.org/TR/WCAG22/**",
+  ),
+  body(
+    "WCAG 2.2 sets the published minimum target size. Success criterion 2.5.8, at Level AA, sets a minimum of 24 by 24 CSS pixels; the enhanced criterion 2.5.5, at Level AAA, sets 44 by 44. The 48-pixel minimum used here exceeds both. It is stated that way deliberately: WCAG does not require 48 pixels, and a paper that implied it did would be misreporting the standard it claims to follow.",
   ),
 
   h3("E. Information Decay and Offline Operation"),
-  body("**Citation 8:** ____________ (20__). ____________. ____________, __(_), ___-___."),
-  note(
-    "Search brief: terms: temporal decay user-generated content; information freshness real-time systems; offline-first application design; intermittent connectivity mobile developing regions.",
+  body(
+    "**Liu, B., Wang, Y., & Li, Y. (2024). The effect of time display format on cognitive performance of integrated meteorological radar information. *Behavioral Sciences, 14*(9), Article 847. https://doi.org/10.3390/bs14090847**",
   ),
   body(
-    "**What this source must establish, and how it connects to Antas.** That the usefulness of an observation falls with age, and that presenting old data without marking it leads users to act on conditions that have changed. This is the basis for the two most distinctive rules in this system: every reading states its age, and past six hours the map refuses to draw cached data at all. Both are unusual enough to require a citation rather than an assertion. Work on offline-first design additionally supports caching the application shell and the preparedness guide, since connectivity degrades in exactly the conditions the product exists for.",
+    "Liu et al. establish that how the age of a time-sensitive reading is displayed changes whether people account for it. They study pilots reading radar imagery and find that users overlook the latency or underestimate the uncertainty the delay introduces, and that the display format of the delay affects this. Two limits should be stated rather than glossed. Their population is pilots reading cockpit radar, not the general public, so the transfer to a flood map is an argument this paper makes and not a finding the source reports. And they manipulate the format of an already-shown delay rather than testing age-marking against its absence, so they support the decision to state a reading's age prominently, not the stronger claim that usefulness decays at a measurable rate. The six-hour cutoff in particular has no source: no work found within the review window fixes a threshold, and it is an engineering judgement of this project. Ashista et al. and the MDN documentation below cover the separate decision to cache the application shell and the guide for use without a network.",
+  ),
+
+  body(
+    "**Ashista, H., Comas, A. S., Selby, T., Essar, M. Y., Alawa, J., Al-Hajj, S., & Nelson, E. (2026). An offline-first electronic health record for vulnerable populations: A mixed-methods feasibility study. *PLOS Digital Health, 5*(2), Article e0001204. https://doi.org/10.1371/journal.pdig.0001204**",
+  ),
+  body(
+    "Ashista et al. demonstrate that an offline-first architecture with deferred synchronisation is workable for a safety-relevant application under intermittent connectivity in a low-resource setting. Liu et al. cover how the age of a reading is displayed; this covers the other half, the decision to cache the application shell and the preparedness guide so the product still opens when the network does not.",
+  ),
+  body(
+    "**Mozilla. (2025). *Offline and background operation*. MDN Web Docs. Retrieved August 15, 2026, from https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Offline_and_background_operation**",
+  ),
+  body(
+    "MDN documents the service-worker mechanism by which a progressive web application serves cached content without a network, which is the implementation route for the cached shell and guide described above.",
+  ),
+
+  h3("F. The Closest Comparable System"),
+  body(
+    "**Roque, N. (2024, August 24). Dingdong Dantes’ foundation helps launch LyfSaver, an app to foster bayanihan during disasters. *GMA Integrated News*. https://www.gmanetwork.com/news/lifestyle/content/918113/dingdong-dantes-foundation-helps-launch-lyfsaver-an-app-to-foster-bayanihan-during-disasters/story/**",
+  ),
+  body(
+    "LyfSaver is the system this project most resembles, and the comparison is worth making directly rather than leaving implied. Launched in August 2024 by Fyt Media with the University of the Philippines Nationwide Operational Assessment of Hazards, the UP Resilience Institute and the YesPinoy Foundation, it accepts resident reports of floods, storm surges, landslides, barangay status and accidents, with photographs, video and messages, and combines them with UP-NOAH hazard mapping and a volunteer training programme. It is available as a mobile application and in the browser at https://app.lyfsaver.ph.",
+  ),
+  body(
+    "It is better resourced than this project in every dimension that resources buy: scientific hazard layers, institutional partners, and a training pipeline. Its adoption is real rather than prospective.",
+  ),
+  body(
+    "**Magbanua, S. A. (2026, August 26). QC trains city disaster responders through LyfSaver. *Daily Tribune*. https://tribune.net.ph/2026/08/26/qc-trains-city-disaster-responders-through-lyfsaver**",
+  ),
+  body(
+    "Magbanua reports the Quezon City government training barangay officials, volunteers and city disaster responders on the platform, describing it as a tool to report incidents, verify information and share trusted updates during emergencies. The significance for this project is twofold. It confirms that the problem addressed here is real enough for a city government to invest in, and it establishes that the crowdsourced-reporting space in Metro Manila is occupied. Any claim this project makes to contribute something must therefore be a claim about what LyfSaver does not do, not about the category as a whole.",
+  ),
+  body(
+    "That difference is one of data type. LyfSaver records that an incident is present at a place. Antas records how deep the water is, on a fixed five-level scale, which is a different kind of measurement: it can be ordered, compared between reports, clustered, and turned into a decision. A report that a street is flooded cannot be converted into advice; a report that the water is knee-deep can. Section 1.3 argues that difference and Section 1.4 tabulates it, including the rows where LyfSaver is the stronger system.",
+  ),
+
+  h3("G. The Official Passability Standard"),
+  body(
+    "**Malasig, J. (2024, September 4). Tire deep or gutter deep? MMDA’s new system assigns acronyms to flood levels. *Interaksyon*. https://interaksyon.philstar.com/trends-spotlights/2024/09/04/282826/mmda-flood-gauge-system-travelers-motorists/**",
+  ),
+  body(
+    "Malasig documents the Metropolitan Manila Development Authority’s Flood Gauge System, which classifies a flooded road by whether vehicles can pass it: PATV, passable to all types of vehicles, at eight to ten inches; NPLV, not passable to light vehicles, at thirteen to nineteen inches; and NPATV, not passable to any type of vehicle, at twenty-six inches and above. The system is the reason this project can make a passability claim without inventing a threshold.",
+  ),
+  body(
+    "Two features of the standard matter here. The first is that it is official and published, so adopting it is citation rather than invention — an important distinction for a safety claim. The second is that MMDA describes its own categories in body terms: nineteen inches is “knee deep”, thirty-seven is “waist deep”, forty-five is “chest deep”. The scale this project chose for its own reasons, described in Section 2.2, turns out to be the vocabulary the national road authority already uses. Antas maps its five levels onto the three MMDA categories, taking the worse category wherever one of its bands straddles two, and shows the result on every flood report.",
   ),
 
   h3("Synthesis: The Gap This Project Addresses"),
   body(
-    "Taken together the literature establishes three things. Residents are a viable source of hazard information that instruments cannot capture at street level, and platforms built on that premise operate successfully in comparable cities. The central difficulty of such platforms is not collection but trust, and the accepted response is to weigh signals by corroboration and history rather than to reject them outright. And official warning systems, which are authoritative and necessary, work at a spatial resolution that cannot answer the question a person standing on a street is actually asking.",
+    "Taken together the literature supports three positions, with the strength of each stated honestly. First, residents are a documented source of hazard information that instruments do not capture at street level: Esparza et al. quantify a 32 per cent reduction in the sensors required, and Chow et al. show collection at a rate of several hundred street segments a day, though they caution against treating volunteered depth as accurate. Second, trust is the recurring difficulty in this literature rather than collection, and the responses described are to weigh reports by corroboration, contributor history and independent environmental data. That weighting is documented in individual systems; describing it as the field's settled answer would go further than the sources reviewed here allow. Third, official warning systems are authoritative and necessary, and work at a spatial resolution that cannot answer the question a person standing on a street is asking, which PAGASA's own products demonstrate directly.",
   ),
   body(
-    "What the reviewed literature does not address, and where this project contributes, is the treatment of information decay in the interface itself. Existing platforms display reports; the literature says comparatively little about refusing to display them once they are too old to be acted on safely. Antas treats staleness as a first-class safety property: every reading states its age, and beyond six hours the map draws nothing and says why. It pairs that with an explicit refusal to imply a dispatch capability it does not have. Those two commitments, rather than the collection mechanism, are what distinguish this system from its precedents.",
+    "Where this project positions its contribution is the treatment of information decay in the interface itself. The sources reviewed here concentrate on collecting reports and on judging their reliability; none of them examines withholding a report once it is too old to act on. That is an observation about the literature this review reached, not a demonstrated gap in the field, and it is stated as such: a systematic search would be needed to establish that no such work exists. On that reading, Antas treats staleness as a first-class safety property: every reading states its age, and beyond six hours the map draws nothing and says why. It pairs that with an explicit refusal to imply a dispatch capability it does not have. Those two commitments, rather than the collection mechanism, are what distinguish this system from the precedents reviewed here.",
   ),
   h2("1.3 How Antas Improves Upon Existing Solutions"),
-  body("Six differences separate Antas from the tools a Metro Manila resident already has."),
+  body(
+    "Two comparisons are needed rather than one. The tools a Metro Manila resident reaches for during a flood — official warnings, news, neighbourhood groups, navigation apps — differ from Antas in the ways set out below. LyfSaver, described in Section 1.2F, is a different case: it is a purpose-built crowdsourced reporting platform and shares this project’s premise. The differences that matter against it are the third, the seventh and the eighth.",
+  ),
   numbered(
     1,
     "**Street-level resolution.** Official warnings describe a basin; Antas describes a coordinate. A report is attached to the point it was observed at, so the map answers a question about one street rather than one city.",
@@ -307,7 +461,7 @@ const content = [
   ),
   numbered(
     3,
-    "**Every reading carries its age.** A pin states how old it is, and past six hours the map refuses to draw the data at all rather than presenting a stale reading as current. No informal channel does this.",
+    "**Every reading carries its age.** A pin states how old it is, and past six hours the map refuses to draw the data at all rather than presenting a stale reading as current. A photograph posted to a group carries no such treatment: nothing in the channel marks its age or withdraws it once conditions change.",
   ),
   numbered(
     4,
@@ -321,29 +475,52 @@ const content = [
     6,
     "**An explicit refusal to dispatch.** Antas states on every relevant screen that it sends no rescue. This is a feature rather than a missing one: a tool that implies help is coming makes a person wait instead of climbing.",
   ),
+  numbered(
+    7,
+    "**A measurement, not a report.** This is the difference that separates Antas from other crowdsourced platforms rather than from informal sources. A platform records that an incident is present at a place; Antas records how deep the water is on a five-level scale. The distinction is not one of detail but of data type. A presence report cannot be ordered, compared between contributors, or clustered without losing its meaning, and it cannot be converted into advice. A graded reading can be all four, which is what makes the map colour-ramp, the cluster rule that takes the deepest member, and the passability classification below possible at all.",
+  ),
+  numbered(
+    8,
+    "**Road passability in the national authority’s own words.** Antas maps each flood reading onto the MMDA Flood Gauge System (Section 1.2G) and shows the result: passable to all vehicles, not passable to light vehicles, or not passable to any vehicle. MMDA publishes that classification for a small number of monitored roads; Antas publishes it for any street a resident is standing on, minutes old, in the vocabulary Metro Manila motorists already read in traffic advisories. Where one of the five levels straddles two MMDA categories the worse category is taken, so the system never reports a street as more passable than the reading supports. It offers no verdict for people on foot, because the MMDA standard covers vehicles and moving water is dangerous well below knee height; the interface says so rather than estimating.",
+  ),
+  body(
+    "The seventh and eighth points are the substantive claim of this project. The first six distinguish Antas from informal sources, which is a low bar. Against a purpose-built platform the argument is narrower and should be stated as such: Antas does not attempt the breadth of a multi-hazard information platform, and would lose that comparison. It contributes one measurement those platforms do not take, and one decision they therefore cannot support.",
+  ),
 
   h2("1.4 Functionality Comparison"),
   body(
-    "The table below compares Antas with the sources a Metro Manila resident currently relies on during a flood.",
+    "The table compares Antas with the sources a Metro Manila resident currently relies on during a flood, and with LyfSaver, the purpose-built platform described in Section 1.2F. LyfSaver is given its own column because it is the only entry that shares this project’s premise, and the rows where it is the stronger system are marked as such.",
   ),
   table(
-    [2760, 1320, 1320, 1320, 1320, 1320],
+    [2400, 1120, 1120, 1120, 1120, 1320, 1120],
     [
-      ["Function", "PAGASA", "News", "FB groups", "Waze", "Antas"],
-      ["Street-level water depth", "❌", "❌", "△", "❌", "✅"],
-      ["Structured, comparable readings", "✅", "❌", "❌", "✅", "✅"],
-      ["Searchable by location", "❌", "❌", "❌", "✅", "✅"],
-      ["States the age of each reading", "✅", "❌", "❌", "△", "✅"],
-      ["Refuses to show stale data", "❌", "❌", "❌", "❌", "✅"],
-      ["Usable with no account", "✅", "✅", "❌", "❌", "✅"],
-      ["Works with no connection", "❌", "❌", "❌", "❌", "✅"],
-      ["Filipino-first interface", "△", "✅", "✅", "❌", "✅"],
-      ["Confirmation that a report still holds", "❌", "❌", "△", "✅", "✅"],
-      ["Triage queue for barangay desks", "❌", "❌", "❌", "❌", "✅"],
-      ["States plainly that it cannot dispatch", "❌", "❌", "❌", "❌", "✅"],
+      ["Function", "PAGASA", "News", "FB groups", "Waze", "LyfSaver", "Antas"],
+      ["Street-level incident reports", "❌", "❌", "△", "✅", "✅", "✅"],
+      ["Graded water depth, not just presence", "❌", "❌", "△", "❌", "❌", "✅"],
+      ["Structured, comparable readings", "✅", "❌", "❌", "△", "△", "✅"],
+      ["Road passability in MMDA categories", "❌", "△", "❌", "△", "❌", "✅"],
+      ["States the age of each reading", "✅", "❌", "❌", "△", "△", "✅"],
+      ["Refuses to show stale data", "❌", "❌", "❌", "❌", "❌", "✅"],
+      ["Confirmation that a report still holds", "❌", "❌", "△", "✅", "△", "✅"],
+      ["Works with no connection", "❌", "❌", "❌", "❌", "△", "✅"],
+      ["Filipino-first interface", "△", "✅", "✅", "△", "✅", "✅"],
+      ["Withholds a person’s emergency from the public map", "—", "❌", "❌", "—", "❌", "✅"],
+      ["States plainly that it cannot dispatch", "❌", "❌", "❌", "❌", "❌", "✅"],
+      ["Multi-hazard coverage beyond flood", "△", "✅", "✅", "△", "✅", "✅"],
+      ["Scientific hazard and risk layers", "✅", "❌", "❌", "❌", "✅", "❌"],
+      ["Verified alerts from an institution", "✅", "✅", "❌", "❌", "✅", "❌"],
+      ["Photographs and video with a report", "❌", "✅", "✅", "△", "✅", "△"],
+      ["Responder training programme", "✅", "❌", "❌", "❌", "✅", "❌"],
+      ["Deployed with a city government", "✅", "—", "❌", "—", "✅", "❌"],
     ],
   ),
-  note("Legend: ✅ provided, △ partial or incidental, ❌ not provided."),
+  note("Legend: ✅ provided, △ partial or incidental, ❌ not provided, — not applicable."),
+  note(
+    "The last five rows are the ones LyfSaver wins, and they are included deliberately. A comparison table in which the author’s own system takes every row is an advertisement rather than an assessment. LyfSaver carries UP-NOAH hazard modelling, institutional verification, a training pipeline and a live deployment with the Quezon City government; this project has none of those and is not attempting them. Photographs are marked partial for Antas because a photograph may be attached to a report but video cannot, and because photographs of accident and medical incidents are withheld from the public map by the same rule that withholds their location.",
+  ),
+  note(
+    "Three cells warrant a note. Public Facebook groups are readable without an account and private ones are not, so the account row of the earlier draft was partial rather than absent for that column. Waze hazard reports are a fixed set of named categories rather than graded readings, which is why its structured-readings cell is partial. LyfSaver’s offline behaviour is marked partial rather than absent because it is available as an installable mobile application, which implies some local caching, but no published statement of its offline guarantees was found; the cell records what could be verified, not what is likely.",
+  ),
 
   h2("1.5 Target Audience and Core User Personas"),
   body(
@@ -450,14 +627,14 @@ const content = [
   ),
 
   h2("2.2 Functional Requirements (Feature Set)"),
-  body("The application is structured around seven interactive features."),
+  body("The application is structured around eight interactive features."),
   numbered(
     1,
     "**Depth Map.** The default screen. Reports are drawn as pins coloured along a five-step depth ramp, clustered when they overlap. A cluster takes the depth of its deepest member rather than an average, so eleven ankle-deep reports cannot hide one above-head report behind a reassuring colour.",
   ),
   numbered(
     2,
-    "**Report Flow.** A five-level gauge labelled by body part, with an optional photograph and an automatic GPS accuracy check. Where the fix is imprecise the user is warned and asked to confirm, because a report placed on the wrong street is worse than no report.",
+    "**Report Flow.** A five-level gauge labelled by body part, with an optional photograph and an automatic GPS accuracy check. Where the fix is imprecise the user is warned and asked to confirm, because a report placed on the wrong street is worse than no report. The photograph is taken through an in-page viewfinder rather than chosen from the device’s files: a picker offers the gallery beside the camera, which places an image downloaded from anywhere one tap away from a report about a specific street.",
   ),
   numbered(
     3,
@@ -469,7 +646,7 @@ const content = [
   ),
   numbered(
     5,
-    "**Moderator Console.** A triage queue scoped to a barangay, showing each signal's trust score, its supporting evidence, a call button, and directions. Every opening of a signal is recorded.",
+    "**Moderator Console.** Two triage queues on one screen, both scoped to a barangay. The emergency queue shows each signal’s trust score, its supporting evidence, a call button, and directions. The report queue, described in 2.6, carries the depth readings themselves. Each tab shows its own count, so a backlog building behind the queue in view is visible without going to look for it, and every opening of either kind of row is recorded.",
   ),
   numbered(
     6,
@@ -479,6 +656,10 @@ const content = [
     7,
     "**Language Toggle.** The whole interface in Filipino or English, with no partial translation, resolved on the server so no screen is ever briefly in the wrong language.",
   ),
+  numbered(
+    8,
+    "**Report Dashboard.** The second queue in the console, listing submitted depth readings in priority order with the reporter’s contact number available on the report a moderator opens. Added in response to the review described in 2.6.",
+  ),
 
   h2("2.3 System Architecture"),
   body(
@@ -486,7 +667,7 @@ const content = [
   ),
   figure(1, "System architecture. Every path to data passes through Row Level Security."),
   body(
-    "The system comprises nine tables across twenty-six migrations, and seventeen database functions. Security is enforced in PostgreSQL rather than in application code: a moderator's barangay scope, the confidentiality of a reporter's phone number, and the visibility of emergency photographs are all database predicates, so no route can bypass them by accident, including a route added later by somebody who has not read this report.",
+    "The system comprises ten tables across twenty-seven migrations, and twenty-two database functions. Security is enforced in PostgreSQL rather than in application code: a moderator's barangay scope, the confidentiality of a reporter's phone number, and the visibility of emergency photographs are all database predicates, so no route can bypass them by accident, including a route added later by somebody who has not read this report.",
   ),
   figure(
     2,
@@ -515,6 +696,63 @@ const content = [
   ),
   body(
     "The user flow is Map, then Report Detail, then Freshness Answer, with the tab bar branching to Guide, Report, Me and Tulong. The map is the default screen because the product's premise is a question about a place. Reporting is a raised centre action rather than a peer tab, because it is the single contribution the system asks of its users.",
+  ),
+
+  h2("2.6 Response to Review Recommendations"),
+  body(
+    "The working system was reviewed by Mr. Peralta, who returned five recommendations. Four are implemented and described in this report as built behaviour; the fifth is adopted as scope and is deliberately not claimed as working software. They are separated here because a report that describes intentions in the present tense is not a report a reader can check.",
+  ),
+  table(
+    [3400, 1500, 4460],
+    [
+      ["Recommendation", "Status", "How it was addressed"],
+      [
+        "Expand the scope beyond flood to emergency, fire, earthquake and accidents",
+        "Adopted as scope",
+        "Not built. The staging argument and what the change requires are set out below.",
+      ],
+      [
+        "Create a dashboard for the admin to monitor the submitted reports",
+        "Implemented",
+        "A second queue in the moderator console, scoped to a barangay by the same database predicate as the emergency queue.",
+      ],
+      [
+        "Organise the reports and categorise them to identify priorities",
+        "Implemented",
+        "Three priority bands computed in the database from severity and age, with contested reports ordered above all of them.",
+      ],
+      [
+        "Use the built-in camera to capture instead of uploading pictures",
+        "Implemented",
+        "The report screen now uses the same in-page viewfinder the emergency screen has always used.",
+      ],
+      [
+        "Collect additional data such as a contact number, to contact the reporter",
+        "Implemented",
+        "The column and the field already existed for emergencies; the number is now reachable from a depth report as well.",
+      ],
+    ],
+  ),
+  body(
+    "**Priority is a stated rule, not a score.** A report is urgent when it is chest-deep or deeper and less than six hours old, watch when it is waist-deep and fresh or deep but older, and routine otherwise. Six hours is not a new threshold: it is the same age at which the map already refuses to draw a cached reading, on the argument that floodwater moves in far less time than that. Contested readings sort above every band regardless of depth, because a contested report is waiting on a person rather than on the water.",
+  ),
+  body(
+    "The deliberate omission is a trust score. Emergency signals carry one because they are weighed against rainfall, elevation and reporter history before a human sees them; a depth reading has no comparable evidence behind it, and a number computed from severity and age alone would present an ordering rule as an assessment. The bands are shown as words for the same reason the console never shows a bare score: a moderator can argue with a sentence.",
+  ),
+  body(
+    "**The contact number was already collected, and the recommendation identified where it was missing.** A reporter’s number has been stored since the emergency work, constrained to a single dialable form, and exposed only through the function that serves a moderator who may act on that signal. What did not exist was any path from a depth report to the person who filed it. That path now exists on the same terms: the number is absent from the queue listing and present on the report a moderator opens, and every opening is recorded, because the record of who saw a number is also the record of who could have called it.",
+  ),
+  body(
+    "One limitation is restated rather than resolved: these numbers are unverified. Verification means sending a code by SMS, which requires a paid provider this project does not have, so the console labels the number as what the reporter typed rather than as a checked fact.",
+  ),
+  body(
+    "**On expanding beyond flood.** The recommendation is accepted as the right direction and is not implemented, and the distance between those two statements is the substance of this response. The system’s data model is not merely flood-themed; it is flood-shaped. Severity is a five-step scale named for where water reaches on a body, the map colours and clusters pins along that scale and takes a cluster’s deepest member so that shallow readings cannot average away a deep one, and the trust score weighs rainfall and elevation. None of that survives contact with a fire. A body-part gauge cannot describe a structural collapse, and rainfall is not evidence about an earthquake.",
+  ),
+  body(
+    "A serious multi-hazard version therefore needs a hazard type carried on every report and signal, a separate severity vocabulary for each hazard, a scoring path per hazard or an honest refusal to score the ones without evidence to weigh, revised map semantics for hazards that are not measured in depth, and every new string written in both Filipino and English, since the product fails its build rather than falling back when a translation is missing. Attempting it inside the remaining scope of this course would produce a system that named four hazards and handled one of them properly, which is a worse answer to the recommendation than a working single-hazard system and a clear statement of what the extension costs.",
+  ),
+  body(
+    "There is also a naming consequence worth recording: **antas** means level, and the product is named for the measurement it takes. A multi-hazard system would need a different organising noun, not merely additional categories.",
   ),
 
   pageBreak(),
@@ -652,7 +890,7 @@ const content = [
   ),
   bullet("**Verified-authority badges.** These impersonate an institution the project has no relationship with."),
   bullet(
-    "**A Ligtas, or safe, label on ankle-deep water.** No flood depth is safe; ankle-deep water hides open drains and moves fast.",
+    "**A Ligtas, or safe, label on ankle-deep water.** No flood depth is safe to declare. Six inches of moving water is enough to knock an adult off their feet, and floodwater can be electrically charged by downed or underground power lines (National Weather Service, n.d.).",
   ),
   bullet(
     "**A satellite basemap with filled heat zones.** This claims continuous area knowledge derived from sparse point reports.",
@@ -694,36 +932,86 @@ const content = [
   ),
 
   h2("Software Interface"),
-  body("**Prototype Link:** [PASTE YOUR GOOGLE STITCH SHARE LINK HERE]"),
+  body("**Prototype Link:** https://stitch.withgoogle.com/projects/7108188453245133559"),
   body("**Live Application:** https://antas-one.vercel.app"),
   body("**Source Repository:** https://github.com/blckltsdmsnw/antas"),
 
   h2("References"),
-  note(
-    "APA 7th edition, alphabetical by author surname. Every entry must be dated 2022 or later, and every entry must correspond to a citation used in the text. Delete any slot you do not fill. Author names, years, volume and issue numbers are left blank deliberately rather than guessed: a reference invented to complete a template is checkable, and is the single worst error this paper could contain.",
-  ),
   h3("Journal articles and conference papers"),
-  body("____________ (20__). ____________. ____________, __(_), ___-___."),
-  body("____________ (20__). ____________. ____________, __(_), ___-___."),
-  body("____________ (20__). ____________. ____________, __(_), ___-___."),
-  body("____________ (20__). ____________. ____________, __(_), ___-___."),
-  note(
-    "Fill from the search briefs in Section 1.2. Format: Surname, A. A., & Surname, B. B. (Year). Title of the article in sentence case. Journal Name in Title Case, volume(issue), page-page. https://doi.org/...",
+  body(
+    "Ashista, H., Comas, A. S., Selby, T., Essar, M. Y., Alawa, J., Al-Hajj, S., & Nelson, E. (2026). An offline-first electronic health record for vulnerable populations: A mixed-methods feasibility study. *PLOS Digital Health, 5*(2), Article e0001204. https://doi.org/10.1371/journal.pdig.0001204",
   ),
+  body(
+    "Chow, T. E., Chien, J., & Meitzen, K. (2023). Validating the quality of volunteered geographic information (VGI) for flood modeling of Hurricane Harvey in Houston, Texas. *Hydrology, 10*(5), Article 113. https://doi.org/10.3390/hydrology10050113",
+  ),
+  body(
+    "Cicek, D., & Kantarci, B. (2023). Use of mobile crowdsensing in disaster management: A systematic review, challenges, and open issues. *Sensors, 23*(3), Article 1699. https://doi.org/10.3390/s23031699",
+  ),
+  body(
+    "Esparza, M., Farahmand, H., Liu, X., & Mostafav, A. (2024). Enhancing inundation monitoring of road networks using crowdsourced flood reports. *Urban Informatics, 3*(1), Article 25. https://doi.org/10.1007/s44212-024-00055-7",
+  ),
+  body(
+    "Feng, Y., Brenner, C., & Sester, M. (2020). Flood severity mapping from volunteered geographic information by interpreting water level from images containing people: A case study of Hurricane Harvey. *ISPRS Journal of Photogrammetry and Remote Sensing, 169*, 301-319. https://doi.org/10.1016/j.isprsjprs.2020.09.011",
+  ),
+  body(
+    "Gheyas, I., Asghar, M. R., Schneider, S., & Woodward, A. (2025). *Establishing trust in crowdsourced data* (arXiv:2511.03016). arXiv. https://arxiv.org/abs/2511.03016",
+  ),
+  body(
+    "Hilberts, S., Govers, M., Petelos, E., & Evers, S. (2025). The impact of misinformation on social media in the context of natural disasters: Narrative review. *JMIR Infodemiology, 5*, Article e70413. https://doi.org/10.2196/70413",
+  ),
+  body(
+    "Kemp, S. (2025). *Digital 2026: The Philippines*. DataReportal. Retrieved August 15, 2026, from https://datareportal.com/reports/digital-2026-philippines",
+  ),
+  body(
+    "Knysh, A., & Pohrebniak, T. (2026). Mental health app crisis support assessment framework: Development and pilot testing. *Frontiers in Digital Health, 8*, Article 1814547. https://doi.org/10.3389/fdgth.2026.1814547",
+  ),
+  body(
+    "Liu, B., Wang, Y., & Li, Y. (2024). The effect of time display format on cognitive performance of integrated meteorological radar information. *Behavioral Sciences, 14*(9), Article 847. https://doi.org/10.3390/bs14090847",
+  ),
+  body(
+    "Lowrie, C., Kruczkiewicz, A., McClain, S. N., Nielsen, M., & Mason, S. J. (2022). Evaluating the usefulness of VGI from Waze for the reporting of flash floods. *Scientific Reports, 12*(1), Article 5268. https://doi.org/10.1038/s41598-022-08751-7",
+  ),
+  body(
+    "Mozilla. (2025). *Offline and background operation*. MDN Web Docs. Retrieved August 15, 2026, from https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Offline_and_background_operation",
+  ),
+  body(
+    "National Weather Service. (n.d.). *During a flood*. National Oceanic and Atmospheric Administration. Retrieved August 15, 2026, from https://www.weather.gov/safety/flood-during",
+  ),
+  body(
+    "Nielsen, A. B., Landwehr, D., Nicolai, J., Patil, T., & Raju, E. (2024). Social media and crowdsourcing in disaster risk management: Trends, gaps, and insights from the current state of research. *Risk, Hazards & Crisis in Public Policy, 15*(2), 104-127. https://doi.org/10.1002/rhc3.12297",
+  ),
+  body(
+    "Safaei-Moghadam, A., Tarboton, D., & Minsker, B. (2023). Estimating the likelihood of roadway pluvial flood based on crowdsourced traffic data and depression-based DEM analysis. *Natural Hazards and Earth System Sciences, 23*(1), 1-19. https://doi.org/10.5194/nhess-23-1-2023",
+  ),
+  body(
+    "World Bank. (2020). *Concept project information document (PID): Pasig-Marikina River Basin Flood Management Project (P171897)* (Report No. PIDC27692). World Bank Group. https://documents.worldbank.org/curated/en/851731580982488098/pdf/Concept-Project-Information-Document-PID-Pasig-Marikina-River-Basin-Flood-Management-Project-P171897.pdf",
+  ),
+  body(
+    "World Wide Web Consortium. (2024). *Web Content Accessibility Guidelines (WCAG) 2.2* (W3C Recommendation). Retrieved August 15, 2026, from https://www.w3.org/TR/WCAG22/",
+  ),
+
   h3("Government and institutional sources"),
   body(
-    "National Disaster Risk Reduction and Management Council. (20__). ____________. Retrieved ____________, from ____________",
+    "National Disaster Risk Reduction and Management Council. (2024). *SitRep no. 46 for the combined effects of Southwest Monsoon and TCs Butchoy and Carina (2024)*. Retrieved August 15, 2026, from https://ndrrmc.gov.ph/attachments/article/4259/SitRep_No_46_for_the_Combined_Effects_of_Southwest_Monsoon_and_TCs_BUTCHOY_and_CARINA_2024.pdf",
   ),
   body(
-    "Philippine Atmospheric, Geophysical and Astronomical Services Administration. (20__). ____________. Retrieved ____________, from ____________",
+    "Philippine Atmospheric, Geophysical and Astronomical Services Administration. (n.d.). *Flood information*. Retrieved August 15, 2026, from https://www.pagasa.dost.gov.ph/flood",
   ),
-  note(
-    "These two are the safest entries to complete. Both are primary sources, both are inherently within the date window, and both are trivially verifiable by whoever marks this. Format for a web document: Organisation. (Year). Title of the document in sentence case. Retrieved Month Day, Year, from URL",
+  body(
+    "Philippine Atmospheric, Geophysical and Astronomical Services Administration. (n.d.). *Legend*. Retrieved August 15, 2026, from https://pagasa.dost.gov.ph/learnings/legend",
   ),
   h3("Platform and industry sources"),
-  body("____________ (20__). ____________. ____________"),
+  body(
+    "Magbanua, S. A. (2026, August 26). QC trains city disaster responders through LyfSaver. *Daily Tribune*. https://tribune.net.ph/2026/08/26/qc-trains-city-disaster-responders-through-lyfsaver",
+  ),
+  body(
+    "Malasig, J. (2024, September 4). Tire deep or gutter deep? MMDA’s new system assigns acronyms to flood levels. *Interaksyon*. https://interaksyon.philstar.com/trends-spotlights/2024/09/04/282826/mmda-flood-gauge-system-travelers-motorists/",
+  ),
+  body(
+    "Roque, N. (2024, August 24). Dingdong Dantes’ foundation helps launch LyfSaver, an app to foster bayanihan during disasters. *GMA Integrated News*. https://www.gmanetwork.com/news/lifestyle/content/918113/dingdong-dantes-foundation-helps-launch-lyfsaver-an-app-to-foster-bayanihan-during-disasters/story/",
+  ),
   note(
-    "Optional. If you cite PetaBencana.id, cite a 2022-or-later publication or evaluation of it rather than the platform's founding material, which falls outside the window.",
+    "No peer-reviewed study of PetaBencana.id published in 2022 or later could be located; the available literature on that platform predates the date window applied here. The three sources above are news reporting rather than peer-reviewed work, and are cited for what news reporting can establish — that a system exists, when it launched, who built it, and that a city government has adopted it — not for evaluative claims about its performance.",
   ),
 ].join("");
 
@@ -741,6 +1029,7 @@ const contentTypes =
   `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
   `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>` +
   `<Default Extension="xml" ContentType="application/xml"/>` +
+  `<Default Extension="png" ContentType="image/png"/>` +
   `<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>` +
   `</Types>`;
 
@@ -748,6 +1037,19 @@ const rels =
   `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
   `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
   `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>` +
+  `</Relationships>`;
+
+// document.xml needs its own relationship part; the r:embed on each image
+// resolves through this, not through the package-level _rels/.rels.
+const documentRels =
+  `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+  `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+  figures
+    .map(
+      (f) =>
+        `<Relationship Id="${f.rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/fig${f.n}.png"/>`,
+    )
+    .join("") +
   `</Relationships>`;
 
 rmSync(BUILD, { recursive: true, force: true });
@@ -759,9 +1061,14 @@ const parts = [
   ["[Content_Types].xml", contentTypes],
   ["_rels/.rels", rels],
   ["word/document.xml", documentXml],
+  ["word/_rels/document.xml.rels", documentRels],
 ];
 
 parts.forEach(([name, xml], i) => writeFileSync(join(BUILD, `part${i}`), xml));
+
+// Images are copied in as bytes, not text. Writing a PNG through a StreamWriter
+// would re-encode it and produce a file Word silently shows as a broken image.
+const binaryParts = figures.map((f) => [`word/media/fig${f.n}.png`, f.file]);
 
 const outPath = join(OUT_DIR, `${OUT_NAME}.docx`);
 
@@ -787,6 +1094,15 @@ const ps = [
       `$w.Write([System.IO.File]::ReadAllText('${src}')); $w.Dispose()`
     );
   }),
+  ...binaryParts.map(([name, src]) => {
+    const s = src.replace(/'/g, "''");
+    return (
+      `$e = $zip.CreateEntry('${name}'); ` +
+      `$st = $e.Open(); ` +
+      `$bytes = [System.IO.File]::ReadAllBytes('${s}'); ` +
+      `$st.Write($bytes, 0, $bytes.Length); $st.Dispose()`
+    );
+  }),
   "$zip.Dispose()",
 ].join("; ");
 
@@ -795,4 +1111,9 @@ execFileSync("powershell", ["-NoProfile", "-Command", ps], { stdio: "inherit" })
 rmSync(BUILD, { recursive: true, force: true });
 console.log(`Wrote ${outPath}`);
 console.log("Times New Roman 12pt - Letter - 1in margins - no first-line indent");
-console.log("Four figure placeholders remain; paste the rendered diagrams in.");
+console.log(
+  `Four figures embedded from figures/*.png at ${(PRINT_WIDTH_EMU / 914400).toFixed(2)}in wide:`,
+);
+for (const f of figures) {
+  console.log(`  Figure ${f.n}: ${(f.cy / 914400).toFixed(2)}in tall`);
+}
