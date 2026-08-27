@@ -33,9 +33,14 @@ export async function submitReport(input: ReportInput): Promise<SubmitResult> {
     return { ok: false, errors: ["not_signed_in"] };
   }
 
-  const { error } = await supabase
-    .from("depth_reports")
-    .insert(buildReportRow(userData.user.id, { ...input, depth: validation.depth }));
+  const { error } = await supabase.from("depth_reports").insert(
+    buildReportRow(userData.user.id, {
+      ...input,
+      hazard: validation.hazard,
+      severity: validation.severity,
+      depth: validation.depth,
+    }),
+  );
 
   if (error) {
     /**

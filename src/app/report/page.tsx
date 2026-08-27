@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { DepthSlider } from "@/components/DepthSlider";
 import { PhotoCapture } from "@/components/PhotoCapture";
+import { HazardPicker } from "@/components/HazardPicker";
 import { submitReport, type SubmitErrorCode } from "@/app/actions/submit-report";
 import {
   formatAccuracy,
@@ -12,6 +13,8 @@ import {
 import { reportPhotoPath, REPORT_PHOTO_BUCKET } from "@/lib/reports/photo";
 import { createClient } from "@/lib/supabase/client";
 import type { DepthLevel } from "@/lib/depth/scale";
+import { SEVERITIES, isPublicHazard, type HazardType, type Severity } from "@/lib/hazard/types";
+import { severityWord } from "@/lib/hazard/name";
 import { useCopy } from "@/lib/i18n/context";
 import type { Copy } from "@/lib/i18n/strings";
 
@@ -28,7 +31,10 @@ type PageErrorCode = SubmitErrorCode | "no_location" | "upload_failed";
  * help - and that sentence has to survive into every language.
  */
 const ERROR_KEY: Record<PageErrorCode, keyof Copy["screens"]> = {
+  missing_hazard: "errMissingHazard",
   invalid_depth: "errInvalidDepth",
+  depth_not_allowed: "errDepthNotAllowed",
+  missing_severity: "errMissingSeverity",
   invalid_coordinates: "errInvalidCoordinates",
   outside_pilot_area: "errOutsidePilotArea",
   not_signed_in: "errNotSignedIn",
@@ -47,7 +53,9 @@ interface Fix {
 
 export default function ReportPage() {
   const copy = useCopy();
+  const [hazard, setHazard] = useState<HazardType | null>(null);
   const [depth, setDepth] = useState<DepthLevel>("knee");
+  const [severity, setSeverity] = useState<Severity | null>(null);
   const [status, setStatus] = useState<
     "idle" | "locating" | "confirming" | "sending" | "sent"
   >("idle");
@@ -94,7 +102,9 @@ export default function ReportPage() {
     }
 
     const result = await submitReport({
-      depth,
+      hazard,
+      severity,
+      depth: hazard === "flood" ? depth : "",
       lat: from.lat,
       lon: from.lon,
       gpsAccuracyM: from.accuracyM,
@@ -150,7 +160,11 @@ export default function ReportPage() {
       <main className="task-page">
         <div className="done">
           <h1 className="done-title">{copy.screens.reportDoneTitle}</h1>
-          <p className="done-body">{copy.screens.reportDoneBody}</p>
+          <p className="done-body">
+            {hazard !== null && !isPublicHazard(hazard)
+              ? copy.screens.reportDoneNotOnMap
+              : copy.screens.reportDoneBody}
+          </p>
         </div>
         <p style={{ marginTop: 24 }}>
           <Link href="/" className="quiet-link">
@@ -197,14 +211,55 @@ export default function ReportPage() {
     );
   }
 
+  if (hazard === null) {
+    return (
+      <main className="task-page">
+        <HazardPicker onPick={setHazard} />
+      </main>
+    );
+  }
+
   const isBusy = status === "locating" || status === "sending";
+  const isReportComplete = hazard === "flood" || severity !== null;
 
   return (
     <main className="task-page">
       <h1 className="task-title">{copy.screens.reportTitle}</h1>
       <p className="task-lede">{copy.screens.reportLede}</p>
 
-      <DepthSlider value={depth} onChange={setDepth} />
+      <button
+        type="button"
+        className="btn btn-quiet"
+        onClick={() => {
+          setHazard(null);
+          setSeverity(null);
+        }}
+      >
+        {copy.hazard.back}
+      </button>
+
+      {hazard === "flood" ? (
+        <DepthSlider value={depth} onChange={setDepth} />
+      ) : (
+        <>
+          <h2 className="task-title">{copy.hazard.severityPrompt}</h2>
+          {SEVERITIES.map((s) => (
+            <button
+              key={s}
+              type="button"
+              className="btn severity-choice"
+              aria-pressed={severity === s}
+              onClick={() => setSeverity(s)}
+            >
+              {severityWord(hazard, s, copy.hazard)}
+            </button>
+          ))}
+        </>
+      )}
+
+      {(hazard === "medical" || hazard === "accident") && (
+        <p className="notice">{copy.hazard.tellBarangay}</p>
+      )}
 
       {/* Optional, and second - the slider is the report. A photo makes it
           checkable by someone who was not there, which is worth a lot, but
@@ -250,7 +305,11 @@ export default function ReportPage() {
       )}
 
       <div style={{ marginTop: 28 }}>
-        <button className="btn" onClick={handleSubmit} disabled={isBusy}>
+        <button
+          className="btn"
+          onClick={handleSubmit}
+          disabled={isBusy || !isReportComplete}
+        >
           {status === "locating"
             ? copy.screens.reportLocating
             : status === "sending"
