@@ -83,7 +83,11 @@ function colorForDepth(depth: DepthLevel): string {
 const CARTO_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY;
 
 function cartoTiles(variant: string): string[] {
-  const key = CARTO_KEY ? `?api_key=${encodeURIComponent(CARTO_KEY)}` : "";
+  // `key`, not `api_key`. CARTO ignores an unrecognised parameter and serves
+  // the watermarked tile anyway - byte-identical to the keyless response - so
+  // the wrong name fails as a map that looks unconfigured rather than as an
+  // error. Checked against a real tile: 116607 bytes keyed, 104958 unkeyed.
+  const key = CARTO_KEY ? `?key=${encodeURIComponent(CARTO_KEY)}` : "";
   return ["a", "b", "c"].map(
     (host) =>
       `https://${host}.basemaps.cartocdn.com/${variant}/{z}/{x}/{y}@2x.png${key}`,
