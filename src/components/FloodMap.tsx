@@ -7,10 +7,14 @@ import {
   Marker,
   type MapMouseEvent,
 } from "maplibre-gl";
+import { renderToStaticMarkup } from "react-dom/server";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { type DepthLevel } from "@/lib/depth/scale";
-import { DEPTH_HEX } from "@/lib/depth/presentation";
+import { DEPTH_HEX, SEVERITY_HEX } from "@/lib/depth/presentation";
 import { depthName } from "@/lib/depth/name";
+import type { HazardType, Severity } from "@/lib/hazard/types";
+import { hazardName, severityWord } from "@/lib/hazard/name";
+import { HazardIcon } from "@/components/HazardIcon";
 import { useCopy } from "@/lib/i18n/context";
 import type { Copy } from "@/lib/i18n/strings";
 import { clusterByProximity, CLUSTER_RADIUS_PX } from "@/lib/map/cluster";
@@ -22,7 +26,11 @@ export interface MapReport {
   id: string;
   lat: number;
   lon: number;
-  depth: DepthLevel;
+  hazard: HazardType;
+  severity: Severity;
+  /** Flood's exact body reading. Null for every other hazard - see
+   *  `severityWord`, which carries their words instead. */
+  depth: DepthLevel | null;
   photoPath: string | null;
   reportedAt: string;
 }
@@ -34,6 +42,32 @@ const FALLBACK_COLOR = DEPTH_HEX.above_head;
 
 function colorForDepth(depth: DepthLevel): string {
   return DEPTH_HEX[depth] ?? FALLBACK_COLOR;
+}
+
+/**
+ * A pin or cluster's colour: flood's exact depth colour where every report
+ * behind it is flood, and the shared three-step severity colour otherwise.
+ * Never a colour keyed by which hazard it is - the icon already says that,
+ * and colouring pins by hazard too would compete with the one thing colour
+ * is for here: how bad.
+ */
+function colorForSeverity(depth: DepthLevel | null, severity: Severity): string {
+  if (depth !== null) return colorForDepth(depth);
+  return SEVERITY_HEX[severity] ?? FALLBACK_COLOR;
+}
+
+/**
+ * The word beside a pin's aria-label and inside a cluster count: flood's
+ * exact reading, or the hazard plus how bad for everything else.
+ */
+function worstLabel(
+  hazard: HazardType,
+  depth: DepthLevel | null,
+  severity: Severity,
+  copy: Copy,
+): string {
+  if (depth !== null) return depthName(depth, copy.map);
+  return `${hazardName(hazard, copy.hazard)} · ${severityWord(hazard, severity, copy.hazard)}`;
 }
 
 /**
@@ -259,18 +293,30 @@ const FOCUS_ZOOM = 14.5;
  * itself - the previous ring gap was too subtle to decode, so nobody discovered
  * which pins were worth tapping.
  */
+function hazardBadge(hazard: HazardType, title: string): HTMLSpanElement {
+  const badge = document.createElement("span");
+  badge.className = "pin-hazard";
+  // `HazardIcon` is a React component; these builders hand MapLibre a plain
+  // DOM node, so its markup is rendered to a string here rather than mounted -
+  // there is no root to mount into, and the icon never changes once drawn.
+  badge.innerHTML = renderToStaticMarkup(
+    <HazardIcon hazard={hazard} size="sm" title={title} />,
+  );
+  return badge;
+}
+
 function singlePinElement(
   report: MapReport,
   isSelected: boolean,
   // Passed in rather than read from context: these builders make DOM nodes
   // outside React, for MapLibre to own, so no hook can reach them.
-  copy: Copy["map"],
+  copy: Copy,
 ): HTMLButtonElement {
   const photo = reportPhotoUrl(report.photoPath);
   const el = document.createElement("button");
   el.type = "button";
   el.className = `pin${photo ? " pin--photo" : ""}${isSelected ? " pin--selected" : ""}`;
-  el.style.setProperty("--pin-color", colorForDepth(report.depth));
+  el.style.setProperty("--pin-color", colorForSeverity(report.depth, report.severity));
 
   // Age as opacity is set on the Marker, NOT here - see `draw`. MapLibre's
   // Marker writes `style.opacity` onto whatever element it is given, on every
@@ -292,9 +338,17 @@ function singlePinElement(
     el.appendChild(img);
   }
 
+  // The icon says WHAT the pin is - colour alone stopped being able to say
+  // that the moment a pin could be a fire instead of a flood. No word sits
+  // beside it here, so it carries its own title.
+  el.appendChild(hazardBadge(report.hazard, hazardName(report.hazard, copy.hazard)));
+
   el.setAttribute(
     "aria-label",
-    copy.pinLabel(depthName(report.depth, copy), photo !== null),
+    copy.map.pinLabel(
+      worstLabel(report.hazard, report.depth, report.severity, copy),
+      photo !== null,
+    ),
   );
   return el;
 }
@@ -302,23 +356,32 @@ function singlePinElement(
 /**
  * A group of pins too close together to tap apart.
  *
- * Takes the colour of its deepest member, never an average - see
+ * Takes the colour of its worst member, never an average - see
  * `clusterByProximity`. The count is rendered as text so the information does
  * not live in size alone.
  */
 function clusterElement(
-  depth: DepthLevel,
+  hazard: HazardType,
+  depth: DepthLevel | null,
+  severity: Severity,
   count: number,
-  copy: Copy["map"],
+  copy: Copy,
 ): HTMLButtonElement {
   const el = document.createElement("button");
   el.type = "button";
   el.className = "pin-cluster";
-  el.style.setProperty("--pin-color", colorForDepth(depth));
-  el.textContent = String(count);
+  el.style.setProperty("--pin-color", colorForSeverity(depth, severity));
+
+  el.appendChild(hazardBadge(hazard, hazardName(hazard, copy.hazard)));
+
+  const countEl = document.createElement("span");
+  countEl.className = "pin-cluster-count";
+  countEl.textContent = String(count);
+  el.appendChild(countEl);
+
   el.setAttribute(
     "aria-label",
-    copy.clusterLabel(count, depthName(depth, copy)),
+    copy.map.clusterLabel(count, worstLabel(hazard, depth, severity, copy)),
   );
   return el;
 }
@@ -492,7 +555,15 @@ export function FloodMap({
 
       const projected = reports.map((report) => {
         const point = instance!.project([report.lon, report.lat]);
-        return { id: report.id, x: point.x, y: point.y, depth: report.depth, report };
+        return {
+          id: report.id,
+          x: point.x,
+          y: point.y,
+          hazard: report.hazard,
+          severity: report.severity,
+          depth: report.depth,
+          report,
+        };
       });
 
       const clusters = clusterByProximity(projected, CLUSTER_RADIUS_PX);
@@ -505,8 +576,14 @@ export function FloodMap({
        * margin. So one report tints its corner and eleven spread across a
        * barangay tint the barangay - the mark grows because the evidence does,
        * not because the zoom did.
+       *
+       * Only drawn where `cluster.depth` is not null - a cluster carries a
+       * depth only when every member is flood (see `clusterByProximity`), and a
+       * water stain under a fire would be a lie.
        */
-      const areas = clusters.map((cluster) => {
+      const areas = clusters.flatMap((cluster) => {
+        if (cluster.depth === null) return [];
+
         const spread = Math.max(
           ...cluster.members.map((m) => Math.hypot(m.x - cluster.x, m.y - cluster.y)),
         );
@@ -515,22 +592,30 @@ export function FloodMap({
           Math.max(AREA_MIN_PX, (spread + AREA_MARGIN_PX) * 2),
         );
 
-        return new Marker({
-          element: areaElement(cluster.depth, diameter),
-          // Set here for the same reason as the pins: MapLibre overwrites
-          // `style.opacity` on the element, so a CSS value never survives.
-          opacity: String(AREA_OPACITY[theme]),
-        })
-          .setLngLat(instance!.unproject([cluster.x, cluster.y]))
-          .addTo(instance!);
+        return [
+          new Marker({
+            element: areaElement(cluster.depth, diameter),
+            // Set here for the same reason as the pins: MapLibre overwrites
+            // `style.opacity` on the element, so a CSS value never survives.
+            opacity: String(AREA_OPACITY[theme]),
+          })
+            .setLngLat(instance!.unproject([cluster.x, cluster.y]))
+            .addTo(instance!),
+        ];
       });
 
       const pins = clusters.map((cluster) => {
         const single = cluster.members.length === 1 ? cluster.members[0].report : null;
 
         const element = single
-          ? singlePinElement(single, single.id === selectedId, copy.map)
-          : clusterElement(cluster.depth, cluster.members.length, copy.map);
+          ? singlePinElement(single, single.id === selectedId, copy)
+          : clusterElement(
+              cluster.hazard,
+              cluster.depth,
+              cluster.severity,
+              cluster.members.length,
+              copy,
+            );
 
         // Without stopPropagation the map's own click handler also fires, so a
         // tap would open the report and then immediately replace it with the

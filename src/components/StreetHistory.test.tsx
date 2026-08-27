@@ -51,6 +51,8 @@ describe("StreetHistory", () => {
     mockRpc([
       {
         id: "1",
+        hazard_type: "flood",
+        severity: 3,
         depth: "chest",
         reported_at: "2026-08-01T00:00:00Z",
         lat: 14.65,
@@ -59,6 +61,8 @@ describe("StreetHistory", () => {
       },
       {
         id: "2",
+        hazard_type: "flood",
+        severity: 3,
         depth: "above_head",
         reported_at: "2026-08-02T00:00:00Z",
         lat: 14.65,
@@ -67,6 +71,8 @@ describe("StreetHistory", () => {
       },
       {
         id: "3",
+        hazard_type: "flood",
+        severity: 1,
         depth: "ankle",
         reported_at: "2026-08-03T00:00:00Z",
         lat: 14.65,
@@ -91,6 +97,8 @@ describe("StreetHistory", () => {
     mockRpc([
       {
         id: "42",
+        hazard_type: "flood",
+        severity: 2,
         depth: "waist",
         reported_at: "2026-08-01T00:00:00Z",
         photo_path: "user-1/1755100000000.jpg",
@@ -107,6 +115,8 @@ describe("StreetHistory", () => {
     // markers share that shape, so a row and a pin open the identical card.
     expect(onSelect).toHaveBeenCalledWith({
       id: "42",
+      hazard: "flood",
+      severity: 2,
       depth: "waist",
       lat: 14.65,
       lon: 121.1,

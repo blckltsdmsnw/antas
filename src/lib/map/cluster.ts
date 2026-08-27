@@ -1,4 +1,6 @@
 import { depthRank, type DepthLevel } from "@/lib/depth/scale";
+import type { HazardType, Severity } from "@/lib/hazard/types";
+import { worstSeverity } from "@/lib/hazard/severity";
 
 /**
  * Screen-space clustering for map pins.
@@ -13,7 +15,9 @@ export interface Clusterable {
   id: string;
   x: number;
   y: number;
-  depth: DepthLevel;
+  hazard: HazardType;
+  severity: Severity;
+  depth: DepthLevel | null;
 }
 
 export interface Cluster<T extends Clusterable = Clusterable> {
@@ -21,8 +25,15 @@ export interface Cluster<T extends Clusterable = Clusterable> {
   key: string;
   x: number;
   y: number;
-  /** The deepest member's level - never an average. See `deepestOf`. */
-  depth: DepthLevel;
+  /** The worst member's severity - never an average. See `worstSeverity`. */
+  severity: Severity;
+  /** The hazard of the member carrying that worst severity. The deterministic
+   *  sort makes the tie stable when more than one member ties for it. */
+  hazard: HazardType;
+  /** The deepest member's level - never an average - but ONLY when every
+   *  member is a flood report. See `deepestOf`. A mixed cluster carries no
+   *  depth at all: a water stain under a fire would be a lie. */
+  depth: DepthLevel | null;
   members: T[];
 }
 
@@ -67,16 +78,26 @@ export function clusterByProximity<T extends Clusterable>(
     }
   }
 
-  return clusters.map((cluster) => ({
-    key: cluster.members
-      .map((member) => member.id)
-      .sort()
-      .join(","),
-    x: cluster.x,
-    y: cluster.y,
-    depth: deepestOf(cluster.members),
-    members: cluster.members,
-  }));
+  return clusters.map((cluster) => {
+    const severity = worstSeverity(cluster.members.map((member) => member.severity));
+    // First member at the worst severity, in the deterministic sorted order
+    // `cluster.members` already carries - so a tie always resolves the same way.
+    const worst = cluster.members.find((member) => member.severity === severity)!;
+    const allFlood = cluster.members.every((member) => member.hazard === "flood");
+
+    return {
+      key: cluster.members
+        .map((member) => member.id)
+        .sort()
+        .join(","),
+      x: cluster.x,
+      y: cluster.y,
+      severity,
+      hazard: worst.hazard,
+      depth: allFlood ? deepestOf(cluster.members) : null,
+      members: cluster.members,
+    };
+  });
 }
 
 function mean(values: number[]): number {
@@ -90,11 +111,17 @@ function mean(values: number[]): number {
  * above-head report would render pale blue, and the map would tell someone a
  * street is passable at the exact moment it is not. Same rule the street
  * history uses for "Pinakamalalim".
+ *
+ * Only ever called once every member is known to be flood, so each member's
+ * depth is guaranteed non-null - the cast below is that guarantee, not an
+ * assumption.
  */
-function deepestOf(members: Clusterable[]): DepthLevel {
-  return members.reduce(
+function deepestOf(members: readonly Clusterable[]): DepthLevel {
+  return members.reduce<DepthLevel>(
     (worst, member) =>
-      depthRank(member.depth) > depthRank(worst) ? member.depth : worst,
-    members[0].depth,
+      member.depth !== null && depthRank(member.depth) > depthRank(worst)
+        ? member.depth
+        : worst,
+    members[0].depth as DepthLevel,
   );
 }

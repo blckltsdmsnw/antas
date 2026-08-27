@@ -16,6 +16,7 @@ export const map = dict(
   {
     legendLabel: "Kulay ng lalim ng tubig",
     legendTitle: "Lalim ng tubig",
+    legendDarkerWorse: "Mas madilim, mas malala.",
 
     depthAnkle: "Bukong-bukong",
     depthKnee: "Tuhod",
@@ -76,6 +77,7 @@ export const map = dict(
   {
     legendLabel: "Water depth colours",
     legendTitle: "Water depth",
+    legendDarkerWorse: "Darker is worse.",
 
     depthAnkle: "Ankle",
     depthKnee: "Knee",

@@ -3,7 +3,7 @@ import { clusterByProximity, CLUSTER_RADIUS_PX } from "./cluster";
 import type { DepthLevel } from "@/lib/depth/scale";
 
 function point(id: string, x: number, y: number, depth: DepthLevel = "knee") {
-  return { id, x, y, depth };
+  return { id, x, y, depth, hazard: "flood" as const, severity: 1 as const };
 }
 
 describe("clusterByProximity", () => {
@@ -109,5 +109,37 @@ describe("clusterByProximity", () => {
 
     expect(clusters[0].key).toBeTruthy();
     expect(typeof clusters[0].key).toBe("string");
+  });
+
+  it("takes the cluster's worst severity, never an average", () => {
+    const [cluster] = clusterByProximity([
+      { id: "a", key: "a", x: 0, y: 0, severity: 1, hazard: "flood", depth: "ankle" },
+      { id: "b", key: "b", x: 2, y: 2, severity: 3, hazard: "fire", depth: null },
+    ]);
+    expect(cluster.severity).toBe(3);
+  });
+
+  it("labels a mixed cluster by its worst member's hazard", () => {
+    const [cluster] = clusterByProximity([
+      { id: "a", key: "a", x: 0, y: 0, severity: 1, hazard: "flood", depth: "ankle" },
+      { id: "b", key: "b", x: 2, y: 2, severity: 3, hazard: "fire", depth: null },
+    ]);
+    expect(cluster.hazard).toBe("fire");
+  });
+
+  it("keeps the exact depth when every member is flood", () => {
+    const [cluster] = clusterByProximity([
+      { id: "a", key: "a", x: 0, y: 0, severity: 1, hazard: "flood", depth: "ankle" },
+      { id: "b", key: "b", x: 2, y: 2, severity: 3, hazard: "flood", depth: "chest" },
+    ]);
+    expect(cluster.depth).toBe("chest");
+  });
+
+  it("has no depth once a non-flood member joins", () => {
+    const [cluster] = clusterByProximity([
+      { id: "a", key: "a", x: 0, y: 0, severity: 3, hazard: "flood", depth: "chest" },
+      { id: "b", key: "b", x: 2, y: 2, severity: 1, hazard: "fire", depth: null },
+    ]);
+    expect(cluster.depth).toBeNull();
   });
 });

@@ -6,8 +6,10 @@ import { PhotoLightbox } from "@/components/PhotoLightbox";
 import { ReportFreshness } from "@/components/ReportFreshness";
 import { ReporterStanding } from "@/components/ReporterStanding";
 import { depthRank, DEPTH_LEVELS } from "@/lib/depth/scale";
-import { DEPTH_VAR } from "@/lib/depth/presentation";
+import { DEPTH_VAR, SEVERITY_VAR } from "@/lib/depth/presentation";
 import { depthName, depthShortName, depthRangeText } from "@/lib/depth/name";
+import { hazardName, severityWord } from "@/lib/hazard/name";
+import { HazardIcon } from "@/components/HazardIcon";
 import { reportPhotoUrl } from "@/lib/reports/photo";
 import { clockTime, relativeTime } from "@/lib/time/relative";
 import { useCopy } from "@/lib/i18n/context";
@@ -37,8 +39,21 @@ export function ReportDetail({ report, onClose }: ReportDetailProps) {
     setZoomed(false);
   }, [report.id]);
 
-  const label = depthName(report.depth, copy.map);
-  const rank = depthRank(report.depth);
+  // Flood shows its exact body reading and keeps the depth meter; every other
+  // hazard shows what it is and how bad, with no meter - there is no scale to
+  // put five steps on.
+  const { depth } = report;
+  const label =
+    depth !== null ? depthName(depth, copy.map) : hazardName(report.hazard, copy.hazard);
+  const subLabel =
+    depth !== null
+      ? `${depthShortName(depth, copy.map)} · ${depthRangeText(depth, copy.map)}`
+      : severityWord(report.hazard, report.severity, copy.hazard);
+  const swatchColor = depth !== null ? DEPTH_VAR[depth] : SEVERITY_VAR[report.severity];
+  const rank = depth !== null ? depthRank(depth) : null;
+  // `detailPhotoAlt` reads "water that is X" - true only for flood. Elsewhere
+  // the hazard's own name already says what the photo shows.
+  const photoAlt = depth !== null ? copy.screens.detailPhotoAlt(label) : label;
 
   return (
     <section className="detail-sheet" aria-label={copy.screens.detailLabel}>
@@ -63,7 +78,7 @@ export function ReportDetail({ report, onClose }: ReportDetailProps) {
           <img
             className="detail-photo"
             src={photo}
-            alt={copy.screens.detailPhotoAlt(label)}
+            alt={photoAlt}
             onError={() => setPhotoFailed(true)}
           />
           <span className="detail-photo-cue" aria-hidden="true">
@@ -81,25 +96,24 @@ export function ReportDetail({ report, onClose }: ReportDetailProps) {
       )}
 
       <div className="detail-body">
-        {/* Depth colour as a bar, never as the text colour. `ankle` and `knee`
-            are pale enough to fail contrast against white, and the display size
+        {/* Colour as a bar, never as the text colour. `ankle` and `knee` are
+            pale enough to fail contrast against white, and the display size
             here is exactly where that would bite hardest. */}
         <p className="detail-depth">
-          <span
-            className="detail-swatch"
-            style={{ background: DEPTH_VAR[report.depth] }}
-          />
+          <span className="detail-swatch" style={{ background: swatchColor }} />
+          {/* The icon says WHAT - only needed once colour has stopped being
+              able to say it, i.e. everything that is not flood. A word
+              already sits right beside it, so it carries no title. */}
+          {depth === null && <HazardIcon hazard={report.hazard} size="md" />}
           {label}
         </p>
         {/* The cross-language gloss used to live here - the Tagalog reading with
             its English equivalent underneath. The language toggle now does that
             job properly, so repeating it would only say the same thing twice in
             whichever language is on screen. The centimetre range is the part
-            that was never a translation. */}
-        <p className="detail-sub">
-          {depthShortName(report.depth, copy.map)} ·{" "}
-          {depthRangeText(report.depth, copy.map)}
-        </p>
+            that was never a translation. Everything but flood shows how bad
+            instead, since there is no centimetre range to give. */}
+        <p className="detail-sub">{subLabel}</p>
 
         {/* Sits with the reading it qualifies, not down beside the timestamp:
             it is a reason to believe the number above it. Renders nothing at
@@ -114,23 +128,24 @@ export function ReportDetail({ report, onClose }: ReportDetailProps) {
           <span className="detail-clock">{clockTime(report.reportedAt)}</span>
         </p>
 
-        <div
-          className="depth-meter"
-          role="img"
-          aria-label={copy.screens.detailMeter(
-            label,
-            rank + 1,
-            DEPTH_LEVELS.length,
-          )}
-        >
-          {DEPTH_LEVELS.map((level, index) => (
-            <span
-              key={level}
-              className={`depth-meter-step${index <= rank ? " is-filled" : ""}`}
-              style={index <= rank ? { background: DEPTH_VAR[level] } : undefined}
-            />
-          ))}
-        </div>
+        {/* Flood only - there is no five-step scale for a fire or an
+            earthquake, and drawing one would claim a precision that does not
+            exist. */}
+        {rank !== null && (
+          <div
+            className="depth-meter"
+            role="img"
+            aria-label={copy.screens.detailMeter(label, rank + 1, DEPTH_LEVELS.length)}
+          >
+            {DEPTH_LEVELS.map((level, index) => (
+              <span
+                key={level}
+                className={`depth-meter-step${index <= rank ? " is-filled" : ""}`}
+                style={index <= rank ? { background: DEPTH_VAR[level] } : undefined}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Everything above describes the moment the report was filed. This is
             the only part that can say whether it is still true. */}
@@ -140,8 +155,8 @@ export function ReportDetail({ report, onClose }: ReportDetailProps) {
       {zoomed && photo && (
         <PhotoLightbox
           src={photo}
-          alt={copy.screens.detailPhotoAlt(label)}
-          caption={`${label} · ${relativeTime(report.reportedAt, copy.screens)} · ${clockTime(report.reportedAt)}`}
+          alt={photoAlt}
+          caption={`${label}${depth === null ? ` · ${subLabel}` : ""} · ${relativeTime(report.reportedAt, copy.screens)} · ${clockTime(report.reportedAt)}`}
           onClose={() => setZoomed(false)}
         />
       )}
