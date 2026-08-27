@@ -24,6 +24,10 @@ export const screens = dict(
     reportPhotoPrompt: "Magdagdag ng larawan ng tubig",
     reportPhotoPromptOther: "Magdagdag ng larawan",
     reportPhotoNote: "Opsyonal. Makikita ito ng lahat sa mapa.",
+    // For medical and accident, which never reach the map - see sos.ts's
+    // photoNote, whose second sentence this reuses verbatim so the promise
+    // matches what `reportDoneNotOnMap` says two taps later.
+    reportPhotoNoteBarangayOnly: "Opsyonal. Ang barangay lang ang makakakita nito.",
     reportPhotoOpen: "Kumuha ng larawan",
     reportPhotoRemove: "Alisin ang larawan",
     yourPhoto: "Ang larawang kinuha mo",
@@ -255,6 +259,7 @@ export const screens = dict(
     reportPhotoPrompt: "Add a photo of the water",
     reportPhotoPromptOther: "Add a photo",
     reportPhotoNote: "Optional. Everyone on the map can see it.",
+    reportPhotoNoteBarangayOnly: "Optional. Only the barangay can see it.",
     reportPhotoOpen: "Take a photo",
     reportPhotoRemove: "Remove the photo",
     yourPhoto: "The photo you took",

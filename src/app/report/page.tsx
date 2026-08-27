@@ -289,7 +289,11 @@ export default function ReportPage() {
               ? copy.screens.reportPhotoPrompt
               : copy.screens.reportPhotoPromptOther
           }
-          note={copy.screens.reportPhotoNote}
+          note={
+            isPublicHazard(hazard)
+              ? copy.screens.reportPhotoNote
+              : copy.screens.reportPhotoNoteBarangayOnly
+          }
           openLabel={copy.screens.reportPhotoOpen}
           variant="secondary"
           /*
