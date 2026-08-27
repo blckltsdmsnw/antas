@@ -755,7 +755,18 @@ as $fn$
   select h in ('flood', 'fire', 'earthquake');
 $fn$;
 
+-- GRANTED, not merely revoked. `reports_near` is SECURITY INVOKER - correctly,
+-- it has been since 0013 - so the call to public_hazard() inside it runs with
+-- the CALLER's privileges. Revoking from public without granting to anyone
+-- makes reports_near uncallable by every role including anon, and
+-- src/app/page.tsx:117 is the public map. The first draft of this migration
+-- did exactly that.
+--
+-- report_priority above is revoked-only and safe, because it is called only
+-- from SECURITY DEFINER functions, which run as the owner and bypass the grant
+-- check. That is the distinction: an invoker-mode caller needs the grant.
 revoke execute on function public_hazard(hazard_type) from public;
+grant  execute on function public_hazard(hazard_type) to anon, authenticated, service_role;
 
 -- 6. report_priority moves from depth to severity --------------------------------
 --
@@ -985,8 +996,30 @@ Expected: `0`, `0`, and a list that still includes `my_reports`,
 `reporter_standing`, `is_suspended` — those must be present and, because the
 table was not renamed, still valid.
 
-Then call each untouched function once so a broken body surfaces here and not
-in production:
+Then CALL every function this migration creates or recreates, **as the roles
+that will actually call them** — not as superuser, and not by inspecting
+`pg_proc` metadata. Checking shapes and `prosecdef` flags is what let a missing
+grant through the first time: the function existed, had the right signature,
+and was uncallable.
+
+```bash
+docker exec supabase_db_app psql -U postgres -d postgres -c "
+  set role anon;
+  select count(*) from reports_near(14.65, 121.10, 5000);
+  reset role;
+  set role authenticated;
+  select count(*) from reports_near(14.65, 121.10, 5000);
+  reset role;
+  select report_priority(3::smallint, now());
+  select public_hazard('flood');
+  select corroborating_reports(14.65, 121.10, 500, 60);"
+```
+
+Expected: five results, no errors. A `permission denied` here is the bug this
+step exists to catch.
+
+Then the functions this migration deliberately does NOT touch, whose bodies
+name `depth_reports` and are re-parsed at call time:
 
 ```bash
 docker exec supabase_db_app psql -U postgres -d postgres -tAc "
