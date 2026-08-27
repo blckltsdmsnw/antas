@@ -239,11 +239,20 @@ describe("everybody else", () => {
     expect(error).not.toBeNull();
   });
 
-  it("does not expose the scope predicate itself to callers", async () => {
-    // `moderates` answers only about auth.uid(), so it leaks nothing even when
-    // reachable - but the console never needs it, and an unused entry point is
-    // one more thing that has to stay correct forever.
-    const { error } = await modClient.rpc("moderates", { p_barangay: AWAY });
-    expect(error).not.toBeNull();
+  it("is directly callable since 0031, but still answers only about the caller", async () => {
+    // Until 0031 this was refused outright: `moderates` was reachable only
+    // through the security definer functions that already had their own
+    // rights to it, and authenticated held no EXECUTE grant of its own.
+    // 0031's companion policy on depth_reports (moderators read all depth
+    // reports) calls `moderates(barangay)` directly from an RLS predicate,
+    // which runs as the querying role - so authenticated needed its own
+    // EXECUTE grant for that policy to work at all, and the same grant makes
+    // this RPC call succeed now. That is fine: `moderates` answers only about
+    // auth.uid(), never about a role or barangay the caller supplies, so a
+    // moderator scoped to HOME asking about AWAY gets an honest `false`, not
+    // an error and not a leak.
+    const { data, error } = await modClient.rpc("moderates", { p_barangay: AWAY });
+    expect(error).toBeNull();
+    expect(data).toBe(false);
   });
 });

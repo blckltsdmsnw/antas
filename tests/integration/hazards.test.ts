@@ -177,6 +177,45 @@ describe("the public map", () => {
   });
 });
 
+describe("depth_reports, read directly rather than through reports_near (0031)", () => {
+  // The RPC's public_hazard() filter was a courtesy sitting beside the real
+  // door, not a lock on it: anon holds SELECT on depth_reports itself (0002),
+  // so anyone with the anon key - shipped in every client bundle - could
+  // issue a direct PostgREST table read and receive medical and accident
+  // reports with exact coordinates. This exercises that exact path, not the
+  // RPC, so it fails if the table's own RLS policy ever loses its
+  // public_hazard() guard again.
+  it("keeps medical and accident rows out of a direct anonymous table read, while flood rows stay in", async () => {
+    const medicalId = await newIncident({ hazard_type: "medical", depth: null, severity: 3 });
+    const accidentId = await newIncident({ hazard_type: "accident", depth: null, severity: 2 });
+    const floodId = await newIncident({ hazard_type: "flood", depth: "chest" });
+
+    const stranger = createClient(url, anonKey, opts);
+    const { data, error } = await stranger
+      .from("depth_reports")
+      .select("id, hazard_type")
+      .in("id", [medicalId, accidentId, floodId]);
+
+    expect(error).toBeNull();
+    const ids = (data as { id: string; hazard_type: string }[]).map((r) => r.id);
+    expect(ids).not.toContain(medicalId);
+    expect(ids).not.toContain(accidentId);
+    expect(ids).toContain(floodId);
+  });
+
+  it("still lets a moderator read a medical or accident row directly, for realtime", async () => {
+    const medicalId = await newIncident({ hazard_type: "medical", depth: null, severity: 3 });
+
+    const { data, error } = await modClient
+      .from("depth_reports")
+      .select("id, hazard_type")
+      .eq("id", medicalId);
+
+    expect(error).toBeNull();
+    expect((data as { id: string }[]).map((r) => r.id)).toContain(medicalId);
+  });
+});
+
 describe("my_reports (0029)", () => {
   it("returns the hazard and severity for a non-flood report owned by the caller, with depth null", async () => {
     const id = await newIncident({ hazard_type: "fire", depth: null, severity: 2 });
