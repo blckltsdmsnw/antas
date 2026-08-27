@@ -37,7 +37,15 @@ function colorForDepth(depth: DepthLevel): string {
 }
 
 /**
- * CARTO basemaps — free, keyless.
+ * CARTO basemaps.
+ *
+ * NOT keyless any more. CARTO ended keyless access and now stamps "API KEY
+ * REQUIRED" across every tile it serves without one - the tiles still draw
+ * streets, water and labels correctly, so this presents as a working map wearing
+ * a watermark rather than as an error, and nothing in the console complains.
+ * A free key removes it. Absent the key the map still works, watermark and all,
+ * which is why this reads the variable rather than refusing to render: a
+ * watermarked map of a flooding street is worth more than no map.
  *
  * VOYAGER BY DAY, NOT POSITRON. Positron renders water as pale grey, which on a
  * flood map loses the single most important piece of context there is: the
@@ -62,9 +70,23 @@ function colorForDepth(depth: DepthLevel): string {
  *    without one, so the failure presented as a blank map rather than an error.
  *    Raster tiles decode on the main thread and avoid the worker entirely.
  */
+/**
+ * Public by necessity, not by oversight.
+ *
+ * A basemap key travels in the tile URL, so it is visible to anyone with the
+ * network tab open - there is no arrangement in which a browser fetches tiles
+ * with a secret the browser does not have. CARTO expects this and restricts
+ * keys by domain instead; set the allowed domains in their dashboard rather
+ * than trying to hide the value here. It is NEXT_PUBLIC_ for the same reason
+ * the Supabase anon key is.
+ */
+const CARTO_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY;
+
 function cartoTiles(variant: string): string[] {
+  const key = CARTO_KEY ? `?api_key=${encodeURIComponent(CARTO_KEY)}` : "";
   return ["a", "b", "c"].map(
-    (host) => `https://${host}.basemaps.cartocdn.com/${variant}/{z}/{x}/{y}@2x.png`,
+    (host) =>
+      `https://${host}.basemaps.cartocdn.com/${variant}/{z}/{x}/{y}@2x.png${key}`,
   );
 }
 
