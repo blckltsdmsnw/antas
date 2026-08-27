@@ -22,6 +22,7 @@ export const screens = dict(
     reportBackToMap: "Bumalik sa mapa",
 
     reportPhotoPrompt: "Magdagdag ng larawan ng tubig",
+    reportPhotoPromptOther: "Magdagdag ng larawan",
     reportPhotoNote: "Opsyonal. Makikita ito ng lahat sa mapa.",
     reportPhotoOpen: "Kumuha ng larawan",
     reportPhotoRemove: "Alisin ang larawan",
@@ -252,6 +253,7 @@ export const screens = dict(
     reportBackToMap: "Back to the map",
 
     reportPhotoPrompt: "Add a photo of the water",
+    reportPhotoPromptOther: "Add a photo",
     reportPhotoNote: "Optional. Everyone on the map can see it.",
     reportPhotoOpen: "Take a photo",
     reportPhotoRemove: "Remove the photo",

@@ -284,7 +284,11 @@ export default function ReportPage() {
         </figure>
       ) : (
         <PhotoCapture
-          prompt={copy.screens.reportPhotoPrompt}
+          prompt={
+            hazard === "flood"
+              ? copy.screens.reportPhotoPrompt
+              : copy.screens.reportPhotoPromptOther
+          }
           note={copy.screens.reportPhotoNote}
           openLabel={copy.screens.reportPhotoOpen}
           variant="secondary"
