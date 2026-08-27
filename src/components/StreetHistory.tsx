@@ -8,6 +8,7 @@ import { DEPTH_VAR, SEVERITY_VAR } from "@/lib/depth/presentation";
 import { depthName } from "@/lib/depth/name";
 import type { HazardType, Severity } from "@/lib/hazard/types";
 import { hazardName, severityWord } from "@/lib/hazard/name";
+import { worstSeverity } from "@/lib/hazard/severity";
 import { HazardIcon } from "@/components/HazardIcon";
 import { reportPhotoUrl } from "@/lib/reports/photo";
 import { relativeTime } from "@/lib/time/relative";
@@ -91,17 +92,21 @@ export function StreetHistory({ point, onSelect }: StreetHistoryProps) {
   // "Pinakamalalim" (deepest) is a claim about water, and only makes sense
   // while every report on this street is flood. The moment one is not, the
   // worst case is read off the shared severity scale instead - see
-  // `cluster.ts`'s `deepestOf`, which refuses the same shortcut.
-  const allFlood = reports.every((report) => report.hazard_type === "flood");
-
-  const worst = allFlood
-    ? reports.reduce((deepest, report) =>
-        report.depth !== null &&
-        (deepest.depth === null || depthRank(report.depth) > depthRank(deepest.depth))
-          ? report
-          : deepest,
-      )
-    : reports.reduce((worst, report) => (report.severity > worst.severity ? report : worst));
+  // `cluster.ts`, which this mirrors exactly: severity has three steps and
+  // depth has five, so a severity tie can hide a shallower flood reading in
+  // front of a deeper one (chest and above_head are both severity 3). Among
+  // members at the worst severity, prefer the deepest flood; only fall back
+  // to the first when none of them is flood, where there is no depth to
+  // compare.
+  const severity = worstSeverity(reports.map((report) => report.severity));
+  const atWorst = reports.filter((report) => report.severity === severity);
+  const floodsAtWorst = atWorst.filter((report) => report.hazard_type === "flood");
+  const worst =
+    floodsAtWorst.length > 0
+      ? floodsAtWorst.reduce((deepest, report) =>
+          depthRank(report.depth!) > depthRank(deepest.depth!) ? report : deepest,
+        )
+      : atWorst[0];
 
   const worstColor =
     worst.depth !== null ? DEPTH_VAR[worst.depth] : SEVERITY_VAR[worst.severity];
@@ -112,7 +117,7 @@ export function StreetHistory({ point, onSelect }: StreetHistoryProps) {
 
       {/* The worst case leads. Someone reading this is deciding whether to walk
           down the street, and the average depth is not what would stop them.
-          Branches on `worst.depth`, not `allFlood`: `worst` is a single real
+          Branches on `worst.depth`: `worst` is a single real
           report, and depth is only ever non-null for a flood report, so this
           is the same one-member consistency `cluster.ts` enforces - a worst
           report picked by severity from a mixed street must never be read

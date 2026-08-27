@@ -126,6 +126,53 @@ describe("StreetHistory", () => {
     expect(await screen.findByText("Pinakamalalim: Hanggang dibdib")).toBeInTheDocument();
   });
 
+  it("prefers the deepest flood among tied severities on a mixed street, mirroring cluster.ts (18fff84)", async () => {
+    // Chest and above_head are both severity 3, so picking the first
+    // max-severity row in distance order (the old behaviour) reports the
+    // chest reading even though a deeper above-head flood sits later in the
+    // list, with a fire between them. cluster.ts was fixed for exactly this;
+    // this pins the same fix here.
+    mockRpc([
+      {
+        id: "1",
+        hazard_type: "flood",
+        severity: 3,
+        depth: "chest",
+        reported_at: "2026-08-01T00:00:00Z",
+        photo_path: null,
+        lat: 14.65,
+        lon: 121.1,
+        distance_m: 10,
+      },
+      {
+        id: "2",
+        hazard_type: "fire",
+        severity: 1,
+        depth: null,
+        reported_at: "2026-08-02T00:00:00Z",
+        photo_path: null,
+        lat: 14.65,
+        lon: 121.1,
+        distance_m: 20,
+      },
+      {
+        id: "3",
+        hazard_type: "flood",
+        severity: 3,
+        depth: "above_head",
+        reported_at: "2026-08-03T00:00:00Z",
+        photo_path: null,
+        lat: 14.65,
+        lon: 121.1,
+        distance_m: 30,
+      },
+    ]);
+
+    render(<StreetHistory point={{ lat: 14.65, lon: 121.1 }} onSelect={vi.fn()} />);
+
+    expect(await screen.findByText("Pinakamalalim: Lampas ulo")).toBeInTheDocument();
+  });
+
   it("opens a report when its row is pressed, passing the photo through", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
