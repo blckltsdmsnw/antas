@@ -9,6 +9,7 @@ import { depthRank, DEPTH_LEVELS } from "@/lib/depth/scale";
 import { DEPTH_VAR, SEVERITY_VAR } from "@/lib/depth/presentation";
 import { depthName, depthShortName, depthRangeText } from "@/lib/depth/name";
 import { hazardName, severityWord } from "@/lib/hazard/name";
+import { passabilityOfDepth, passabilityLabel } from "@/lib/passability/mmda";
 import { HazardIcon } from "@/components/HazardIcon";
 import { reportPhotoUrl } from "@/lib/reports/photo";
 import { clockTime, relativeTime } from "@/lib/time/relative";
@@ -114,6 +115,20 @@ export function ReportDetail({ report, onClose }: ReportDetailProps) {
             that was never a translation. Everything but flood shows how bad
             instead, since there is no centimetre range to give. */}
         <p className="detail-sub">{subLabel}</p>
+
+        {/* MMDA's vehicle-passability verdict for this depth - flood only,
+            since it is derived from the depth reading and no other hazard has
+            one. See `lib/passability/mmda.ts` for where the categories come
+            from. The caution is not a pedestrian verdict - MMDA's standard
+            covers vehicles, and there is no official threshold for a person
+            on foot to invent one from. */}
+        {depth !== null && (
+          <>
+            <p className="detail-sub">{passabilityLabel(passabilityOfDepth(depth), copy.map)}</p>
+            <p className="detail-sub">{copy.map.passSource}</p>
+            <p className="detail-sub">{copy.map.passNotForWalking}</p>
+          </>
+        )}
 
         {/* Sits with the reading it qualifies, not down beside the timestamp:
             it is a reason to believe the number above it. Renders nothing at

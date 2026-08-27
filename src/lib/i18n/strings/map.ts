@@ -33,6 +33,15 @@ export const map = dict(
     depthRangeUp: (min: number) => `${min} cm pataas`,
     depthRange: (min: number, max: number) => `${min}–${max} cm`,
 
+    // MMDA Flood Gauge System's three vehicle-passability categories - see
+    // `lib/passability/mmda.ts` for the inch ranges and the straddle rule.
+    passPATV: "Madaanan ng lahat ng sasakyan",
+    passNPLV: "Hindi madaanan ng maliliit na sasakyan",
+    passNPATV: "Hindi madaanan ng anumang sasakyan",
+    passSource: "Batay sa MMDA Flood Gauge System",
+    passNotForWalking:
+      "Hindi ito gabay sa naglalakad. Delikado ang umaagos na tubig kahit mababa.",
+
     pinLabel: (depth: string, hasPhoto: boolean) =>
       `${depth}${hasPhoto ? ", may larawan" : ""}`,
     clusterLabel: (count: number, deepest: string) =>
@@ -93,6 +102,13 @@ export const map = dict(
 
     depthRangeUp: (min: number) => `${min} cm and above`,
     depthRange: (min: number, max: number) => `${min}–${max} cm`,
+
+    passPATV: "Passable to all vehicles",
+    passNPLV: "Not passable to light vehicles",
+    passNPATV: "Not passable to any vehicle",
+    passSource: "Based on the MMDA Flood Gauge System",
+    passNotForWalking:
+      "This is not guidance for people on foot. Moving water is dangerous even when shallow.",
 
     pinLabel: (depth: string, hasPhoto: boolean) =>
       `${depth}${hasPhoto ? ", has a photo" : ""}`,
