@@ -30,5 +30,25 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  // `video` is its own package, and the deployed application must not type
+  // check it.
+  //
+  // It holds the Remotion compositions, whose dependencies live in
+  // video/node_modules and are installed by hand when somebody renders a film.
+  // Vercel installs the root dependencies only - correctly, since a renderer
+  // pulling in a headless browser and ffmpeg has no place in the deployed tree
+  // - so on Vercel those modules are simply absent.
+  //
+  // `include` above is a recursive wildcard, which swept them in anyway, and
+  // `next build` type checks whatever tsconfig hands it. Every deploy from
+  // 63b33c3 onward failed on "Cannot find module 'remotion'" while building
+  // perfectly on any machine where somebody had run npm install inside video/.
+  // Ten days of commits never reached production because of it.
+  //
+  // Line comments, not a block comment: a recursive glob written out in full
+  // contains the character pair that ends one, which silently truncated an
+  // earlier version of this note into the middle of the JSON.
+  //
+  // video/tsconfig.json covers that package on its own terms.
+"exclude": ["node_modules", "video/**/*"]
 }
