@@ -15,6 +15,7 @@ import { reportPhotoUrl } from "@/lib/reports/photo";
 import { timestampLabel } from "@/lib/time/relative";
 import { hideReport } from "@/app/actions/submit-update";
 import { PhoneField } from "@/components/PhoneField";
+import { ResponderField } from "@/components/ResponderField";
 
 /**
  * Your own reports.
@@ -62,6 +63,7 @@ export default function AkoPage() {
   const [confirming, setConfirming] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
   const [savedPhone, setSavedPhone] = useState<string | null>(null);
+  const [responder, setResponder] = useState<{ name: string | null; unit: string | null; barangay: string | null } | null>(null);
   const [anonymous, setAnonymous] = useState(false);
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
 
@@ -82,11 +84,16 @@ export default function AkoPage() {
     // never return somebody else's number.
     const { data: profile } = await supabase
       .from("profiles")
-      .select("phone")
+      .select("phone, display_name, responder_unit, responder_barangay")
       .eq("id", auth.user.id)
       .maybeSingle();
 
     if (profile?.phone) setSavedPhone(profile.phone as string);
+    setResponder({
+      name: (profile?.display_name as string | null) ?? null,
+      unit: (profile?.responder_unit as string | null) ?? null,
+      barangay: (profile?.responder_barangay as string | null) ?? null,
+    });
 
     const { data, error } = await supabase.rpc("my_reports");
     if (error) {
@@ -213,6 +220,8 @@ export default function AkoPage() {
             note={copy.screens.akoPhoneNote}
             initial={savedPhone}
           />
+
+          {!anonymous && responder && <ResponderField initial={responder} />}
 
           <h2 className="my-reports-title">{copy.screens.akoReportsTitle}</h2>
 
