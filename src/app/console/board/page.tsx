@@ -10,7 +10,7 @@ import { decideSos } from "@/app/actions/decide-sos";
 import { decideReport } from "@/app/actions/decide-report";
 import { assignResponder, closeAssignment } from "@/app/actions/assign";
 import {
-  BOARD_COLUMNS, columnLabel, groupByColumn, moveNeeds,
+  BOARD_COLUMNS, columnLabel, groupByColumn, moveNeeds, canMove,
   type BoardColumn, type BoardRow,
 } from "@/lib/board/types";
 import { useCopy } from "@/lib/i18n/context";
@@ -38,6 +38,8 @@ export default function BoardPage() {
   const [roster, setRoster] = useState<RosterEntry[] | null>(null);
   const [panel, setPanel] = useState<{ row: BoardRow; to: BoardColumn } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [dragging, setDragging] = useState<BoardRow | null>(null);
+  const [over, setOver] = useState<BoardColumn | null>(null);
 
   const load = useCallback(async () => {
     const { data, error: loadError } = await createClient().rpc("board_rows");
@@ -154,7 +156,33 @@ export default function BoardPage() {
         {stage === "ready" && (
           <div className="board-columns">
             {BOARD_COLUMNS.map((column) => (
-              <section key={column} className="board-column" data-column={column}>
+              <section
+                key={column}
+                className="board-column"
+                data-column={column}
+                data-over={over === column}
+                onDragOver={(e) => {
+                  // Only a column the card may move to accepts it. preventDefault is
+                  // what makes a drop possible at all; withholding it is the refusal.
+                  if (dragging && canMove(dragging.board_column, column)) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    if (over !== column) setOver(column);
+                  }
+                }}
+                onDragLeave={(e) => {
+                  // Leaving for a child element fires dragleave too; only clear when
+                  // the pointer has actually left the column.
+                  if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const row = dragging;
+                  setDragging(null);
+                  setOver(null);
+                  if (row && canMove(row.board_column, column)) void move(row, column);
+                }}
+              >
                 <h2 className="board-column-title">
                   {columnLabel(column, copy.board)}
                   <span className="console-tab-count">{grouped[column].length}</span>
@@ -163,7 +191,17 @@ export default function BoardPage() {
                   <p className="board-card-meta">{copy.board.columnEmpty}</p>
                 )}
                 {grouped[column].map((row) => (
-                  <BoardCard key={`${row.kind}:${row.id}`} row={row} onMove={(to) => void move(row, to)} />
+                  <BoardCard
+                    key={`${row.kind}:${row.id}`}
+                    row={row}
+                    onMove={(to) => void move(row, to)}
+                    onDragStart={() => setDragging(row)}
+                    onDragEnd={() => {
+                      setDragging(null);
+                      setOver(null);
+                    }}
+                    dragging={dragging?.id === row.id && dragging.kind === row.kind}
+                  />
                 ))}
               </section>
             ))}

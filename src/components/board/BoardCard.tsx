@@ -21,9 +21,16 @@ import { useCopy } from "@/lib/i18n/context";
 export function BoardCard({
   row,
   onMove,
+  onDragStart,
+  onDragEnd,
+  dragging = false,
 }: {
   row: BoardRow;
   onMove: (to: BoardColumn) => void;
+  /** Task 7: the page tracks which row is in flight. */
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
+  dragging?: boolean;
 }) {
   const copy = useCopy();
 
@@ -46,7 +53,22 @@ export function BoardCard({
       : null;
 
   return (
-    <article className="board-card" data-kind={row.kind} data-severity={row.severity ?? "sos"}>
+    <article
+      className="board-card"
+      data-kind={row.kind}
+      data-severity={row.severity ?? "sos"}
+      data-dragging={dragging}
+      // Nowhere to go from not_true, so nothing to pick up.
+      draggable={movesFrom(row.board_column).length > 0}
+      onDragStart={(e) => {
+        // The payload is for other drop targets and devtools; the page
+        // already knows which row this is through onDragStart.
+        e.dataTransfer.setData("text/plain", `${row.kind}:${row.id}`);
+        e.dataTransfer.effectAllowed = "move";
+        onDragStart?.();
+      }}
+      onDragEnd={() => onDragEnd?.()}
+    >
       <div className="board-card-head">
         <span className="report-band" data-band={row.kind === "sos" ? "urgent" : "routine"}>
           {row.kind === "sos" ? copy.board.kindSos : copy.board.kindReport}

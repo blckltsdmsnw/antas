@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BoardCard } from "./BoardCard";
 import type { BoardRow } from "@/lib/board/types";
@@ -59,5 +59,26 @@ describe("BoardCard", () => {
   it("offers nothing from not_true", () => {
     render(<BoardCard row={row({ board_column: "not_true" })} onMove={() => {}} />);
     expect(screen.queryAllByRole("button")).toEqual([]);
+  });
+
+  it("is draggable, announces what it carries, and reports its lifecycle", () => {
+    const onDragStart = vi.fn();
+    const onDragEnd = vi.fn();
+    render(
+      <BoardCard row={row({})} onMove={() => {}} onDragStart={onDragStart} onDragEnd={onDragEnd} dragging={false} />,
+    );
+    const card = screen.getByRole("article");
+    expect(card).toHaveAttribute("draggable", "true");
+    const setData = vi.fn();
+    fireEvent.dragStart(card, { dataTransfer: { setData, effectAllowed: "" } });
+    expect(setData).toHaveBeenCalledWith("text/plain", "report:r1");
+    expect(onDragStart).toHaveBeenCalled();
+    fireEvent.dragEnd(card);
+    expect(onDragEnd).toHaveBeenCalled();
+  });
+
+  it("is not draggable from not_true, where there is nowhere to go", () => {
+    render(<BoardCard row={row({ board_column: "not_true" })} onMove={() => {}} dragging={false} />);
+    expect(screen.getByRole("article")).toHaveAttribute("draggable", "false");
   });
 });
