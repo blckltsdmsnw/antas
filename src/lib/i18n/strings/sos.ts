@@ -41,6 +41,7 @@ export const sos = dict(
 
     noteLabel: "Dagdag na detalye (opsyonal)",
     notePlaceholder: "Halimbawa: tatlo kami, may matanda",
+    hazardPrompt: "Ano ang nangyayari? (opsyonal)",
 
     holdSending: "Ipinapadala...",
     holdLabel: "Pindutin nang 3 segundo para humingi ng tulong",
@@ -98,6 +99,7 @@ export const sos = dict(
 
     noteLabel: "More detail (optional)",
     notePlaceholder: "For example: there are three of us, one elderly",
+    hazardPrompt: "What is happening? (optional)",
 
     holdSending: "Sending...",
     holdLabel: "Press and hold for 3 seconds to ask for help",

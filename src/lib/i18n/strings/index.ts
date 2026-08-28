@@ -6,6 +6,7 @@ import { sos } from "./sos";
 import { map } from "./map";
 import { screens } from "./screens";
 import { hazard } from "./hazard";
+import { board } from "./board";
 
 /**
  * Every string in the product, in one place.
@@ -15,7 +16,7 @@ import { hazard } from "./hazard";
  * nothing else. `sos.ts` and `guide.ts` in particular are meant to be read
  * end-to-end by a person, not grepped.
  */
-const DICTS = { shell, guide, sos, map, screens, hazard } as const;
+const DICTS = { shell, guide, sos, map, screens, hazard, board } as const;
 
 type Dicts = typeof DICTS;
 
@@ -44,5 +45,6 @@ export function copyFor(lang: Lang): Copy {
     map: pick(map, lang),
     screens: pick(screens, lang),
     hazard: pick(hazard, lang),
+    board: pick(board, lang),
   };
 }
