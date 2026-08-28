@@ -3306,3 +3306,158 @@ a.btn {
   display: inline-block;
   margin: 4px 0 12px;
 }
+
+/* ---- The master admin's board ---------------------------------------------
+   Desktop only. Four columns side by side is the whole point; under 900px
+   the columns are hidden and the page says so, rather than stacking four
+   lists into a scroll nobody could triage from. */
+.board-page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 20px 20px calc(48px + var(--tabbar-total));
+}
+
+.board-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.board-narrow { display: none; }
+
+.board-columns {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+  align-items: start;
+}
+
+.board-column {
+  background: var(--raised);
+  border-radius: var(--radius-control);
+  padding: 10px;
+  min-height: 240px;
+}
+
+.board-column[data-over="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.board-column-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* A card, unlike the queue rows, because a card is a thing you drag. The
+   left edge carries severity from the depth palette, and the SOS colour is
+   the danger red - a person asking for help, not a reading. */
+.board-card {
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: var(--radius-control);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.board-card[data-severity="1"]   { border-left-color: var(--depth-ankle); }
+.board-card[data-severity="2"]   { border-left-color: var(--depth-waist); }
+.board-card[data-severity="3"]   { border-left-color: var(--depth-above-head); }
+.board-card[data-severity="sos"] { border-left-color: var(--danger); }
+
+.board-card[draggable="true"] { cursor: grab; }
+.board-card[data-dragging="true"] { opacity: 0.5; }
+
+.board-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.board-card-title { font-size: 15px; }
+
+.board-card-meta {
+  margin: 4px 0 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.board-card-open {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.board-moves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.board-move {
+  appearance: none;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.board-move:hover { border-color: var(--ink-muted); }
+
+/* The reason / responder panel. A dialog rather than an inline expansion
+   because it interrupts a drag, and the interruption is the point. */
+.board-panel {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+}
+
+.board-panel-card {
+  background: var(--ground);
+  border-radius: var(--radius-control);
+  padding: 20px;
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+
+.board-roster {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.board-roster-row {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+@media (max-width: 899px) {
+  .board-columns, .board-graph { display: none; }
+  .board-narrow { display: block; margin-top: 12px; color: var(--ink-muted); }
+}
