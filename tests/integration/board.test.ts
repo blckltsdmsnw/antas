@@ -141,9 +141,9 @@ beforeAll(async () => {
 describe("who may look", () => {
   it("refuses an admin, with an error rather than an empty board", async () => {
     const { error } = await adminClient.rpc("board_rows");
-    expect(error).not.toBeNull();
+    expect(error!.code).toBe("42501");
     const graph = await adminClient.rpc("board_graph");
-    expect(graph.error).not.toBeNull();
+    expect(graph.error!.code).toBe("42501");
   });
 
   it("refuses anon at the grant layer", async () => {
@@ -248,6 +248,52 @@ describe("order within a column", () => {
   });
 });
 
+describe("the 200-row cap", () => {
+  it("caps a column at 200 rows", async () => {
+    const rows = Array.from({ length: 205 }, () => ({
+      reporter_id: reporterId,
+      location: MALANDAY,
+      hazard_type: "fire",
+      severity: 1,
+    }));
+    const { error } = await admin.from("depth_reports").insert(rows);
+    if (error) throw error;
+
+    const needsChecking = (await board()).filter((r) => r.board_column === "needs_checking");
+    expect(needsChecking.length).toBeLessThanOrEqual(200);
+    expect(needsChecking.length).toBe(200);
+  });
+});
+
+describe("the not_true window follows the decision", () => {
+  it("a hidden report moves to not_true even when the report itself is old", async () => {
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    const id = await newReport({ reported_at: threeDaysAgo });
+    await masterClient.rpc("decide_report", { p_report_id: id, p_decision: "hide", p_reason: "wrong_place" });
+    expect(await placement(id)).toBe("not_true");
+  });
+
+  it("an old dismissed signal whose decision is also old is not on the board", async () => {
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    const id = await newSignal({ created_at: threeDaysAgo });
+
+    // Set directly rather than through decide_sos(), which would stamp its own
+    // signal_events row with now() and defeat the point of this test.
+    const { error: updateError } = await admin
+      .from("sos_signals")
+      .update({ status: "dismissed" })
+      .eq("id", id);
+    if (updateError) throw updateError;
+
+    const { error: eventError } = await admin
+      .from("signal_events")
+      .insert({ sos_id: id, event_type: "decision", created_at: threeDaysAgo });
+    if (eventError) throw eventError;
+
+    expect(await placement(id)).toBeUndefined();
+  });
+});
+
 describe("the graph", () => {
   it("returns counts by hour and hazard, and a ranked barangay list", async () => {
     await newReport({ hazard_type: "earthquake", severity: 1 });
@@ -270,5 +316,34 @@ describe("the graph", () => {
     const { data } = await masterClient.rpc("board_graph");
     const graph = data as { hours: { hazard: string | null; count: number }[] };
     expect(graph.hours.some((h) => h.hazard === null)).toBe(true);
+  });
+
+  it("the graph ranks at most ten barangays", async () => {
+    const { data: bgys, error: bgyError } = await admin.from("barangays").select("name").limit(11);
+    if (bgyError) throw bgyError;
+    const names = (bgys ?? []).map((b) => b.name as string);
+    expect(names.length).toBe(11);
+
+    for (const name of names) {
+      // The insert trigger derives barangay from location, so it has to be
+      // set afterward to land each report under a distinct real barangay.
+      const id = await newReport();
+      const { error } = await admin.from("depth_reports").update({ barangay: name }).eq("id", id);
+      if (error) throw error;
+    }
+
+    const { data } = await masterClient.rpc("board_graph");
+    const graph = data as { barangays: { barangay: string; count: number }[] };
+    expect(graph.barangays.length).toBeLessThanOrEqual(10);
+  });
+
+  it("the graph ignores anything older than 48 hours", async () => {
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+    await newReport({ hazard_type: "earthquake", reported_at: threeDaysAgo.toISOString() });
+
+    const { data } = await masterClient.rpc("board_graph");
+    const graph = data as { hours: { hour: string; hazard: string | null; count: number }[] };
+    const cutoff = Date.now() - 48 * 60 * 60 * 1000;
+    expect(graph.hours.every((h) => new Date(h.hour).getTime() >= cutoff)).toBe(true);
   });
 });

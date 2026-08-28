@@ -22,6 +22,12 @@
 --         above, unless it is not_true (dismissing closes assignments, so
 --         that combination cannot persist).
 --
+--   The 48h window on not_true is on the incident OR the decision, whichever
+--   is recent - a report filed three days ago and hidden a minute ago must
+--   still land in "Hindi totoo" instead of vanishing, so the window also
+--   checks report_events/signal_events for a 'decision' row in the last 48h,
+--   not only reported_at/created_at.
+--
 -- Within a column: SOS above reports (a person asking for help outranks an
 -- observation), then severity worst first, then newest first. SOS rows have
 -- no severity, and `nulls first` is what puts them on top.
@@ -91,7 +97,14 @@ begin
       from sos_signals s
       left join open_assignment oa on oa.target_id = s.id
      where s.status <> 'resolved'
-       and (s.status <> 'dismissed' or s.created_at > now() - interval '48 hours')
+       and (s.status <> 'dismissed'
+            or s.created_at > now() - interval '48 hours'
+            or exists (
+                 select 1 from signal_events e
+                  where e.sos_id = s.id
+                    and e.event_type = 'decision'
+                    and e.created_at > now() - interval '48 hours'
+               ))
     union all
     select 'report',
            r.id,
@@ -114,7 +127,14 @@ begin
       from depth_reports r
       left join open_assignment oa on oa.target_id = r.id
      where (r.status <> 'hidden' or r.triage_state = 'not_true')
-       and (r.triage_state <> 'not_true' or r.reported_at > now() - interval '48 hours')
+       and (r.triage_state <> 'not_true'
+            or r.reported_at > now() - interval '48 hours'
+            or exists (
+                 select 1 from report_events e
+                  where e.report_id = r.id
+                    and e.event_type = 'decision'
+                    and e.created_at > now() - interval '48 hours'
+               ))
   ),
   ranked as (
     select p.*,
