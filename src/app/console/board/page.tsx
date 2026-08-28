@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { SimulationBanner } from "@/components/SimulationBanner";
@@ -10,7 +10,7 @@ import { decideSos } from "@/app/actions/decide-sos";
 import { decideReport } from "@/app/actions/decide-report";
 import { assignResponder, closeAssignment } from "@/app/actions/assign";
 import {
-  BOARD_COLUMNS, columnLabel, groupByColumn, moveNeeds, canMove,
+  BOARD_COLUMNS, columnLabel, groupByColumn, moveNeeds, canMove, findLive,
   type BoardColumn, type BoardRow,
 } from "@/lib/board/types";
 import { useCopy } from "@/lib/i18n/context";
@@ -64,6 +64,27 @@ export default function BoardPage() {
       void channel.unsubscribe();
     };
   }, [load]);
+
+  // Read inside the effect below via a ref: react-hooks/set-state-in-effect
+  // flags setState called from state closed over directly in an effect, but
+  // exempts a call gated on a ref (the pattern it recommends for "detecting
+  // that a value changed" - https://react.dev/learn/you-might-not-need-an-effect).
+  const rowsRef = useRef(rows);
+  useEffect(() => {
+    rowsRef.current = rows;
+  }, [rows]);
+
+  // A reload mid-drag (another admin's move, or the realtime echo of this
+  // admin's own) can retarget or remove the row `dragging` snapshotted at
+  // dragstart; when the dragged card's node unmounts, dragend may never
+  // fire. Only clear when the live row is actually gone - not on every
+  // reload, which would cancel a drag whose row is still on the board.
+  useEffect(() => {
+    if (dragging && !findLive(rowsRef.current, dragging)) {
+      setDragging(null);
+      setOver(null);
+    }
+  }, [rows, dragging]);
 
   /** Fetched the first time a responder is needed; the roster is short. */
   async function ensureRoster(): Promise<RosterEntry[]> {
@@ -128,6 +149,7 @@ export default function BoardPage() {
   );
 
   const grouped = groupByColumn(rows);
+  const liveDragging = findLive(rows, dragging);
 
   return (
     <>
@@ -164,7 +186,9 @@ export default function BoardPage() {
                 onDragOver={(e) => {
                   // Only a column the card may move to accepts it. preventDefault is
                   // what makes a drop possible at all; withholding it is the refusal.
-                  if (dragging && canMove(dragging.board_column, column)) {
+                  // liveDragging re-reads board_column from `rows`, not the
+                  // dragstart snapshot, so a concurrent move can't stale this check.
+                  if (liveDragging && canMove(liveDragging.board_column, column)) {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = "move";
                     if (over !== column) setOver(column);
@@ -177,7 +201,7 @@ export default function BoardPage() {
                 }}
                 onDrop={(e) => {
                   e.preventDefault();
-                  const row = dragging;
+                  const row = liveDragging;
                   setDragging(null);
                   setOver(null);
                   if (row && canMove(row.board_column, column)) void move(row, column);

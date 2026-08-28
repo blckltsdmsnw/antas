@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { copyFor } from "@/lib/i18n/strings";
 import {
   BOARD_COLUMNS, isBoardColumn, movesFrom, canMove, moveNeeds,
-  columnLabel, groupByColumn, type BoardRow,
+  columnLabel, groupByColumn, findLive, type BoardRow,
 } from "./types";
 
 const tl = copyFor("tl").board;
@@ -67,6 +67,20 @@ describe("moves", () => {
     expect(moveNeeds("assigned")).toBe("responder");
     expect(moveNeeds("needs_attention")).toBeNull();
     expect(moveNeeds("needs_checking")).toBeNull();
+  });
+});
+
+describe("findLive", () => {
+  it("returns the live row - its current board_column, not the snapshot's", () => {
+    const snapshot = row({ id: "a", board_column: "needs_checking" });
+    const rows = [row({ id: "a", board_column: "needs_attention" }), row({ id: "b" })];
+    expect(findLive(rows, snapshot)).toEqual(rows[0]);
+  });
+
+  it("returns null when the row is absent, and when dragging is null", () => {
+    const rows = [row({ id: "b" })];
+    expect(findLive(rows, row({ id: "a" }))).toBeNull();
+    expect(findLive(rows, null)).toBeNull();
   });
 });
 

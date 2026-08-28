@@ -95,6 +95,12 @@ export function moveNeeds(to: BoardColumn): "reason" | "responder" | null {
   return NEEDS[to];
 }
 
+/** The row `dragging` refers to, as `rows` stands right now - not the dragstart snapshot. */
+export function findLive(rows: readonly BoardRow[], dragging: BoardRow | null): BoardRow | null {
+  if (!dragging) return null;
+  return rows.find((r) => r.kind === dragging.kind && r.id === dragging.id) ?? null;
+}
+
 export function columnLabel(column: BoardColumn, copy: Copy["board"]): string {
   return copy[LABEL_KEY[column]] as string;
 }
