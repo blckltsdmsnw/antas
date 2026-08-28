@@ -80,6 +80,42 @@ async function placement(id: string): Promise<string | undefined> {
 }
 
 beforeAll(async () => {
+  // board_rows() caps each column at 200 rows and orders severity-first, so
+  // on a shared local DB a fresh mild row can be starved out by hundreds of
+  // stale severe rows left behind by earlier test runs. This cleanup only
+  // ever touches rows owned by this project's test/seed accounts - the
+  // @example.test convention used by makeUser() here and in scripts/unseed.ts
+  // - and only once they are an hour old, so it never reaches into anyone
+  // else's data or a run still in flight.
+  const staleTestAccountIds: string[] = [];
+  for (let page = 1; ; page += 1) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) throw error;
+    for (const u of data.users) {
+      if (u.email?.endsWith("@example.test")) staleTestAccountIds.push(u.id);
+    }
+    if (data.users.length !== 1000) break;
+  }
+
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  for (let i = 0; i < staleTestAccountIds.length; i += 200) {
+    const chunk = staleTestAccountIds.slice(i, i + 200);
+
+    const { error: reportsError } = await admin
+      .from("depth_reports")
+      .delete()
+      .in("reporter_id", chunk)
+      .lt("reported_at", oneHourAgo);
+    if (reportsError) throw reportsError;
+
+    const { error: signalsError } = await admin
+      .from("sos_signals")
+      .delete()
+      .in("reporter_id", chunk)
+      .lt("created_at", oneHourAgo);
+    if (signalsError) throw signalsError;
+  }
+
   const master = await makeUser("master");
   const a = await makeUser("admin");
   const resp = await makeUser("responder");
