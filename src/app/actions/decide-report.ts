@@ -18,13 +18,14 @@ export type DecideReportResult =
 
 /**
  * Thin wrapper. Every rule - barangay scope, the report existing, a reason
- * being required to hide, and the audit row - lives in the `decide_report`
- * Postgres function so the whole decision is one transaction. Re-implementing
- * any of it here would create a second source of truth that drifts.
+ * being required to hide, and whether confirming is allowed, and the audit
+ * row - lives in the `decide_report` Postgres function so the whole decision
+ * is one transaction. Re-implementing any of it here would create a second
+ * source of truth that drifts.
  */
 export async function decideReport(
   reportId: string,
-  decision: "keep" | "hide",
+  decision: "keep" | "hide" | "confirm",
   reason: string | null,
 ): Promise<DecideReportResult> {
   if (decision === "hide" && (reason === null || !isHideReason(reason))) {

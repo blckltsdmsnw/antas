@@ -3222,6 +3222,12 @@ a.btn {
 .report-band[data-band="urgent"]  { background: var(--danger-tint); color: var(--danger); }
 .report-band[data-band="watch"]   { background: var(--raised);      color: var(--ink); }
 .report-band[data-band="routine"] { background: var(--raised);      color: var(--ink-muted); }
+.report-band[data-band="confirmed"] { background: var(--success-tint); color: var(--success); }
+
+/* A responder's own row: the pill says what kind of record it is, in the
+   quiet colour, because on this list nothing is competing for priority -
+   everything here is already theirs. */
+.report-band[data-band="assigned"] { background: var(--raised); color: var(--ink); }
 
 .report-meta {
   grid-column: 1 / -1;
@@ -3294,4 +3300,9 @@ a.btn {
 .severity-choice[aria-pressed="true"] {
   border-color: var(--ink);
   background: var(--raised);
+}
+
+.console-board-link {
+  display: inline-block;
+  margin: 4px 0 12px;
 }

@@ -20,15 +20,20 @@ import { createClient } from "@supabase/supabase-js";
  * A barangay is still required with --admin. The row has to name somewhere -
  * an admin is a person at a desk who can also cover others, not a floating
  * permission - and it is where they land when the wider role is taken away.
+ *
+ * `--master` grants `master_admin`, which is admin plus the board at
+ * `/console/board`, the responder roster, and the right to assign
+ * responders. Same act of vetting, one level wider again.
  */
 const args = process.argv.slice(2);
+const isMaster = args.includes("--master");
 const isAdmin = args.includes("--admin");
 
 // Positional arguments only, so the flag can sit anywhere in the command.
 const [email, barangay] = args.filter((arg) => !arg.startsWith("--"));
 
 if (!email || !barangay) {
-  console.error("usage: npm run make-moderator -- <email> <barangay> [--admin]");
+  console.error("usage: npm run make-moderator -- <email> <barangay> [--admin | --master]");
   process.exit(1);
 }
 
@@ -59,7 +64,9 @@ async function main() {
     throw new Error(`no user with email ${email} - they must sign in once first`);
   }
 
-  const role = isAdmin ? "admin" : "moderator";
+  // --master wins over --admin if both are passed: the wider grant is the one
+  // being asked for, and refusing the command would be the only alternative.
+  const role = isMaster ? "master_admin" : isAdmin ? "admin" : "moderator";
 
   // The role is written every time, not only when --admin is passed. Omitting
   // it would make re-running without the flag silently leave an existing admin
@@ -70,9 +77,11 @@ async function main() {
   if (error) throw error;
 
   console.log(
-    isAdmin
-      ? `${email} is now an admin, based at ${barangay} and able to see every barangay.`
-      : `${email} is now a moderator for ${barangay}.`,
+    isMaster
+      ? `${email} is now the master admin, based at ${barangay}: every barangay, plus the board and the roster.`
+      : isAdmin
+        ? `${email} is now an admin, based at ${barangay} and able to see every barangay.`
+        : `${email} is now a moderator for ${barangay}.`,
   );
 }
 

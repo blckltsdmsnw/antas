@@ -30,6 +30,7 @@ export interface QueueReport {
   severity: Severity;
   depth: DepthLevel | null;
   status: string;
+  triage_state: "needs_checking" | "not_true" | "needs_attention";
   priority: string;
   reported_at: string;
   has_photo: boolean;
@@ -142,6 +143,14 @@ export function ReportCard({
         <span className="report-band" data-band={band}>
           {bandLabel}
         </span>
+        {report.triage_state === "needs_attention" && (
+          // The moment a report becomes real to other people: the master admin
+          // (or this desk) confirmed it. Shown as a second pill, not a colour,
+          // because colour on this row already means priority.
+          <span className="report-band" data-band="confirmed">
+            {copy.board.confirmedBadge}
+          </span>
+        )}
         <HazardIcon hazard={report.hazard_type} size="sm" />
         <strong>
           {report.hazard_type === "flood"

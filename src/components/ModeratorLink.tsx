@@ -5,19 +5,21 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 /**
- * Shows the console link only to actual moderators.
+ * Shows the console link to anyone `/console` would show something to:
+ * moderators, admins, master admins, and a plain account holding an open
+ * assignment - because the console is where their assigned incident is.
  *
  * Client-side on purpose: doing this check in the root layout would require
  * `cookies()`, which turns every page - including the statically prerendered
  * public map - into a server-rendered-on-demand route. A nav link is not worth
  * that.
  *
- * This is discoverability, not access control. A non-moderator who types
- * /console still sees nothing: `moderator_queue()` is scoped by `auth.uid()`
- * inside the database and revoked from anon entirely.
+ * This is discoverability, not access control. Somebody who types /console
+ * without either still sees nothing: `console_access()` answers only about
+ * `auth.uid()`, inside the database.
  */
 export function ModeratorLink() {
-  const [isModerator, setIsModerator] = useState(false);
+  const [hasConsole, setHasConsole] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -27,14 +29,9 @@ export function ModeratorLink() {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user || cancelled) return;
 
-      // RLS lets a user read only their own moderators row.
-      const { data } = await supabase
-        .from("moderators")
-        .select("barangay")
-        .eq("user_id", userData.user.id)
-        .maybeSingle();
-
-      if (!cancelled) setIsModerator(Boolean(data));
+      const { data } = await supabase.rpc("console_access");
+      const row = ((data as { role: string | null; open_assignments: number }[]) ?? [])[0];
+      if (!cancelled) setHasConsole(Boolean(row && (row.role !== null || row.open_assignments > 0)));
     }
 
     void check();
@@ -43,7 +40,7 @@ export function ModeratorLink() {
     };
   }, []);
 
-  if (!isModerator) return null;
+  if (!hasConsole) return null;
 
   return (
     <Link href="/console" className="nav-link">
