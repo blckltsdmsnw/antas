@@ -166,6 +166,30 @@ describe("triage state", () => {
     });
     expect(error).not.toBeNull();
   });
+
+  it("resets to needs_checking when a hidden report is kept", async () => {
+    // 'keep' genuinely re-activates a hidden report; leaving triage_state at
+    // not_true would put a live, publicly visible report in the board's
+    // "Hindi totoo" column - the two-sources-of-truth drift the migration's
+    // own comment argues against.
+    const id = await newReport();
+    await modClient.rpc("decide_report", {
+      p_report_id: id,
+      p_decision: "hide",
+      p_reason: "stale",
+    });
+    const { error } = await modClient.rpc("decide_report", {
+      p_report_id: id,
+      p_decision: "keep",
+    });
+    expect(error).toBeNull();
+    const { data } = await admin
+      .from("depth_reports")
+      .select("triage_state, status")
+      .eq("id", id)
+      .single();
+    expect(data).toEqual({ triage_state: "needs_checking", status: "active" });
+  });
 });
 
 describe("the roster", () => {

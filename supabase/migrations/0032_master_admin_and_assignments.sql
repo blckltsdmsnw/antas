@@ -546,7 +546,8 @@ begin
      where id = decide_report.p_report_id;
   else
     update depth_reports
-       set status = 'active'
+       set status = 'active',
+           triage_state = case when triage_state = 'not_true' then 'needs_checking' else triage_state end
      where id = decide_report.p_report_id;
   end if;
 
