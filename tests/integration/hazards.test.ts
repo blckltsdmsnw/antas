@@ -270,14 +270,24 @@ describe("the functions this migration did not touch still work", () => {
 
     await isolatedFire();
     const { data, error } = await admin.rpc("corroborating_reports", {
-      ...ISOLATED, within_minutes: 60,
+      ...ISOLATED, within_minutes: 60, hazard: "flood",
     });
     expect(error).toBeNull();
-    // Whatever the count is, adding a fire must not have raised it.
+    // Asked for floods, a fire must not have raised it.
     await isolatedFire();
     const { data: after } = await admin.rpc("corroborating_reports", {
-      ...ISOLATED, within_minutes: 60,
+      ...ISOLATED, within_minutes: 60, hazard: "flood",
     });
     expect(after).toBe(data);
+
+    // 0034 moved the flood filter from the function body to a parameter.
+    // Asked for nothing, the count is of everything active nearby - an SOS
+    // whose sender chose no chip is corroborated by whatever is happening on
+    // that street, fires included. This assertion is the old body's rule
+    // restated where it now lives, not a weakened one.
+    const { data: anyHazard } = await admin.rpc("corroborating_reports", {
+      ...ISOLATED, within_minutes: 60,
+    });
+    expect(anyHazard as number).toBeGreaterThan(after as number);
   });
 });

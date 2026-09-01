@@ -1,5 +1,5 @@
 // tests/integration/sos-hazard.test.ts
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 
 /** The hazard on an SOS, read back where a moderator and the scorer need it. */
@@ -71,13 +71,29 @@ describe("the queue and the detail", () => {
 });
 
 describe("corroborating_reports with a hazard", () => {
+  /**
+   * The counts below are absolute, so this file must leave the local database
+   * exactly as it found it. Every row it inserts is deleted by id afterwards -
+   * nothing is matched by age or by location, so no row this file did not
+   * create can ever be caught by the cleanup.
+   */
+  let inserted: string[] = [];
+
+  afterAll(async () => {
+    if (inserted.length > 0) await admin.from("depth_reports").delete().in("id", inserted);
+  });
+
   beforeAll(async () => {
-    const { error } = await admin.from("depth_reports").insert([
+    const { data, error } = await admin.from("depth_reports").insert([
       { reporter_id: reporterId, location: FORTUNE, hazard_type: "fire", severity: 2 },
       { reporter_id: reporterId, location: FORTUNE, hazard_type: "fire", severity: 3 },
-      { reporter_id: reporterId, location: FORTUNE, depth: "knee" },
-    ]);
+      // hazard_type is spelled out even though the column defaults to 'flood':
+      // a bulk insert unions the keys across the rows, so PostgREST would send
+      // an explicit null here and the default would never fire.
+      { reporter_id: reporterId, location: FORTUNE, hazard_type: "flood", depth: "knee" },
+    ]).select("id");
     if (error) throw error;
+    inserted = (data as { id: string }[]).map((r) => r.id);
   });
 
   it("counts only the same hazard when one is given", async () => {
