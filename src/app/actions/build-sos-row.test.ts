@@ -9,6 +9,7 @@ describe("buildSosRow", () => {
       gpsAccuracyM: 9,
       photoPath: "user-1/abc.jpg",
       note: "nasa bubong kami",
+      hazard: null,
     });
 
     expect(row).toEqual({
@@ -17,6 +18,7 @@ describe("buildSosRow", () => {
       gps_accuracy_m: 9,
       photo_path: "user-1/abc.jpg",
       note: "nasa bubong kami",
+      hazard_type: null,
     });
   });
 
@@ -27,6 +29,7 @@ describe("buildSosRow", () => {
       gpsAccuracyM: null,
       photoPath: "user-1/abc.jpg",
       note: null,
+      hazard: null,
     });
 
     expect(row.note).toBeNull();
@@ -39,11 +42,25 @@ describe("buildSosRow", () => {
       gpsAccuracyM: 9,
       photoPath: "user-1/abc.jpg",
       note: null,
+      hazard: null,
     });
 
     // Absent, not defaulted. Writing a level nobody chose would put a claim
     // about the water into a record the moderator reads as the sender's own
     // words - and the sender was deliberately never asked for one.
     expect(row).not.toHaveProperty("depth");
+  });
+
+  it("carries the chosen hazard through as hazard_type", () => {
+    const row = buildSosRow("user-1", {
+      lat: 14.65,
+      lon: 121.1,
+      gpsAccuracyM: 9,
+      photoPath: "user-1/abc.jpg",
+      note: null,
+      hazard: "fire",
+    });
+
+    expect(row.hazard_type).toBe("fire");
   });
 });

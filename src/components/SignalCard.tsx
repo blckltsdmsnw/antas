@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { type DepthLevel } from "@/lib/depth/scale";
 import { depthName } from "@/lib/depth/name";
+import { type HazardType } from "@/lib/hazard/types";
+import { hazardName } from "@/lib/hazard/name";
+import { HazardIcon } from "./HazardIcon";
 import { useCopy } from "@/lib/i18n/context";
 
 export interface QueueSignal {
@@ -10,6 +13,8 @@ export interface QueueSignal {
   barangay: string | null;
   /** Null on every signal sent since the SOS form stopped asking for one. */
   depth: DepthLevel | null;
+  /** What the sender chose from the optional chips, or null for none. */
+  hazard_type: HazardType | null;
   status: string;
   trust_score: number | null;
   confidence: string | null;
@@ -34,14 +39,18 @@ export function SignalCard({ signal }: { signal: QueueSignal }) {
         <span className="signal-band" data-band={band}>
           {signal.confidence ?? copy.screens.signalUnscored}
         </span>
+        {signal.hazard_type && <HazardIcon hazard={signal.hazard_type} size="sm" />}
         {/* A signal is a person asking for help, not a depth reading. Where a
             sender did choose one it is still their word and still shown; where
-            they were never asked, the card says the thing that is actually
-            true rather than inventing a level. */}
+            they chose a hazard chip instead, that is their word too; where
+            they said neither, the card says the thing that is actually true
+            rather than inventing a level. */}
         <strong>
           {signal.depth
             ? depthName(signal.depth, copy.map)
-            : copy.screens.signalTitle}
+            : signal.hazard_type
+              ? hazardName(signal.hazard_type, copy.hazard)
+              : copy.screens.signalTitle}
         </strong>
       </span>
       <span className="signal-meta">

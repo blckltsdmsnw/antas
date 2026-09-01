@@ -13,6 +13,8 @@ import {
 } from "@/lib/reports/accuracy";
 import { type DepthLevel } from "@/lib/depth/scale";
 import { depthName } from "@/lib/depth/name";
+import { type HazardType } from "@/lib/hazard/types";
+import { hazardName } from "@/lib/hazard/name";
 import { formatPhone } from "@/lib/profile/phone";
 import { useCopy } from "@/lib/i18n/context";
 import type { Reason } from "@/lib/scoring/types";
@@ -21,6 +23,7 @@ interface Detail {
   id: string;
   barangay: string | null;
   depth: DepthLevel | null;
+  hazard_type: HazardType | null;
   status: string;
   trust_score: number | null;
   confidence: string | null;
@@ -127,12 +130,15 @@ export default function SignalDetailPage({
       <main className="console-page">
         {/* The sender's own words where they gave them, and the plain fact
             otherwise. An SOS no longer asks for a depth, so most signals from
-            here on carry none - and inventing one would put a claim about the
-            water into a record a moderator reads as theirs. */}
+            here on carry none; the optional chips may carry a hazard instead,
+            which is equally theirs. Inventing either would put a claim into a
+            record a moderator reads as the sender's own. */}
         <h1 className="task-title">
           {detail.depth
             ? depthName(detail.depth, copy.map)
-            : copy.screens.signalTitle}
+            : detail.hazard_type
+              ? hazardName(detail.hazard_type, copy.hazard)
+              : copy.screens.signalTitle}
         </h1>
         <p className="task-lede">
           {detail.barangay} · {new Date(detail.created_at).toLocaleString("en-PH")}

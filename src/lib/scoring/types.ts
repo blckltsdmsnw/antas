@@ -1,4 +1,5 @@
 import type { DepthLevel } from "@/lib/depth/scale";
+import type { HazardType } from "@/lib/hazard/types";
 
 /**
  * Everything the scorer is allowed to know. Assembled by the caller from the
@@ -18,6 +19,13 @@ export interface ScoringSnapshot {
    * a claim.
    */
   claimedDepth: DepthLevel | null;
+  /**
+   * What the sender said is happening, or `null` because they chose no
+   * chip. Rainfall and elevation are evidence about water; for a fire or an
+   * earthquake they are withdrawn rather than scored, and the reasons say
+   * so. `null` keeps them: see `scoreSignal`.
+   */
+  hazard: HazardType | null;
   gpsAccuracyM: number | null;
   hasLivePhoto: boolean;
   /**

@@ -8,6 +8,7 @@ import { validateLocation, type LocationErrorCode } from "@/lib/reports/validate
 import { scoreSignal } from "@/lib/scoring/score";
 import { openMeteoProvider } from "@/lib/env/open-meteo";
 import { buildSosRow, type SosInput } from "@/lib/sos/row";
+import { isHazardType } from "@/lib/hazard/types";
 
 export type { SosInput };
 
@@ -16,9 +17,11 @@ export type { SosInput };
  * `missing_severity` are deliberately absent.
  *
  * They come with `ReportErrorCode`, and an SOS can no longer produce them: the
- * sender is never asked for a hazard, a depth or a severity, so none of those
- * fields can be invalid or missing. Naming only the codes that can actually
- * occur keeps the page from carrying a message for a failure that cannot
+ * sender is never asked for a depth or a severity, and the hazard chips are
+ * optional - choosing none is a real answer - so none of those fields can be
+ * missing. A hazard that is present but not one we know is refused as
+ * `insert_failed`, not as `missing_hazard`. Naming only the codes that can
+ * actually occur keeps the page from carrying a message for a failure that cannot
  * happen. `LocationErrorCode` is `validate.ts`'s own name for this same set.
  */
 export type SosErrorCode =
@@ -32,6 +35,14 @@ export type SosResult =
   | { ok: false; errors: SosErrorCode[] };
 
 export async function submitSos(input: SosInput): Promise<SosResult> {
+  // Optional, so null passes; anything else must be a hazard we know. An
+  // unknown word is refused rather than nulled, because silently
+  // recording "unspecified" for a sender who chose something would put
+  // the wrong fact in the console.
+  if (input.hazard !== null && !isHazardType(input.hazard)) {
+    return { ok: false, errors: ["insert_failed"] };
+  }
+
   // Location only. An SOS carries no depth, and failing one on `invalid_depth`
   // would be refusing a call for help over a field the sender was deliberately
   // never shown.
@@ -165,6 +176,7 @@ async function enrichAndScore(
         lon: input.lon,
         radius_m: 500,
         within_minutes: 60,
+        hazard: input.hazard,
       }),
       // The reporter's own history. `decide_sos` has maintained this table since
       // 0010 and nothing ever read it back - the two counts below were passed as
@@ -199,6 +211,7 @@ async function enrichAndScore(
     const result = scoreSignal({
       // Never asked. Not a shallow claim - see isDeepClaim.
       claimedDepth: null,
+      hazard: input.hazard,
       gpsAccuracyM: input.gpsAccuracyM,
       hasLivePhoto: input.photoPath.length > 0,
       accountAgeMinutes: minutesSince(accountCreatedAt),

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { HoldToConfirm } from "@/components/HoldToConfirm";
 import { PhotoCapture } from "@/components/PhotoCapture";
+import { HazardChips } from "@/components/HazardChips";
 import { PhoneField } from "@/components/PhoneField";
 import { SignalStatus } from "@/components/SignalStatus";
 import { createClient } from "@/lib/supabase/client";
@@ -13,6 +14,7 @@ import {
   needsLocationConfirmation,
 } from "@/lib/reports/accuracy";
 import { useCopy } from "@/lib/i18n/context";
+import type { HazardType } from "@/lib/hazard/types";
 import { PULSE_SENT, vibrate } from "@/lib/haptics/pulse";
 import type { Copy } from "@/lib/i18n/strings";
 
@@ -43,6 +45,7 @@ export default function SosPage() {
   const copy = useCopy();
   const [photo, setPhoto] = useState<File | null>(null);
   const [note, setNote] = useState("");
+  const [hazard, setHazard] = useState<HazardType | null>(null);
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [errors, setErrors] = useState<PageErrorCode[]>([]);
   /** Accuracy of the fix that was actually sent, so the confirmation screen can
@@ -120,6 +123,7 @@ export default function SosPage() {
       gpsAccuracyM: position.coords.accuracy ?? null,
       photoPath: path,
       note: note.trim() === "" ? null : note.trim(),
+      hazard,
     });
 
     if (!result.ok) {
@@ -225,6 +229,8 @@ export default function SosPage() {
           onCapture={setPhoto}
         />
       )}
+
+      <HazardChips value={hazard} onChange={setHazard} />
 
 
       <label className="field" style={{ marginTop: 24 }}>

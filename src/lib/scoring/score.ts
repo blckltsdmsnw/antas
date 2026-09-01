@@ -1,7 +1,19 @@
 import { depthRank, type DepthLevel } from "@/lib/depth/scale";
+import type { HazardType } from "@/lib/hazard/types";
 import type { Confidence, Reason, ScoreResult, ScoringSnapshot } from "./types";
 
 const START = 50;
+
+/**
+ * The two environmental groups are evidence about water. They run for flood
+ * and for an unspecified hazard (no chip chosen - the old assumption, and
+ * with no claimed depth they can only support), and are withdrawn for
+ * everything else. A gap that was never asked about must not become a
+ * caution mark, so `environmentUnknown` stays false for those.
+ */
+function environmentApplies(hazard: HazardType | null): boolean {
+  return hazard === null || hazard === "flood";
+}
 
 /**
  * Deep claims are the ones rainfall and elevation can meaningfully contradict.
@@ -46,53 +58,60 @@ export function scoreSignal(snapshot: ScoringSnapshot): ScoreResult {
     });
   }
 
-  // --- Rainfall ------------------------------------------------------------
-  if (snapshot.rainfall24hMm === null) {
-    environmentUnknown = true;
-  } else if (snapshot.rainfall24hMm >= 20) {
-    score += 15;
-    reasons.push({
-      kind: "supporting",
-      text: `${Math.round(snapshot.rainfall24hMm)}mm rainfall recorded in 24h.`,
-    });
-  } else if (snapshot.rainfall24hMm >= 5) {
-    score += 8;
-    reasons.push({
-      kind: "supporting",
-      text: `${Math.round(snapshot.rainfall24hMm)}mm rainfall recorded in 24h.`,
-    });
-  } else if (isDeepClaim(snapshot.claimedDepth)) {
-    score -= 15;
-    reasons.push({
-      kind: "concerning",
-      text: "No rainfall recorded in 24h.",
-    });
-  }
-
-  // --- Elevation relative to surroundings ----------------------------------
-  if (snapshot.elevationM === null || snapshot.surroundingElevationM === null) {
-    environmentUnknown = true;
-  } else {
-    const relative = snapshot.elevationM - snapshot.surroundingElevationM;
-    if (relative >= 10 && isDeepClaim(snapshot.claimedDepth)) {
-      score -= 20;
-      reasons.push({
-        kind: "concerning",
-        text: `This location sits ${Math.round(relative)}m above surrounding terrain.`,
-      });
-    } else if (relative <= -1) {
-      score += 10;
+  if (environmentApplies(snapshot.hazard)) {
+    // --- Rainfall ------------------------------------------------------------
+    if (snapshot.rainfall24hMm === null) {
+      environmentUnknown = true;
+    } else if (snapshot.rainfall24hMm >= 20) {
+      score += 15;
       reasons.push({
         kind: "supporting",
-        text: `This location sits ${Math.abs(Math.round(relative))}m below surrounding terrain, where water collects.`,
+        text: `${Math.round(snapshot.rainfall24hMm)}mm rainfall recorded in 24h.`,
+      });
+    } else if (snapshot.rainfall24hMm >= 5) {
+      score += 8;
+      reasons.push({
+        kind: "supporting",
+        text: `${Math.round(snapshot.rainfall24hMm)}mm rainfall recorded in 24h.`,
+      });
+    } else if (isDeepClaim(snapshot.claimedDepth)) {
+      score -= 15;
+      reasons.push({
+        kind: "concerning",
+        text: "No rainfall recorded in 24h.",
       });
     }
-  }
 
-  if (environmentUnknown) {
+    // --- Elevation relative to surroundings ----------------------------------
+    if (snapshot.elevationM === null || snapshot.surroundingElevationM === null) {
+      environmentUnknown = true;
+    } else {
+      const relative = snapshot.elevationM - snapshot.surroundingElevationM;
+      if (relative >= 10 && isDeepClaim(snapshot.claimedDepth)) {
+        score -= 20;
+        reasons.push({
+          kind: "concerning",
+          text: `This location sits ${Math.round(relative)}m above surrounding terrain.`,
+        });
+      } else if (relative <= -1) {
+        score += 10;
+        reasons.push({
+          kind: "supporting",
+          text: `This location sits ${Math.abs(Math.round(relative))}m below surrounding terrain, where water collects.`,
+        });
+      }
+    }
+
+    if (environmentUnknown) {
+      reasons.push({
+        kind: "unknown",
+        text: "Environmental data unavailable - treat with caution.",
+      });
+    }
+  } else {
     reasons.push({
       kind: "unknown",
-      text: "Environmental data unavailable - treat with caution.",
+      text: "Rainfall and elevation checks apply to flood only.",
     });
   }
 

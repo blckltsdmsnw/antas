@@ -1,5 +1,12 @@
+import type { HazardType } from "@/lib/hazard/types";
+
 /**
- * An SOS carries no depth.
+ * An SOS carries no depth, and *may* carry a hazard.
+ *
+ * The hazard is chosen from an optional row of chips above the hold: six
+ * words, nothing preselected, nothing required. `null` records that none was
+ * chosen and is never a guess - the console shows "not specified" rather
+ * than inventing one.
  *
  * It used to. The form asked the sender to set a five-level gauge before it
  * would send - a question for somebody on a kerb deciding whether a street is
@@ -16,6 +23,7 @@ export interface SosInput {
   gpsAccuracyM: number | null;
   photoPath: string;
   note: string | null;
+  hazard: HazardType | null;
 }
 
 export interface SosRow {
@@ -24,6 +32,7 @@ export interface SosRow {
   gps_accuracy_m: number | null;
   photo_path: string;
   note: string | null;
+  hazard_type: HazardType | null;
 }
 
 export function buildSosRow(reporterId: string, input: SosInput): SosRow {
@@ -33,5 +42,6 @@ export function buildSosRow(reporterId: string, input: SosInput): SosRow {
     gps_accuracy_m: input.gpsAccuracyM,
     photo_path: input.photoPath,
     note: input.note,
+    hazard_type: input.hazard,
   };
 }

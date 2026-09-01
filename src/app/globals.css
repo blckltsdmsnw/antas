@@ -3551,3 +3551,36 @@ a.btn {
 }
 
 .barangay-ranking-count { font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+
+/* Six optional chips above the SOS hold. Wrap to two rows on a narrow phone
+   rather than shrink below a thumb. */
+.hazard-chips { margin-top: 20px; }
+
+.hazard-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.hazard-chip {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.hazard-chip[aria-checked="true"] {
+  border-color: var(--ink);
+  background: var(--raised);
+}

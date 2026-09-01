@@ -5,6 +5,7 @@ import type { ScoringSnapshot } from "./types";
 /** A plausible mid-range signal. Individual tests override one field. */
 const baseline: ScoringSnapshot = {
   claimedDepth: "chest",
+  hazard: null,
   gpsAccuracyM: 8,
   hasLivePhoto: true,
   photoReusedCount: 0,
@@ -236,5 +237,38 @@ describe("scoreSignal with a reused photo", () => {
     // heaviest penalty in the scorer must not floor a signal out of sight.
     const reused = scoreSignal({ ...baseline, photoReusedCount: 3 });
     expect(reused.score).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("hazard", () => {
+  const wet = { rainfall24hMm: 30, elevationM: 10, surroundingElevationM: 15 };
+
+  it("keeps the rainfall and elevation groups for a flood and for an unspecified hazard", () => {
+    // Unspecified keeps them: with no claimed depth those two groups can
+    // only ever support, and withdrawing support from the people who had no
+    // seconds to choose a chip would penalise the product's own design.
+    const flood = scoreSignal({ ...baseline, claimedDepth: null, hazard: "flood", ...wet });
+    const none = scoreSignal({ ...baseline, claimedDepth: null, hazard: null, ...wet });
+    expect(flood.reasons.some((r) => /rainfall/i.test(r.text))).toBe(true);
+    expect(none.reasons.some((r) => /rainfall/i.test(r.text))).toBe(true);
+  });
+
+  it("withdraws them for a fire, and says so rather than scoring the gap", () => {
+    const fire = scoreSignal({ ...baseline, claimedDepth: null, hazard: "fire", ...wet });
+    expect(fire.reasons.some((r) => /rainfall/i.test(r.text) && r.kind !== "unknown")).toBe(false);
+    expect(fire.reasons.some((r) => /terrain/i.test(r.text))).toBe(false);
+    expect(fire.reasons).toContainEqual({
+      kind: "unknown",
+      text: "Rainfall and elevation checks apply to flood only.",
+    });
+  });
+
+  it("does not degrade a fire to medium on missing weather, because weather was never asked", () => {
+    const fire = scoreSignal({
+      ...baseline, claimedDepth: null, hazard: "fire",
+      rainfall24hMm: null, elevationM: null, surroundingElevationM: null,
+      hasLivePhoto: false, corroboratingReports: 0, reporterFalseReportCount: 2,
+    });
+    expect(fire.confidence).toBe("low");
   });
 });
