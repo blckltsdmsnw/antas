@@ -13,6 +13,9 @@ import {
   BOARD_COLUMNS, columnLabel, groupByColumn, moveNeeds, canMove, findLive,
   type BoardColumn, type BoardRow,
 } from "@/lib/board/types";
+import { TrendChart } from "@/components/board/TrendChart";
+import { BarangayRanking } from "@/components/board/BarangayRanking";
+import type { BoardGraph } from "@/lib/board/graph";
 import { useCopy } from "@/lib/i18n/context";
 
 type Stage = "loading" | "denied" | "failed" | "ready";
@@ -35,6 +38,7 @@ export default function BoardPage() {
   const copy = useCopy();
   const [stage, setStage] = useState<Stage>("loading");
   const [rows, setRows] = useState<BoardRow[]>([]);
+  const [graph, setGraph] = useState<BoardGraph | null>(null);
   const [roster, setRoster] = useState<RosterEntry[] | null>(null);
   const [panel, setPanel] = useState<{ row: BoardRow; to: BoardColumn } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,14 +46,19 @@ export default function BoardPage() {
   const [over, setOver] = useState<BoardColumn | null>(null);
 
   const load = useCallback(async () => {
-    const { data, error: loadError } = await createClient().rpc("board_rows");
-    if (loadError) {
+    const supabase = createClient();
+    const [rowsResult, graphResult] = await Promise.all([
+      supabase.rpc("board_rows"),
+      supabase.rpc("board_graph"),
+    ]);
+    if (rowsResult.error) {
       // 42501 is the function's own refusal: not the master admin. Anything
       // else is a failure, and the two must not look the same.
-      setStage(loadError.code === "42501" ? "denied" : "failed");
+      setStage(rowsResult.error.code === "42501" ? "denied" : "failed");
       return;
     }
-    setRows((data as BoardRow[]) ?? []);
+    setRows((rowsResult.data as BoardRow[]) ?? []);
+    setGraph((graphResult.data as BoardGraph | null) ?? { hours: [], barangays: [] });
     setStage("ready");
   }, []);
 
@@ -174,6 +183,16 @@ export default function BoardPage() {
         )}
 
         {error && <p className="alert" role="alert">{error}</p>}
+
+        {stage === "ready" && graph && (
+          <div className="board-graph">
+            <h2 className="sheet-count">{copy.board.graphTitle}</h2>
+            <div className="board-graph-panels">
+              <TrendChart graph={graph} />
+              <BarangayRanking graph={graph} />
+            </div>
+          </div>
+        )}
 
         {stage === "ready" && (
           <div className="board-columns">

@@ -3461,3 +3461,93 @@ a.btn {
   .board-columns, .board-graph { display: none; }
   .board-narrow { display: block; margin-top: 12px; color: var(--ink-muted); }
 }
+
+/* ---- The graph above the board ------------------------------------------ */
+.board-graph { margin-top: 16px; }
+
+.board-graph-panels {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.board-graph-panel {
+  background: var(--raised);
+  border-radius: var(--radius-control);
+  padding: 10px 12px;
+}
+
+.trend-chart { width: 100%; height: auto; display: block; }
+.trend-grid { stroke: var(--line); stroke-width: 1; }
+.trend-tick { fill: var(--ink-muted); font-size: 11px; font-family: var(--font-body); }
+.trend-tooltip { min-height: 18px; }
+
+.trend-legend {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 8px 0 4px;
+  padding: 0;
+  font-size: 13px;
+}
+
+.trend-legend li { display: inline-flex; align-items: center; gap: 6px; }
+
+.trend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.trend-table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.trend-table th, .trend-table td {
+  text-align: right;
+  padding: 3px 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.trend-table th:first-child, .trend-table td:first-child { text-align: left; }
+
+.barangay-ranking {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.barangay-ranking li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.barangay-ranking-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.barangay-ranking-bar {
+  height: 8px;
+  background: var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.barangay-ranking-bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+.barangay-ranking-count { font-variant-numeric: tabular-nums; color: var(--ink-muted); }
