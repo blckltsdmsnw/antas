@@ -1,8 +1,11 @@
 # Antas, beyond flood — design
 
 **Date:** 2026-08-27
-**Status:** Plan A implemented and deployed 2026-08-28. Plans B and C
-(master admin, board, roster, assignment, graph) approved and not yet built.
+**Status:** Plan A implemented and deployed 2026-08-28. Plan B (master admin,
+board, roster, assignment, graph, SOS hazard) implemented 2026-08-28 to
+2026-09-01 — see
+`docs/superpowers/plans/2026-08-28-antas-multi-hazard-b-master-admin.md`.
+Plan C approved and not yet built.
 This is a **demonstration build** — see "Status: a demonstration build" below.
 **Origin:** Mr. Peralta's review of the working system, plus the follow-up
 discussion about the master admin.

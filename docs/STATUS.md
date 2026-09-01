@@ -1,10 +1,11 @@
 # Antas — where things stand
 
-Last updated: 2026-08-27, ~15:05 PHT.
+Last updated: 2026-09-01.
 
 Everything described here is committed and pushed to
-`github.com/blckltsdmsnw/antas`. Vercel auto-deploys `main`; a push takes about
-45 seconds to go live.
+`github.com/blckltsdmsnw/antas` **except section 1, Plan B**, which is built
+on the unmerged branch `plan-b` and says so. Vercel auto-deploys `main`; a
+push takes about 45 seconds to go live.
 
 **Production loads.** The 403 bot challenge that blocked every other check is
 gone — confirmed in a real browser on 2026-08-14. It was self-inflicted:
@@ -17,7 +18,47 @@ traffic. Do not verify deploys that way. If a challenge page ever returns, it is
 
 ## Do these first
 
-### 1. Moderator scope — fixed on 2026-08-14, and the old diagnosis here was wrong
+### 1. Plan B — master admin, board, responders (built 2026-08-28 to 2026-09-01)
+
+Built on branch `plan-b`, **not yet merged and not yet deployed**. Nothing
+below is live until it is.
+
+**Migrations `0032`–`0034` must reach hosted before the deploy**, in order,
+with `npx supabase db push` against `.env.hosted`. Never `db reset` — that
+wipes real reports. `0032` adds the master-admin role, the triage state,
+responders and assignments; `0033` adds the board's two functions; `0034`
+lets the hazard on an SOS reach the queue, the detail and the corroboration
+count.
+
+**The role has to be granted by hand.** `npm run make-moderator -- <email>
+<barangay> --master`. Both live accounts are still plain `admin`, so until
+that is run nobody can open the board — it will correctly say so.
+
+What is new, for somebody looking at the app:
+
+- `/console/board` — four columns, reports and SOS signals together, moved
+  by button or by drag. Desktop only, and it says so on a phone.
+- `/console` shows tabs according to who is asking: a moderator sees the
+  queue, a responder sees what is assigned to them.
+- A signed-in person registers as a responder under **Ako → Responder**.
+- `/sos` now carries six optional hazard chips above the hold. Choosing
+  none is a real answer and is recorded as one.
+- Above the board, incidents per hour for the last 48 hours and a barangay
+  ranking.
+
+The decisions baked in, so nobody re-litigates them from the code:
+`dispatched` is derived from an open assignment rather than stored;
+assigning a report confirms it; dismissing or hiding a record closes its
+assignments; the board's "Hindi totoo" column holds anything whose incident
+**or decision** is under 48 hours old.
+
+Known limits, deliberate: the board does not live-update when somebody else
+changes an assignment (it does for reports and signals); `board_rows` caps
+at 200 per column, a stated cap rather than PostgREST's silent 1000; and
+the trend chart is the one place in Antas where colour carries hazard
+rather than severity.
+
+### 2. Moderator scope — fixed on 2026-08-14, and the old diagnosis here was wrong
 
 Both real accounts now moderate **South Signal Village**:
 
@@ -88,7 +129,7 @@ Manila 16 districts, and **every other NCR city is still one placeholder
 centroid**. Adding ~1,700 invented barangays would be false precision, not
 progress.
 
-### 2. Seeded demo data — removed from production on 2026-08-15
+### 3. Seeded demo data — removed from production on 2026-08-15
 
 **Production carries no seeded data.** The 48 demo pins and the fabricated
 standing are gone, along with the 8 `@example.test` accounts that owned them.
