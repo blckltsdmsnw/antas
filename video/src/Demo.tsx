@@ -42,6 +42,8 @@ interface Beat {
   caption2?: { text: string; atSec: number };
   /** Phone footage; null with `flood` set = full-bleed cutaway or intro/outro. */
   clip: { src: string; fromSec: number; playbackRate?: number } | null;
+  /** Desk-width capture (the board), drawn in a monitor rather than a phone. */
+  wide?: boolean;
   /** Full-bleed flood cutaway (no card, no phone) - "what the camera sees". */
   flood?: { fromSec: number; tint: number };
   accent: string;
@@ -88,24 +90,24 @@ const BEATS: Beat[] = [
     // flood photo landing (punch-in), scroll, submit, and the green
     // "Salamat. Naitala na ang report mo." holding the tail.
     from: sec(18.5),
-    frames: sec(10.4),
+    frames: sec(16.2),
     chapter: "03 · I-REPORT",
-    title: "Depth, measured on a body",
+    title: "Six hazards, one scale",
     caption:
-      "Report a flood: set the depth with body-level markers - here, knee-deep.",
+      "Every report starts with what is happening - flood, fire, earthquake, accident, medical, other.",
     caption2: {
-      text: "Snap the water, and send - recorded, and on the map.",
-      atSec: 4.5,
+      text: "A flood is graded on a body: here, knee-deep. Snap the water, and send.",
+      atSec: 3.6,
     },
     clip: { src: "captures/scene-report-flood.webm", fromSec: 0.2 },
     accent: DEPTH.knee,
     stat: { big: "Tuhod · 16–50 cm", small: "knee-deep, on a body scale" },
-    punch: [128, 195],
+    punch: [232, 300],
   },
   {
     // One continuous shot from the pin landing to the neighborhood confirming
     // the water is gone.
-    from: sec(28.9),
+    from: sec(34.7),
     frames: sec(8.5),
     chapter: "04 · KOMUNIDAD",
     title: "On the map, kept honest",
@@ -122,22 +124,22 @@ const BEATS: Beat[] = [
     // The whole SOS arc in one take: the live-photo requirement, the flood in
     // the viewfinder, the three-second hold, "Naipadala", and the callback
     // number saved without an account.
-    from: sec(37.4),
+    from: sec(43.2),
     frames: sec(16),
     chapter: "05 · TULONG",
     title: "Hold to call for help",
     caption:
       "A live photo is required - camera only, never the gallery - so false alarms are hard to fake.",
     caption2: {
-      text: "No account needed - leave a number, and moderators can call back.",
-      atSec: 12.0,
+      text: "Say what is happening, or say nothing - both are real answers.",
+      atSec: 9.5,
     },
     clip: { src: "captures/scene-sos-flood.webm", fromSec: 0.2, playbackRate: 1.1 },
     accent: DEPTH.chest,
     stat: { big: "3 seconds", small: "hold to send" },
   },
   {
-    from: sec(53.4),
+    from: sec(59.2),
     frames: sec(8),
     chapter: "06 · CONSOLE",
     title: "Every signal gets a decision",
@@ -150,7 +152,7 @@ const BEATS: Beat[] = [
   {
     // The tap on "Direksyon papunta rito" itself, filmed - then the cut to
     // the Maps route it opened. Click, then result, one continued thought.
-    from: sec(61.4),
+    from: sec(67.2),
     frames: sec(2.5),
     chapter: "06 · CONSOLE",
     title: "Direksyon papunta rito",
@@ -160,7 +162,7 @@ const BEATS: Beat[] = [
     accent: DEPTH.aboveHead,
   },
   {
-    from: sec(63.9),
+    from: sec(69.7),
     frames: sec(5),
     chapter: "06 · CONSOLE",
     title: "Direksyon papunta rito",
@@ -171,7 +173,38 @@ const BEATS: Beat[] = [
     stat: { big: "13 min · 3.6 km", small: "live route to the caller" },
   },
   {
-    from: sec(68.9),
+    // Ako -> Responder. Filmed before the board on purpose: the name typed
+    // here is the name the board assigns two beats later.
+    from: sec(74.7),
+    frames: sec(7.5),
+    chapter: "07 · RESPONDER",
+    title: "Who can be sent",
+    caption:
+      "A signed-in person registers as a responder - fire service, barangay rescue, medical, police.",
+    clip: { src: "captures/scene-responder.webm", fromSec: 1.4 },
+    accent: DEPTH.waist,
+    stat: { big: "5 units", small: "name and number, master admin only" },
+  },
+  {
+    // The desk-width capture: four columns, the 48-hour graph and the
+    // barangay ranking above them, a card moved and then assigned.
+    from: sec(82.2),
+    frames: sec(10.5),
+    chapter: "08 · BOARD",
+    title: "Reports and signals, one board",
+    caption:
+      "The master admin's four columns: needs checking, not true, needs attention, assigned.",
+    caption2: {
+      text: "Assigning records who was put on it. Antas still sends no rescue.",
+      atSec: 5.6,
+    },
+    clip: { src: "captures/scene-board.webm", fromSec: 0.6 },
+    wide: true,
+    accent: DEPTH.aboveHead,
+    stat: { big: "48 hours", small: "incidents per hour, by barangay" },
+  },
+  {
+    from: sec(92.7),
     frames: sec(7.5),
     clip: null,
     accent: DEPTH.chest,
@@ -183,21 +216,25 @@ const NARRATION: { file: string; at: number }[] = [
   { file: "shot-01.mp3", at: 0.2 },
   { file: "shot-02.mp3", at: 6.2 },
   { file: "shot-03.mp3", at: 13.2 },
-  { file: "shot-04.mp3", at: 18.7 },
-  { file: "shot-05.mp3", at: 29.1 },
-  { file: "shot-06.mp3", at: 33.3 },
-  { file: "shot-07.mp3", at: 37.6 },
-  { file: "shot-07b.mp3", at: 41.5 },
-  { file: "shot-07c.mp3", at: 48.9 },
-  { file: "shot-08.mp3", at: 53.6 },
-  { file: "shot-08b.mp3", at: 61.8 },
-  { file: "shot-09.mp3", at: 69.1 },
+  // 04a introduces the hazard picker, 04 keeps the depth line it always had.
+  { file: "shot-04a.mp3", at: 18.7 },
+  { file: "shot-04.mp3", at: 25.6 },
+  { file: "shot-05.mp3", at: 34.9 },
+  { file: "shot-06.mp3", at: 39.1 },
+  { file: "shot-07.mp3", at: 43.4 },
+  { file: "shot-07b.mp3", at: 47.3 },
+  { file: "shot-07c.mp3", at: 54.7 },
+  { file: "shot-08.mp3", at: 59.4 },
+  { file: "shot-08b.mp3", at: 67.6 },
+  { file: "shot-10.mp3", at: 75.0 },
+  { file: "shot-11.mp3", at: 82.5 },
+  { file: "shot-09.mp3", at: 92.9 },
 ];
 
 /** Confirmation chimes: report saved, SOS sent, number saved. */
-const DINGS = [26.6, 47.7, 52.1];
+const DINGS = [33.4, 53.5, 57.9];
 
-export const DEMO_DURATION = sec(76.4);
+export const DEMO_DURATION = sec(100.2);
 
 const RISE_FRAMES = 16;
 const DRAIN_FRAMES = 22;
@@ -408,6 +445,68 @@ const DemoPhone: React.FC<{
           height: "100%",
           objectFit: "cover",
           borderRadius: 36,
+          display: "block",
+        }}
+      />
+    </div>
+  );
+};
+
+/**
+ * The same shot, at desk width.
+ *
+ * The board is desktop-only and says so on a phone, so its capture is 1280x800
+ * and cannot go inside the phone frame without cropping three of its four
+ * columns away. Wider, shorter, squarer corners - a monitor rather than a
+ * handset - and pushed down, because the beat card sits above it.
+ */
+const DemoScreen: React.FC<{
+  src: string;
+  fromSec: number;
+  playbackRate?: number;
+  span: number;
+}> = ({ src, fromSec, playbackRate = 1, span }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const enter = spring({ frame, fps, config: { damping: 200 }, durationInFrames: 22 });
+  const float = Math.sin((frame / fps / 6.5) * Math.PI * 2) * 4;
+  const push = interpolate(frame, [0, span], [1, 1.04], {
+    easing: Easing.inOut(Easing.ease),
+    extrapolateRight: "clamp",
+  });
+  const width = 1080;
+  const height = width * (800 / 1280);
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: "50%",
+        top: "50%",
+        transform: `translate(-50%,-50%) translateX(340px) translateY(${
+          interpolate(enter, [0, 1], [24, 0]) + float + 40
+        }px) scale(${push})`,
+        opacity: enter,
+        width,
+        height,
+        borderRadius: 18,
+        padding: 10,
+        background: "#0b1220",
+        boxShadow:
+          "0 50px 90px rgba(2,12,30,.5), 0 0 0 1px rgba(255,255,255,.08)",
+        overflow: "hidden",
+      }}
+    >
+      <Video
+        src={staticFile(src)}
+        muted
+        trimBefore={sec(fromSec)}
+        playbackRate={playbackRate}
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          borderRadius: 10,
           display: "block",
         }}
       />
@@ -789,13 +888,22 @@ export const Demo: React.FC = () => (
                 caption2={beat.caption2}
                 accent={beat.accent}
               />
-              <DemoPhone
-                src={beat.clip.src}
-                fromSec={beat.clip.fromSec}
-                playbackRate={beat.clip.playbackRate}
-                span={beat.frames}
-                punch={beat.punch}
-              />
+              {beat.wide ? (
+                <DemoScreen
+                  src={beat.clip.src}
+                  fromSec={beat.clip.fromSec}
+                  playbackRate={beat.clip.playbackRate}
+                  span={beat.frames}
+                />
+              ) : (
+                <DemoPhone
+                  src={beat.clip.src}
+                  fromSec={beat.clip.fromSec}
+                  playbackRate={beat.clip.playbackRate}
+                  span={beat.frames}
+                  punch={beat.punch}
+                />
+              )}
               {beat.stat && <StatChip stat={beat.stat} accent={beat.accent} />}
             </AppStage>
           )}

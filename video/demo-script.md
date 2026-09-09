@@ -1,51 +1,102 @@
-# Antas Demonstration Video — Shot-by-Shot Script (v1)
+# Antas Demonstration Video — Shot-by-Shot Script (v2)
 
-**Genre:** SaaS product walkthrough (demonstration, NOT promo). **Length:** ~59s. **Narration:** English — RENDERED 2026-08-19 in both approved voices at `video/public/audio/narration/{james,rosa}/shot-01..09.mp3` (edge-tts, `en-PH-JamesNeural` / `en-PH-RosaNeural`, rate +10%; James totals 52.7s and fits easily, Rosa 56.9s is tight on shots 2 and 9). **Recorded by:** Elijah, screen capture against **local dev only** (never production — bot protection + no demo reports on the public map). Shot durations below are set to the measured narration; record each action to roughly fill its slot — a second of slack either way is fine, Remotion trims.
+**Genre:** SaaS product walkthrough (demonstration, NOT promo). **Length:** ~100s
+(was ~76s; the multi-hazard picker, the responder register and the master
+admin's board were added on 2026-09-09). **Narration:** English — edge-tts
+`en-PH-JamesNeural` at `--rate=+10%`, rendered to
+`video/public/audio/narration/{james,rosa}/shot-*.mp3`. **Footage:** local dev
+only, never production — bot protection, and no demo reports on the public map.
 
-## Recording setup (before filming)
+**v2 is assembled and rendered.** The table below describes the cut that
+exists, not a plan for one. Every chapter except 02 and 04 is a Playwright
+capture from `capture-console.mjs`; those two are Elijah's phone recording
+(`footage/screen.mp4`).
 
-1. `npm run dev` in `C:\xampp\htdocs\app`; open Chrome DevTools device emulation, portrait phone (e.g. Pixel 7, 100% zoom).
-2. Launch Chrome with the fake-camera flags so the report camera shows the flood clip:
-   `chrome --use-fake-device-for-media-stream --use-file-for-fake-video-capture=C:\path\to\flood.y4m`
-   (Give me the flood clip and I'll convert it to `.y4m` with ffmpeg.)
-3. **Drive every feature once off-camera first** — this project has shipped inert features before. Verify by looking, not by tests.
-4. Record each shot as its own clip (named `shot-01.mp4` etc.) — Remotion stitches them; retakes stay cheap.
-5. Screen recorder: OBS or Windows Game Bar, 60fps if possible, capture the emulated phone viewport only.
+## Chapters
 
-## Shots
+| # | Start | Dur | Chapter | Footage | Narration |
+|---|-------|-----|---------|---------|-----------|
+| 1 | 0:00 | 6.0s | *(intro card)* | — | "This is Antas — a community flood-reporting app for barangays. Here's how it works." |
+| 2 | 0:06 | 7.0s | 01 · MAPA | `scene-search.webm` | "The map shows live flood reports. Anyone can search a place and check conditions — no account needed." |
+| 3 | 0:13 | 5.5s | 02 · GABAY | `screen.mp4` | "Gabay puts emergency hotlines and a preparedness checklist first — and it works offline." |
+| 4 | 0:18.5 | 16.2s | 03 · I-REPORT | `scene-report-flood.webm` | **shot-04a** "Every report starts with what is happening: flood, fire, earthquake, accident, medical, or other." → **shot-04** the depth line |
+| 5 | 0:34.7 | 8.5s | 04 · KOMUNIDAD | `screen.mp4` | pin lands, neighbours confirm |
+| 6 | 0:43.2 | 16.0s | 05 · TULONG | `scene-sos-flood.webm` | live photo required, hazard chips optional, 3-second hold, callback number |
+| 7 | 0:59.2 | 8.0s | 06 · CONSOLE | `scene-console.webm` | "Only barangay moderators see an SOS — it never appears on the public map." |
+| 8 | 1:07.2 | 2.5s | 06 · CONSOLE | `scene-direksyon.webm` | *(the tap itself)* |
+| 9 | 1:09.7 | 5.0s | 06 · CONSOLE | `scene-direksyon-2.webm` | "One tap opens Google Maps — straight to the caller's exact location." |
+| 10 | 1:14.7 | 7.5s | **07 · RESPONDER** | `scene-responder.webm` | **shot-10** "Anyone signed in can register as a responder — fire service, barangay rescue, medical, or police." |
+| 11 | 1:22.2 | 10.5s | **08 · BOARD** | `scene-board.webm` *(desk width)* | **shot-11** "A master admin works reports and signals on one board, and records which responder was put on each. Antas still sends no rescue — it keeps the record." |
+| 12 | 1:32.7 | 7.5s | *(outro card)* | — | "Fully bilingual, offline-ready, and installable on any phone. Antas — know the depth before you go." |
 
-| # | Time | Dur | On-screen action (what you record) | Narration (AI voice) |
-|---|------|-----|-------------------------------------|----------------------|
-| 1 | 0:00–0:06 | 6s | App opens on **Mapa** `/`. Brief hold on the map with existing pins. | "This is Antas — a community flood-reporting app for barangays. Here's how it works." |
-| 2 | 0:06–0:13 | 7s | Search a place, map pans to it, tap an existing pin to show its details. | "The map shows live flood reports. Anyone can search a place and check conditions — no account needed." |
-| 3 | 0:13–0:19 | 6s | Switch to **Gabay** `/gabay`. Scroll: hotlines on top, tick one checklist item. | "Gabay puts emergency hotlines and a preparedness checklist first — and it works offline." |
-| 4 | 0:19–0:31 | 12s | **I-report** `/report`: camera opens showing the moving flood scene (fake-camera trick), tap shutter, photo captured. Set depth on the body-part selector (keep default **Tuhod/Knee**), location confirms, submit. | "To report a flood, take a photo and set the water depth using body-level markers — here, knee-deep. Location is confirmed, and the report is sent." |
-| 5 | 0:31–0:35 | 4s | Back on **Mapa**: the new pin appears; tap it — the photo is attached. | "The report appears on the map instantly, photo included." |
-| 6 | 0:35–0:39 | 4s | **Ako** `/ako`: your reports listed; show the delete affordance (don't delete — we need the pin for shot 8). | "Under Ako, residents manage their own reports." |
-| 7 | 0:39–0:44 | 5s | **Tulong** `/sos`: press-and-hold the SOS button until it arms (show the honesty notice briefly). Release before it fires, or let it fire against local dev if safe. | "Tulong is a press-and-hold SOS for real emergencies." |
-| 8 | 0:44–0:52 | 8s | **Moderator side**: `/login` (quick), `/console` queue shows the new signal, open `/console/[id]`, view the photo + depth, click the decision (verify). | "On the other side, barangay moderators privately review each SOS — photo, location, and trust score — and decide it." (corrected 2026-08-19: an SOS never reaches the public map; only depth reports do) |
-| 9 | 0:52–0:59 | 7s | Tap the language toggle — UI flips Filipino⇄English. Cut to end card (Remotion; card can hold a silent beat past the voice). | "Fully bilingual, offline-ready, and installable on any phone. Antas — know the depth before you go." |
+Total 100.2s. `DEMO_DURATION` in `src/Demo.tsx` is the single source of truth;
+`Root.tsx` reads it.
 
-**Narration rendered:** durations above match the James renders (+0–1s slack each); Rosa runs ~0.5s longer per line and bleeds across cuts on shots 2 and 9, which is acceptable.
+## Re-filming
 
-## Remotion polish layer (my job, after your clips arrive)
+Needs Docker + the local stack, and takes about five minutes end to end:
 
-- Chapter label cards (lower-third, 5 chapters: Mapa · Gabay · I-report · Tulong · Console) — reuse existing design tokens, not the rejected promo compositions.
-- Zoom/highlight callouts on: depth selector (shot 4), new pin (shot 5), decision button (shot 8).
-- Captions from the narration lines (rubric insurance — every function gets named on screen even at this pace).
-- Music bed at low volume: drop an mp3 at `video/public/audio/music.mp3` (wiring already exists).
-- End card with app name + tagline.
+```
+npx supabase start                 # Docker must be running first
+npm run dev
+npm run seed                       # rows for the board's columns
+ffmpeg -y -i video/public/footage/flood.mp4 -t 12 \
+  -vf "scale=640:480,fps=30" -pix_fmt yuv420p flood.y4m
+FLOOD_Y4M=<abs path>/flood.y4m FLOOD_JPG=<abs path>/flood.jpg \
+  node video/capture-console.mjs
+```
 
-## Rubric coverage check
+Scene order matters in two places: `responder` must run before `board`, or the
+roster is empty and there is nobody to assign; and `console` runs after `board`,
+because `ensureModerator()` narrows `modemo@example.test` back to a plain
+moderator and a plain moderator is refused the board. The board has its own
+account (`master@example.test`, granted `master_admin` by `ensureMaster()`) for
+exactly that reason.
 
-- Purpose/objectives → shot 1. Each feature step-by-step → shots 2–8 (one beat each; **thinnest part at 58s** — if graded harshly, stretching to ~90s doubles shots 4 and 8). Complete process start-to-finish → the spine: report → pin → moderator decision (shots 4–8). What each function does → one narration line per function + captions.
+The board scene films at 1280x800 — it is desktop-only and says so on a phone —
+and `Demo.tsx` draws it in a monitor frame (`DemoScreen`) rather than the phone.
+
+## The capture lessons, all of them earned the hard way
+
+- **A tap near the foot of the page hits the bottom nav, silently.** The nav is
+  fixed and its centre tab points at `/report`; clicking it while already on
+  `/report` is a no-op in Next.js, so nothing errors and the scene films a
+  screen that never advanced. `press()` wheels the target clear of the nav
+  before clicking. `scrollIntoViewIfNeeded` does NOT help — a button half under
+  the nav already satisfies it — and neither does `scrollIntoView({block:
+  "center"})`, because the element is inside the scrollport, just covered.
+- **`/report` opens on the hazard picker**, not the depth gauge. There is no
+  submit button on that screen at all, and for every hazard except flood the
+  submit stays disabled until a severity is chosen.
+- **`/report`'s camera is the in-page viewfinder now** (`source="live"`), not
+  the OS file picker it was until Mr. Peralta's review. The old `filechooser`
+  path is gone; the flow is the same three taps as `/sos` and the fake-camera
+  y4m feeds it.
+- **Depth reports require sign-in** ("Mag-sign in muna bago mag-report"), and
+  the error renders below the fold. Only SOS is anonymous. The script injects a
+  real session as the `sb-<ref>-auth-token` cookie ("base64-" + base64url JSON,
+  chunked at 3180), minted via `generateLink` + `verifyOtp` — the filmed
+  magic-link flow strands its cookie across the localhost/127.0.0.1 host hop.
+- **Google Maps "No routes found"** = origin equals destination. The moderator's
+  geolocation must be offset from the caller's (14.513,121.043 vs
+  14.497,121.053), and the mobile app-install interstitial needs "Go back to
+  web" before the route films.
+- **A failed scene now writes `scene-<name>-FAILED.png`.** A missed tap lands
+  somewhere, and the URL alone does not say where.
+
+## Known rough edges in the footage
+
+- The console's evidence lines ("No other reports within 500m.", "38mm rainfall
+  recorded in 24h.") are English inside a Filipino screen — they are built in
+  `src/lib/scoring/score.ts` and never went through the dictionary. Visible in
+  chapter 06 · CONSOLE. Pre-existing, not introduced by the video work.
+- Seeded SOS rows mostly read "Hindi tinukoy" (no hazard chip), so the board's
+  columns are repetitive. A more varied seed would film better.
 
 ## Open items
 
-- [x] Flood clip delivered + converted (fake camera feed, report photo, cold open/outro b-roll)
-- [x] Voices: James + Rosa rendered; **James used in the cut** (swap = one line in Demo.tsx)
-- [x] Elijah recorded the app (one 116s take, best segments cut in)
-- [x] Local Playwright captures for what the phone couldn't show: flood-fed SOS camera, flood-photo report, moderator console (see `capture-console.mjs`)
-- [x] Assembled: `src/Demo.tsx` → `out/antas-demo.mp4` (59s, rendered 2026-08-19)
-- [ ] Music bed — still wanted: drop an mp3 at `public/audio/music.mp3` and ask for it to be wired in
-- [ ] Elijah: watch the cut, note timestamps to change
+- [ ] Music bed — still wanted: drop an mp3 at `public/audio/music.mp3` and ask
+      for it to be wired in
+- [ ] Elijah: watch the v2 cut, note timestamps to change
+- [ ] Re-upload to Drive if the cut is approved — the Drive copy is still the
+      2026-08-19 76s version

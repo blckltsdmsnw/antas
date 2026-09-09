@@ -36,6 +36,10 @@ const MAIL = "http://127.0.0.1:54324";
 const FLOOD_Y4M = process.env.FLOOD_Y4M;
 const FLOOD_JPG = process.env.FLOOD_JPG;
 const MOD_EMAIL = "modemo@example.test";
+// A separate account for the board: ensureModerator() scopes MOD_EMAIL back to
+// a plain moderator for the console scene, which would take the board away.
+const MASTER_EMAIL = "master@example.test";
+const RESPONDER_EMAIL = "rescuer@example.test";
 // New Lower Bicutan hotspot from scripts/seed.ts - where Elijah actually is.
 const GEO = { latitude: 14.497, longitude: 121.053 };
 
@@ -67,6 +71,7 @@ const PHONE = {
   isMobile: true,
 };
 const VIEWPORT = { width: 390, height: 844 };
+const DESKTOP = { width: 1280, height: 800 };
 
 const beat = (page, ms = 900) => page.waitForTimeout(ms);
 
@@ -80,11 +85,50 @@ const tap = async (page, locator) => {
   await page.mouse.up();
 };
 
+/**
+ * A tap that cannot land on the wrong thing.
+ *
+ * The bottom nav is fixed, and anything near the foot of the page sits under
+ * it - the camera shutter, a board card's move button, a submit. A coordinate
+ * tap there hits the I-report tab and the scene films the wrong screen without
+ * failing. The element click scrolls, hit-tests, and throws if it is covered.
+ */
+const press = async (page, locator) => {
+  // `scrollIntoViewIfNeeded` is satisfied by a partly visible element, which
+  // is exactly the state a button half-under the nav is already in - so it
+  // scrolls nothing and the click lands on the nav's own I-report link. That
+  // link points at the page we are already on, so Next.js does nothing, no
+  // error is raised, and the scene films a screen that never advanced.
+  // scrollIntoView({block:"center"}) does not help either: the element is
+  // already inside the scrollport, just underneath an overlay.
+  //
+  // Wheel until the target sits clear of the nav, the way the console scene
+  // has always done it, then click.
+  await locator.scrollIntoViewIfNeeded();
+  const clearOf = page.viewportSize().height - 130;
+  for (let i = 0; i < 6; i++) {
+    const box = await locator.boundingBox();
+    if (process.env.DEBUG_PRESS) {
+      console.error(
+        `      press: box=${JSON.stringify(box)} clearOf=${clearOf} scrollY=${await page.evaluate(() => window.scrollY)}`,
+      );
+    }
+    if (!box || box.y + box.height / 2 <= clearOf) break;
+    await page.mouse.wheel(0, 220);
+    await beat(page, 260);
+  }
+  await beat(page, 500);
+  await locator.click();
+};
+
 async function scene(browser, name, steps, opts = {}) {
+  // The board refuses to render on a phone and says so, which is correct
+  // behaviour and useless footage - film it at desk width instead.
+  const size = opts.desktop ? DESKTOP : VIEWPORT;
   const context = await browser.newContext({
-    ...PHONE,
-    viewport: VIEWPORT,
-    recordVideo: { dir: OUT, size: VIEWPORT },
+    ...(opts.desktop ? {} : PHONE),
+    viewport: size,
+    recordVideo: { dir: OUT, size },
     locale: "en-PH",
     timezoneId: "Asia/Manila",
     geolocation: opts.geolocation ?? GEO,
@@ -137,6 +181,12 @@ async function scene(browser, name, steps, opts = {}) {
     process.stdout.write("FAILED\n");
     console.error(`    ${error.message.split("\n")[0]}`);
     console.error(`    page was at: ${page.url()}`);
+    // A still of the moment it gave up: a missed tap lands somewhere, and the
+    // URL alone does not say where.
+    await page
+      .screenshot({ path: join(OUT, `scene-${name}-FAILED.png`), fullPage: true })
+      .then(() => console.error(`    screenshot: scene-${name}-FAILED.png`))
+      .catch(() => {});
   }
   await context.close();
 
@@ -174,13 +224,23 @@ const SCENES = {
     await page.locator("video.capture-view").waitFor({ timeout: 15_000 });
     await beat(page, 2400); // the flood plays in the viewfinder
 
-    await tap(page, page.locator("button.shutter"));
-    await page
-      .getByRole("button", { name: "Gamitin ang larawang ito" })
-      .waitFor({ timeout: 10_000 });
+    await press(page, page.locator("button.shutter"));
+    const useIt = page.getByRole("button", { name: "Gamitin ang larawang ito" });
+    await useIt.waitFor({ timeout: 10_000 });
     await beat(page, 1000);
-    await tap(page, page.getByRole("button", { name: "Gamitin ang larawang ito" }));
+    await press(page, useIt);
     await beat(page, 900);
+
+    // The six optional chips, above the hold. Tapping one is worth filming and
+    // tapping none is a real answer too - a chip-less signal is corroborated by
+    // any active report nearby rather than by floods only.
+    const chip = page.getByRole("radio", { name: "Baha", exact: true });
+    if (await chip.count()) {
+      await chip.first().scrollIntoViewIfNeeded();
+      await beat(page, 1200); // all six readable
+      await tap(page, chip.first());
+      await beat(page, 900);
+    }
 
     const box = await hold.boundingBox();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -259,9 +319,16 @@ const SCENES = {
     // submit fails with "Mag-sign in muna bago mag-report."
     await injectSession(page, "resident@example.test");
     await page.goto(`${BASE}/report`, { waitUntil: "domcontentloaded" });
+
+    // /report opens on the hazard picker now, not on the depth gauge. There is
+    // no submit button on this screen at all, so the old wait for "I-report"
+    // timed out here rather than at the end.
+    await page.getByRole("button", { name: "Baha", exact: true }).waitFor({ timeout: 60_000 });
+    await beat(page, 1800); // all six hazards readable before anything is tapped
+    await tap(page, page.getByRole("button", { name: "Baha", exact: true }));
     await page
       .getByRole("button", { name: "I-report", exact: true })
-      .waitFor({ timeout: 60_000 });
+      .waitFor({ timeout: 30_000 });
     await beat(page, 1100);
 
     for (const level of ["Baywang", "Tuhod"]) {
@@ -270,36 +337,121 @@ const SCENES = {
       await beat(page, 850);
     }
 
-    // Tap the real button; the native hand-off happens off-screen (the OS
-    // camera on a phone, the picker here) and the photo comes back. A raw
-    // mouse tap on the label does not forward to the hidden input - use the
-    // locator click, which does, and still moves the visible dot.
-    const chooser = page.waitForEvent("filechooser");
-    const openCamera = page.getByText("Kumuha ng larawan");
-    await openCamera.scrollIntoViewIfNeeded();
-    await beat(page, 500);
-    await openCamera.click();
-    await (await chooser).setFiles(FLOOD_JPG);
+    // The in-page viewfinder, not a file picker. This was `source="native"`
+    // and a filechooser until Mr. Peralta asked that reports be captured with
+    // the built-in camera; the flow is now the same three taps as /sos, and
+    // the fake-camera y4m feeds it.
+    const openCamera = page.getByRole("button", { name: "Kumuha ng larawan" });
+    await press(page, openCamera);
+    await page.locator("video.capture-view").waitFor({ timeout: 15_000 });
+    await beat(page, 2200); // the flood plays in the viewfinder
+    await press(page, page.locator("button.shutter"));
+    const usePhoto = page.getByRole("button", { name: "Gamitin ang larawang ito" });
+    await usePhoto.waitFor({ timeout: 10_000 });
+    await beat(page, 900);
+    await press(page, usePhoto);
     await beat(page, 1700); // the photo lands on the card
 
-    // The attached photo pushes the submit button below the fold, where a tap
-    // lands on nothing at all - silently. Scroll it into view and clear of the
-    // fixed bottom nav before tapping.
-    const submit = page.getByRole("button", { name: "I-report", exact: true });
-    await submit.scrollIntoViewIfNeeded();
-    await beat(page, 800);
-    const sb = await submit.boundingBox();
-    if (sb && sb.y + sb.height / 2 > 720) {
-      await page.mouse.wheel(0, 300);
-      await beat(page, 600);
-    }
-    await tap(page, submit);
+    // The attached photo pushes the submit button below the fold, under the
+    // fixed nav; press() wheels it clear before clicking.
+    await press(page, page.getByRole("button", { name: "I-report", exact: true }));
     // The upload takes a moment; the finished video must SHOW the report being
     // accepted, so wait for the app's own confirmation and hold on it.
     await page
       .getByText("Salamat. Naitala na ang report mo.")
       .waitFor({ timeout: 30_000 });
     await beat(page, 2600);
+  },
+
+  /**
+   * Ako -> Responder: a signed-in person says they are one, and becomes
+   * assignable on the board. Films the half of the workflow the master admin
+   * never sees, and has to run before `board` or the roster is empty.
+   */
+  async responder(page) {
+    await injectSession(page, RESPONDER_EMAIL);
+    await page.goto(`${BASE}/ako`, { waitUntil: "domcontentloaded" });
+
+    // /ako carries several cards and more than one "I-save"; scope everything
+    // to the responder card rather than to the page.
+    const card = page
+      .locator("section.phone-card")
+      .filter({ has: page.getByRole("heading", { name: "Responder" }) });
+    await card.waitFor({ timeout: 60_000 });
+    await card.scrollIntoViewIfNeeded();
+    await beat(page, 2200); // the note: only the master admin sees name and number
+
+    const name = card.getByRole("textbox").first();
+    await tap(page, name);
+    await name.type("Ka Ramon", { delay: 90 });
+    await beat(page, 700);
+
+    await card.locator("select").first().selectOption({ label: "Barangay rescue" });
+    await beat(page, 900);
+
+    // The fixed bottom nav sits over anything near the page end: a raw tap on
+    // the save button lands on the I-report tab instead and navigates away.
+    // Centre it in the viewport first, then tap.
+    const save = card.getByRole("button", { name: "I-save" });
+    await save.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await beat(page, 500);
+    await tap(page, save);
+    await card.getByText("Naka-save.").waitFor({ timeout: 30_000 });
+    await beat(page, 2200);
+  },
+
+  /**
+   * The master admin's board: four columns, reports and signals together, a
+   * card moved by its own button rather than by drag (a synthesised drag films
+   * as a card that teleports, and the button is the accessible path anyway).
+   * Desktop viewport - the board says so on a phone and means it.
+   */
+  async board(page) {
+    await injectSession(page, MASTER_EMAIL);
+    await page.goto(`${BASE}/console/board`, { waitUntil: "domcontentloaded" });
+
+    await page.getByText("Kailangang suriin").first().waitFor({ timeout: 60_000 });
+    await beat(page, 2600); // the four columns, and the graph above them
+
+    // Incidents per hour and the barangay ranking, both drawn by hand in SVG.
+    const graph = page.getByText("Nakaraang 48 oras");
+    if (await graph.count()) {
+      await graph.first().scrollIntoViewIfNeeded();
+      await beat(page, 2400);
+    }
+
+    // The bottom nav is fixed and still present at desk width, so a card near
+    // the foot of a column sits underneath it. A coordinate tap there lands on
+    // the Mapa tab and the scene silently films the map instead - use the
+    // element click, which scrolls, hit-tests, and fails loudly if covered.
+    // Move one card: needs checking -> needs attention.
+    const toAttention = page.getByRole("button", { name: /Kailangan ng atensyon/ });
+    if (await toAttention.count()) {
+      await press(page, toAttention.first());
+      await beat(page, 2200); // the card lands in its new column
+    }
+
+    // Then assign it: the panel asks who, the roster answers with the
+    // responder registered in the scene before this one.
+    const toAssigned = page.getByRole("button", { name: /May nakatalaga/ });
+    if (await toAssigned.count()) {
+      await press(page, toAssigned.first());
+      await page.getByText("Sino ang itatalaga?").waitFor({ timeout: 15_000 });
+      await beat(page, 1600);
+      // By name, not by position: this is the responder the scene before this
+      // one filmed registering, so the two halves read as one story.
+      const named = page.getByRole("radio", { name: /Ka Ramon/ });
+      const who = (await named.count()) ? named.first() : page.getByRole("radio").first();
+      if (await who.count()) {
+        await press(page, who);
+        await beat(page, 800);
+      }
+      const assign = page.getByRole("button", { name: "Italaga" });
+      if (await assign.count()) {
+        await press(page, assign.first());
+        await beat(page, 2600); // the card now names its responder
+      }
+    }
   },
 
   /**
@@ -453,6 +605,23 @@ async function ensureModerator() {
   console.log(`  moderator ${MOD_EMAIL} scoped to ${barangay}`);
 }
 
+/**
+ * The board's own account, granted master_admin directly. Kept apart from
+ * MOD_EMAIL because ensureModerator() narrows that one back to `moderator`
+ * for the console scene, and a plain moderator is refused the board.
+ */
+async function ensureMaster() {
+  const userId = await ensureUser(MASTER_EMAIL);
+  const { error } = await admin
+    .from("moderators")
+    .upsert(
+      { user_id: userId, barangay: "South Signal Village", role: "master_admin" },
+      { onConflict: "user_id" },
+    );
+  if (error) throw error;
+  console.log(`  ${MASTER_EMAIL} is the master admin`);
+}
+
 const only = process.argv.slice(2);
 mkdirSync(OUT, { recursive: true });
 
@@ -470,6 +639,12 @@ const wants = (name) => only.length === 0 || only.includes(name);
 if (wants("sos-flood")) await scene(browser, "sos-flood", SCENES["sos-flood"]);
 if (wants("report-flood"))
   await scene(browser, "report-flood", SCENES["report-flood"]);
+// Before the board: the roster has to have somebody in it to assign.
+if (wants("responder")) await scene(browser, "responder", SCENES.responder);
+if (wants("board")) {
+  await ensureMaster();
+  await scene(browser, "board", SCENES.board, { desktop: true });
+}
 if (wants("console")) {
   await ensureModerator();
   await scene(browser, "console", SCENES.console);

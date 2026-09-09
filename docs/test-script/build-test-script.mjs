@@ -129,7 +129,7 @@ const content = [
 
   h1("Application Under Test"),
   body(
-    `Antas is a mobile-first web application that lets Metro Manila residents report street-level flood depth on a five-level body-part scale, and read what others have reported. It is a progressive web app and requires no installation. The build under test is the live deployment at ${APP}.`,
+    `Antas is a mobile-first web application that lets Metro Manila residents report street-level incidents and read what others have reported. Six kinds of incident are accepted - flood, fire, earthquake, accident, medical and other. Flood is graded on a five-level body-part scale, from ankle to above the head; the other five are graded on three severity choices each, because water can be measured against a body and a fire cannot. It is a progressive web app and requires no installation. The build under test is the live deployment at ${APP}.`,
   ),
   body(
     "**No account is required** for any step in this document. Neither test writes data to the database, so both can be run repeatedly and by more than one tester without affecting the map or leaving test reports behind.",
@@ -196,15 +196,17 @@ const content = [
     [
       "Test Steps",
       "1. Tap the raised circular I-report button at the centre of the bottom tab bar.\n" +
-        "2. Confirm the report screen has opened and the body-part depth selector is visible.\n" +
-        "3. Leave the depth selector on its default value, Tuhod (Knee). Do not change it.\n" +
-        "4. Tap the I-report submit button at the bottom of the screen.\n" +
-        "5. If the browser asks for location, press Block.\n" +
-        "6. After the test, restore location permission to Ask, so the device is left as it was found and later tests are unaffected.",
+        "2. Confirm the report screen has opened on the question Ano ang nangyayari? (What is happening?), showing six incident buttons. There is no depth selector and no submit button on this screen yet.\n" +
+        "3. Tap Baha (Flood).\n" +
+        "4. Confirm the body-part depth selector is now visible, and leave it on its default value, Tuhod (Knee). Do not change it.\n" +
+        "5. Tap the I-report submit button at the bottom of the screen.\n" +
+        "6. If the browser asks for location, press Block.\n" +
+        "7. After the test, restore location permission to Ask, so the device is left as it was found and later tests are unaffected.",
     ],
     [
       "Test Data",
       "Location permission: Blocked, intentionally denied\n" +
+        "Incident type: Baha (Flood)\n" +
         "Water depth: Tuhod (Knee), the default, left unchanged\n" +
         "Photo: none, since the photo is optional and is deliberately not attached",
     ],
@@ -220,7 +222,7 @@ const content = [
     ["Tester & Date", "________________________          ____________"],
   ]),
   note(
-    "Why this is the negative case rather than an empty-field test. The depth selector opens already set to Tuhod (Knee), so there is no way to submit the form with no depth chosen, and a missing-field test would be untestable through the interface. Denying location is the invalid input a real user can actually produce, and it is the one the application has to handle without losing the report screen.",
+    "Why this is the negative case rather than an empty-field test. On a flood report the depth selector opens already set to Tuhod (Knee), so there is no way to submit it with no depth chosen. On the other five incident types a severity must be chosen, but the application disables the submit button until it is, so the tester gets no error message to check - a guard is not a failure, and a test whose expected result is nothing happening tells the reader very little. Denying location is the invalid input a real user can actually produce, and it is the one the application has to handle without losing the report screen. The disabled-submit guard is exercised in the summary table below instead.",
   ),
 
   pageBreak(),
@@ -234,15 +236,18 @@ const content = [
     [
       ["Test No.", "Function to Test", "Action", "Expected Result", "Actual Result", "Status"],
       ["1", "Place search", "Type Malanday in the search field and tap the result", "Map moves to Malanday, Marikina", "", "Pass / Fail"],
-      ["2", "Report - location guard", "Block location, then tap I-report to submit", "Turn on location message appears; stays on report screen", "", "Pass / Fail"],
-      ["3", "Search - no match", "Type Zzqxwv in the search field", "Walang tugma. (No matches.) appears - NOT Hindi makahanap ngayon., which means the search itself failed", "", "Pass / Fail"],
-      ["4", "Navigation", "Tap each tab: Mapa, Gabay, I-report, Ako, Tulong", "The matching screen opens each time", "", "Pass / Fail"],
-      ["5", "Guide (Gabay)", "Open Gabay from the tab bar", "Hotline numbers appear first, above the checklist", "", "Pass / Fail"],
-      ["6", "Language toggle", "Switch between Filipino and English from the header", "The whole interface changes, with no half-translated screen", "", "Pass / Fail"],
-      ["7", "Emergency boundary", "Open Tulong and read the notice at the top", "It states plainly that no rescue service receives the signal", "", "Pass / Fail"],
-      ["8", "Offline guide", "Open Gabay, turn off the network, then reload", "The guide still displays from cache", "", "Pass / Fail"],
-      ["9", "Mobile layout", "Open the app on a phone-sized screen", "The tab bar is reachable by thumb and nothing is cut off", "", "Pass / Fail"],
-      ["10", "SOS hold guard", "Open Tulong, press and hold the button for about one second, then release", "The ring fills while held and resets on release; no SOS is sent", "", "Pass / Fail"],
+      ["2", "Report - location guard", "Block location, choose Baha, then tap I-report to submit", "Turn on location message appears; stays on report screen", "", "Pass / Fail"],
+      ["3", "Incident picker", "Open I-report and read the first screen", "Six choices - Baha, Sunog, Lindol, Aksidente, Medikal, Iba pa - and no depth selector until one is tapped", "", "Pass / Fail"],
+      ["4", "Severity guard", "Tap Sunog, then try to submit without choosing what you can see", "The submit button stays disabled; choosing one of the three enables it", "", "Pass / Fail"],
+      ["5", "Search - no match", "Type Zzqxwv in the search field", "Walang tugma. (No matches.) appears - NOT Hindi makahanap ngayon., which means the search itself failed", "", "Pass / Fail"],
+      ["6", "Navigation", "Tap each tab: Mapa, Gabay, I-report, Ako, Tulong", "The matching screen opens each time", "", "Pass / Fail"],
+      ["7", "Guide (Gabay)", "Open Gabay from the tab bar", "Hotline numbers appear first, above the checklist", "", "Pass / Fail"],
+      ["8", "Language toggle", "Switch between Filipino and English from the header", "The whole interface changes, with no half-translated screen", "", "Pass / Fail"],
+      ["9", "Emergency boundary", "Open Tulong and read the notice at the top", "It states plainly that no rescue service receives the signal", "", "Pass / Fail"],
+      ["10", "Offline guide", "Open Gabay, turn off the network, then reload", "The guide still displays from cache", "", "Pass / Fail"],
+      ["11", "Mobile layout", "Open the app on a phone-sized screen", "The tab bar is reachable by thumb and nothing is cut off", "", "Pass / Fail"],
+      ["12", "SOS hold guard", "Open Tulong, press and hold the button for about one second, then release", "The ring fills while held and resets on release; no SOS is sent", "", "Pass / Fail"],
+      ["13", "SOS incident chips", "Open Tulong and tap one of the chips under Ano ang nangyayari? (opsyonal)", "The chip is selected and nothing is sent; the chips are optional and leaving them all unchosen is also allowed", "", "Pass / Fail"],
     ],
   ),
 
@@ -320,4 +325,4 @@ execFileSync("powershell", ["-NoProfile", "-Command", ps], { stdio: "inherit" })
 rmSync(BUILD, { recursive: true, force: true });
 
 console.log(`Wrote ${outPath}`);
-console.log("2 detailed scripts (1 positive, 1 negative) + a 10-row summary table");
+console.log("2 detailed scripts (1 positive, 1 negative) + a 13-row summary table");

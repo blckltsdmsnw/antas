@@ -484,7 +484,7 @@ const content = [
     "**Road passability in the national authority’s own words.** Antas maps each flood reading onto the MMDA Flood Gauge System (Section 1.2G) and shows the result: passable to all vehicles, not passable to light vehicles, or not passable to any vehicle. MMDA publishes that classification for a small number of monitored roads; Antas publishes it for any street a resident is standing on, minutes old, in the vocabulary Metro Manila motorists already read in traffic advisories. Where one of the five levels straddles two MMDA categories the worse category is taken, so the system never reports a street as more passable than the reading supports. It offers no verdict for people on foot, because the MMDA standard covers vehicles and moving water is dangerous well below knee height; the interface says so rather than estimating.",
   ),
   body(
-    "The seventh and eighth points are the substantive claim of this project. The first six distinguish Antas from informal sources, which is a low bar. Against a purpose-built platform the argument is narrower and should be stated as such: Antas does not attempt the breadth of a multi-hazard information platform, and would lose that comparison. It contributes one measurement those platforms do not take, and one decision they therefore cannot support.",
+    "The seventh and eighth points are the substantive claim of this project. The first six distinguish Antas from informal sources, which is a low bar. Against a purpose-built platform the argument is narrower and should be stated as such. Antas now takes six hazards rather than one, so breadth of coverage is no longer the difference it once was; but coverage is not the same as depth of capability, and LyfSaver retains the scientific hazard layers, the institutional verification, the training programme and the city deployment that this project does not have and is not attempting. What Antas contributes is one measurement those platforms do not take, and one decision they therefore cannot support.",
   ),
 
   h2("1.4 Functionality Comparison"),
@@ -507,6 +507,8 @@ const content = [
       ["Withholds a person’s emergency from the public map", "—", "❌", "❌", "—", "❌", "✅"],
       ["States plainly that it cannot dispatch", "❌", "❌", "❌", "❌", "❌", "✅"],
       ["Multi-hazard coverage beyond flood", "△", "✅", "✅", "△", "✅", "✅"],
+      ["One severity rank comparable across hazards", "❌", "❌", "❌", "❌", "△", "✅"],
+      ["Records which responder was put on an incident", "—", "❌", "❌", "—", "△", "✅"],
       ["Scientific hazard and risk layers", "✅", "❌", "❌", "❌", "✅", "❌"],
       ["Verified alerts from an institution", "✅", "✅", "❌", "❌", "✅", "❌"],
       ["Photographs and video with a report", "❌", "✅", "✅", "△", "✅", "△"],
@@ -517,6 +519,9 @@ const content = [
   note("Legend: ✅ provided, △ partial or incidental, ❌ not provided, — not applicable."),
   note(
     "The last five rows are the ones LyfSaver wins, and they are included deliberately. A comparison table in which the author’s own system takes every row is an advertisement rather than an assessment. LyfSaver carries UP-NOAH hazard modelling, institutional verification, a training pipeline and a live deployment with the Quezon City government; this project has none of those and is not attempting them. Photographs are marked partial for Antas because a photograph may be attached to a report but video cannot, and because photographs of accident and medical incidents are withheld from the public map by the same rule that withholds their location.",
+  ),
+  note(
+    "The two rows added for the multi-hazard work follow the same evidentiary rule as the offline cell. LyfSaver is marked partial on both rather than absent: a platform deployed with a city government and training its responders plainly coordinates them somehow, and may well grade incidents on a scale of its own, but no published statement of either was found, and an unverified absence is not a finding. The Antas ticks are stated rules enforced in the database — a shared one-to-three rank that lets a fire be ordered against a flood, and an assignment row that is the single source of the board’s assigned state. The second earns a caution rather than a boast: recording who was assigned is not dispatching them, and Antas notifies nobody.",
   ),
   note(
     "Three cells warrant a note. Public Facebook groups are readable without an account and private ones are not, so the account row of the earlier draft was partial rather than absent for that column. Waze hazard reports are a fixed set of named categories rather than graded readings, which is why its structured-readings cell is partial. LyfSaver’s offline behaviour is marked partial rather than absent because it is available as an installable mobile application, which implies some local caching, but no published statement of its offline guarantees was found; the cell records what could be verified, not what is likely.",
@@ -620,21 +625,21 @@ const content = [
 
   h2("2.1 Core Purpose and Primary Objective"),
   body(
-    "Antas is an observation-sharing system for flood depth. Its primary objective is to turn what residents already report informally into structured, located, time-stamped readings that another resident can act on, and to be explicit about the limits of what those readings support.",
+    "Antas is an observation-sharing system for street-level hazard severity, and for flood depth in particular. Its primary objective is to turn what residents already report informally into structured, located, time-stamped readings that another resident can act on, and to be explicit about the limits of what those readings support. Flood is the hazard it measures most precisely and the one it was built for; fire, earthquake, accident, medical and other are carried on the same rails at a coarser grade, because a system that can only describe one kind of emergency is silent during the rest of them.",
   ),
   body(
     "It is deliberately not a dispatch system. The product states on the guide, on the emergency screen, and in its shared link preview that it sends no rescue. This boundary is the design's organising constraint rather than a disclaimer: a person told that help is coming waits, and waiting is the wrong action when water is rising.",
   ),
 
   h2("2.2 Functional Requirements (Feature Set)"),
-  body("The application is structured around eight interactive features."),
+  body("The application is structured around ten interactive features."),
   numbered(
     1,
-    "**Depth Map.** The default screen. Reports are drawn as pins coloured along a five-step depth ramp, clustered when they overlap. A cluster takes the depth of its deepest member rather than an average, so eleven ankle-deep reports cannot hide one above-head report behind a reassuring colour.",
+    "**Hazard Map.** The default screen. Reports are drawn as pins coloured by severity, clustered when they overlap. A cluster takes its worst member rather than an average, so eleven ankle-deep reports cannot hide one above-head report behind a reassuring colour, and where two members tie at the worst severity the deeper flood wins the tie. Flood, fire and earthquake are drawn; accident and medical are not, because those describe a person rather than a place, and the rule is enforced as a database predicate rather than in the client.",
   ),
   numbered(
     2,
-    "**Report Flow.** A five-level gauge labelled by body part, with an optional photograph and an automatic GPS accuracy check. Where the fix is imprecise the user is warned and asked to confirm, because a report placed on the wrong street is worse than no report. The photograph is taken through an in-page viewfinder rather than chosen from the device’s files: a picker offers the gallery beside the camera, which places an image downloaded from anywhere one tap away from a report about a specific street.",
+    "**Report Flow.** A hazard is chosen first. Flood opens a five-level gauge labelled by body part; every other hazard opens three severity words, because water can be measured against a body and a structural collapse cannot. A photograph is optional and a GPS accuracy check is automatic: where the fix is imprecise the user is warned and asked to confirm, because a report placed on the wrong street is worse than no report. The photograph is taken through an in-page viewfinder rather than chosen from the device’s files: a picker offers the gallery beside the camera, which places an image downloaded from anywhere one tap away from a report about a specific street.",
   ),
   numbered(
     3,
@@ -642,11 +647,11 @@ const content = [
   ),
   numbered(
     4,
-    "**Emergency Signal (Tulong).** A live photograph and a three-second hold. No account is required: an anonymous session is created silently, because a magic-link sign-in costs minutes that a person in rising water does not have.",
+    "**Emergency Signal (Tulong).** A live photograph and a three-second hold. No account is required: an anonymous session is created silently, because a magic-link sign-in costs minutes that a person in rising water does not have. Six optional hazard chips sit above the hold. Choosing none is a real answer rather than a missing one, and is recorded as such: a signal with no chip is corroborated by any active report nearby rather than by floods only, because the sender has not claimed it is a flood.",
   ),
   numbered(
     5,
-    "**Moderator Console.** Two triage queues on one screen, both scoped to a barangay. The emergency queue shows each signal’s trust score, its supporting evidence, a call button, and directions. The report queue, described in 2.6, carries the depth readings themselves. Each tab shows its own count, so a backlog building behind the queue in view is visible without going to look for it, and every opening of either kind of row is recorded.",
+    "**Moderator Console.** Two triage queues on one screen, both scoped to a barangay. The emergency queue shows each signal’s trust score, its supporting evidence, a call button, and directions. The report queue, described in 2.6, carries the readings themselves. Each tab shows its own count, so a backlog building behind the queue in view is visible without going to look for it, and every opening of either kind of row is recorded. The tabs shown depend on who is asking: a moderator sees the queues, a responder sees only what has been assigned to them.",
   ),
   numbered(
     6,
@@ -658,7 +663,15 @@ const content = [
   ),
   numbered(
     8,
-    "**Report Dashboard.** The second queue in the console, listing submitted depth readings in priority order with the reporter’s contact number available on the report a moderator opens. Added in response to the review described in 2.6.",
+    "**Report Dashboard.** The second queue in the console, listing submitted readings in priority order with the reporter’s contact number available on the report a moderator opens. Added in response to the review described in 2.6.",
+  ),
+  numbered(
+    9,
+    "**Triage Board.** A master admin’s view of reports and emergency signals together in four columns — needs checking, not true, needs attention, assigned — moved by button or by drag, with incidents per hour over the last forty-eight hours and a barangay ranking above them. It is desktop-only and says so on a phone, because a four-column board on a 360-pixel screen is a worse tool than the queue it would replace. The assigned column is derived from an open assignment rather than stored, and the board caps at two hundred rows per column: a stated limit, in preference to the silent truncation a thousand-row API ceiling would produce.",
+  ),
+  numbered(
+    10,
+    "**Responder Register.** A signed-in person declares themselves a responder and a unit — fire service, barangay rescue, medical, police, or other — from the Ako screen, which makes them assignable on the board and gives them a console tab showing only their own assignments. It records who was put on an incident. It does not notify them, and it does not dispatch.",
   ),
 
   h2("2.3 System Architecture"),
@@ -667,7 +680,7 @@ const content = [
   ),
   figure(1, "System architecture. Every path to data passes through Row Level Security."),
   body(
-    "The system comprises ten tables across twenty-seven migrations, and twenty-two database functions. Security is enforced in PostgreSQL rather than in application code: a moderator's barangay scope, the confidentiality of a reporter's phone number, and the visibility of emergency photographs are all database predicates, so no route can bypass them by accident, including a route added later by somebody who has not read this report.",
+    "The system comprises eleven tables across thirty-four migrations, and thirty-four database functions. Security is enforced in PostgreSQL rather than in application code: a moderator's barangay scope, the confidentiality of a reporter's phone number, and the visibility of emergency photographs are all database predicates, so no route can bypass them by accident, including a route added later by somebody who has not read this report.",
   ),
   figure(
     2,
@@ -700,7 +713,7 @@ const content = [
 
   h2("2.6 Response to Review Recommendations"),
   body(
-    "The working system was reviewed by Mr. Peralta, who returned five recommendations. Four are implemented and described in this report as built behaviour; the fifth is adopted as scope and is deliberately not claimed as working software. They are separated here because a report that describes intentions in the present tense is not a report a reader can check.",
+    "The working system was reviewed by Mr. Peralta, who returned five recommendations. All five are implemented and described in this report as built behaviour. The fifth — expanding beyond flood — was recorded in an earlier draft of this section as adopted scope that was deliberately not claimed as working software; it was built afterwards, and the argument that held it back is kept below rather than quietly deleted, because it is the argument that determined the shape of what was eventually built.",
   ),
   table(
     [3400, 1500, 4460],
@@ -708,8 +721,8 @@ const content = [
       ["Recommendation", "Status", "How it was addressed"],
       [
         "Expand the scope beyond flood to emergency, fire, earthquake and accidents",
-        "Adopted as scope",
-        "Not built. The staging argument and what the change requires are set out below.",
+        "Implemented",
+        "Six hazards are accepted on reports and on emergency signals. Flood keeps its five body levels; the others carry a three-step severity, and a shared 1-3 rank orders them against each other. Described below.",
       ],
       [
         "Create a dashboard for the admin to monitor the submitted reports",
@@ -746,13 +759,16 @@ const content = [
     "One limitation is restated rather than resolved: these numbers are unverified. Verification means sending a code by SMS, which requires a paid provider this project does not have, so the console labels the number as what the reporter typed rather than as a checked fact.",
   ),
   body(
-    "**On expanding beyond flood.** The recommendation is accepted as the right direction and is not implemented, and the distance between those two statements is the substance of this response. The system’s data model is not merely flood-themed; it is flood-shaped. Severity is a five-step scale named for where water reaches on a body, the map colours and clusters pins along that scale and takes a cluster’s deepest member so that shallow readings cannot average away a deep one, and the trust score weighs rainfall and elevation. None of that survives contact with a fire. A body-part gauge cannot describe a structural collapse, and rainfall is not evidence about an earthquake.",
+    "**On expanding beyond flood.** This response previously recorded the recommendation as accepted but unbuilt, and set out what building it would cost. It has since been built, and the earlier objection is worth restating because it shaped the design rather than being dismissed by it. The system’s data model was not merely flood-themed; it was flood-shaped. Severity was a five-step scale named for where water reaches on a body, the map coloured and clustered pins along that scale and took a cluster’s deepest member so that shallow readings could not average away a deep one, and the trust score weighed rainfall and elevation. None of that survives contact with a fire. A body-part gauge cannot describe a structural collapse, and rainfall is not evidence about an earthquake.",
   ),
   body(
-    "A serious multi-hazard version therefore needs a hazard type carried on every report and signal, a separate severity vocabulary for each hazard, a scoring path per hazard or an honest refusal to score the ones without evidence to weigh, revised map semantics for hazards that are not measured in depth, and every new string written in both Filipino and English, since the product fails its build rather than falling back when a translation is missing. Attempting it inside the remaining scope of this course would produce a system that named four hazards and handled one of them properly, which is a worse answer to the recommendation than a working single-hazard system and a clear statement of what the extension costs.",
+    "That list of costs became the specification. A hazard type is now carried on every report and on every emergency signal; the severity vocabulary is separate per hazard, with flood keeping its five body levels because water can be measured against a body and nothing else can, and fire, earthquake, accident, medical and other carrying three severity words instead of five, because inventing finer gradations for a fire would be a false claim about how well it is known. A shared one-to-three rank lets a fire be ordered against a flood without pretending the two were measured the same way. The map draws flood, fire and earthquake and withholds accident and medical, on the rule that the first three describe a place and the last two describe a person; that rule is enforced by a database predicate rather than by the client. Clustering was revised to take a cluster’s worst severity across hazards, breaking a tie between two floods by the deeper reading, so the original guarantee — that shallow readings cannot average away a deep one — survives the generalisation. The trust score weighs rainfall and elevation only where they are evidence, and withdraws rather than guessing where they are not. Every new string was written in both Filipino and English, because the product fails its build rather than falling back when a translation is missing.",
   ),
   body(
-    "There is also a naming consequence worth recording: **antas** means level, and the product is named for the measurement it takes. A multi-hazard system would need a different organising noun, not merely additional categories.",
+    "There is also a naming consequence, and it resolved in the product’s favour rather than against it. The earlier draft of this section held that **antas** means level, that the product was named for the measurement it takes, and that a multi-hazard system would therefore need a different organising noun. The implemented design shows the objection was too narrow: every hazard now reports a level of severity, and the shared one-to-three rank is exactly the *antas* the name refers to. What changed is that the level is no longer always measured in water. The name is kept, and it is kept on an argument rather than on inertia.",
+  ),
+  body(
+    "**A fourth queue arrangement came out of the same discussion, and it is a demonstration rather than an operational claim.** Alongside the moderator console there is now a master-admin role, a board that puts reports and emergency signals into four columns — needs checking, not true, needs attention, assigned — and a register through which a signed-in person declares themselves a responder with a unit: fire service, barangay rescue, medical, police, or other. Assigning a record to a responder records that assignment and confirms the record; the board’s assigned column is derived from an open assignment rather than stored, so the column can never disagree with the assignment that produces it. Above the board, incidents per hour over the preceding forty-eight hours and a ranking of barangays by volume. What this is not is dispatch. Nobody is sent anywhere, no responder is notified by the system, and the emergency screen’s statement that Antas summons no rescue is unchanged and remains true. The feature demonstrates what a barangay desk’s coordination record would look like if the platform kept one; it does not claim to be that record in service.",
   ),
 
   pageBreak(),
@@ -923,12 +939,12 @@ const content = [
     ],
   ),
   body(
-    "**Remaining limitations, stated rather than hidden.** Barangay granularity is uneven outside Marikina, Taguig and the City of Manila, where every other city is represented by a single placeholder centroid. The hotline numbers were supplied rather than independently verified against the issuing agency's own publication. And the personas were derived from design constraints and local knowledge rather than validated through formal user interviews.",
+    "**Remaining limitations, stated rather than hidden.** Barangay granularity is uneven outside Marikina, Taguig and the City of Manila, where every other city is represented by a single placeholder centroid. The hotline numbers were supplied rather than independently verified against the issuing agency's own publication. The personas were derived from design constraints and local knowledge rather than validated through formal user interviews. And the map's nearby-reports query and the two console queues carry no explicit row limit, so past the data layer's own thousand-row ceiling they would truncate silently rather than saying so — a condition a real flood produces and a demonstration does not. The triage board is the one place where the limit is stated instead: two hundred rows per column, refused visibly. The older three should be brought to the same standard.",
   ),
 
   h2("Use Case"),
   body(
-    "Antas is a flood depth reporting system that helps Metro Manila residents decide whether a street is passable. The user opens the map, which loads without an account and shows nearby reports as coloured pins. The user may search for a place or locate themselves, then tap a pin to see the depth, the photograph if one exists, and how long ago it was recorded. If the reading is out of date, the user answers whether the water is gone, the same, or higher. To contribute, the user taps I-report, selects a depth on the body-scale gauge, optionally adds a photograph, and submits; the system records the location and the time and publishes the pin. In an emergency, the user taps Tulong, takes a live photograph, and holds the send control for three seconds; the system creates an anonymous session, scores the signal, and places it in the barangay's queue, then reports back only what has actually happened to it. A moderator opens the queue, reviews the score and its evidence, calls the reporter if a number was left, and confirms or dismisses the signal. Every opening of a signal is recorded. Throughout, the system states that it does not dispatch rescue.",
+    "Antas is a street-level hazard reporting system, built first for flood depth, that helps Metro Manila residents decide whether a street is passable. The user opens the map, which loads without an account and shows nearby reports as pins coloured by severity. The user may search for a place or locate themselves, then tap a pin to see the reading, the photograph if one exists, and how long ago it was recorded. If the reading is out of date, the user answers whether the water is gone, the same, or higher. To contribute, the user taps I-report and chooses a hazard: a flood is graded on the five-level body-scale gauge, and fire, earthquake, accident, medical or other on three severity words. A photograph is optional; on submitting, the system records the location and the time and publishes the pin, unless the hazard describes a person rather than a place, in which case it reaches the barangay desk without reaching the public map. In an emergency, the user taps Tulong, takes a live photograph, optionally taps a hazard chip, and holds the send control for three seconds; the system creates an anonymous session, scores the signal, and places it in the barangay's queue, then reports back only what has actually happened to it. A moderator opens the queue, reviews the score and its evidence, calls the reporter if a number was left, and confirms or dismisses the signal. A master admin may additionally work reports and signals together on a four-column board and record which responder was put on one. Every opening of a signal is recorded. Throughout, the system states that it does not dispatch rescue, and assigning a responder does not change that: nobody is summoned by the software.",
   ),
 
   h2("Software Interface"),

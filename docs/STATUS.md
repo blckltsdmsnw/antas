@@ -1,11 +1,10 @@
 # Antas — where things stand
 
-Last updated: 2026-09-01.
+Last updated: 2026-09-09.
 
 Everything described here is committed and pushed to
-`github.com/blckltsdmsnw/antas` **except section 1, Plan B**, which is built
-on the unmerged branch `plan-b` and says so. Vercel auto-deploys `main`; a
-push takes about 45 seconds to go live.
+`github.com/blckltsdmsnw/antas`. Vercel auto-deploys `main`; a push takes
+about 45 seconds to go live.
 
 **Production loads.** The 403 bot challenge that blocked every other check is
 gone — confirmed in a real browser on 2026-08-14. It was self-inflicted:
@@ -18,21 +17,28 @@ traffic. Do not verify deploys that way. If a challenge page ever returns, it is
 
 ## Do these first
 
-### 1. Plan B — master admin, board, responders (built 2026-08-28 to 2026-09-01)
+### 1. Plan B — master admin, board, responders (shipped 2026-09-01)
 
-Built on branch `plan-b`, **not yet merged and not yet deployed**. Nothing
-below is live until it is.
+**Merged, deployed and confirmed live.** `main` is at `d6c864c`; migrations
+`0032`–`0034` were applied to production *before* the push, which is the
+order that matters — `/console` calls `console_access()`, which only exists
+after `0032`, so pushing first would have broken the console until the
+migration landed. The owner opened `/console/board` on production on
+2026-09-01 and it works; the board cannot render without both halves, so
+that one check proves the whole chain.
 
-**Migrations `0032`–`0034` must reach hosted before the deploy**, in order,
-with `npx supabase db push` against `.env.hosted`. Never `db reset` — that
-wipes real reports. `0032` adds the master-admin role, the triage state,
-responders and assignments; `0033` adds the board's two functions; `0034`
-lets the hazard on an SOS reach the queue, the detail and the corroboration
-count.
+`0032` adds the master-admin role, the triage state, responders and
+assignments; `0033` adds the board's two functions; `0034` lets the hazard on
+an SOS reach the queue, the detail and the corroboration count. Never
+`db reset` against hosted — that wipes real reports.
 
-**The role has to be granted by hand.** `npm run make-moderator -- <email>
-<barangay> --master`. Both live accounts are still plain `admin`, so until
-that is run nobody can open the board — it will correctly say so.
+**The role is granted by hand, and was.** `npm run make-moderator -- <email>
+<barangay> --master` — but the npm script points at `.env.local`, so use
+`npx tsx --env-file=.env.hosted scripts/make-moderator.ts ...` for
+production. `olores2216305@ceu.edu.ph` is `master_admin @ South Signal
+Village`; `elijaholores@gmail.com` stays plain `admin`. Note that
+make-moderator upserts the barangay too, so passing a different one
+relocates the account.
 
 What is new, for somebody looking at the app:
 
@@ -1091,10 +1097,13 @@ viewfinder on `/report` with zero file inputs left on the page.
   font files at build time and caches them, and the cached URLs go stale when
   Google rotates them. **Vercel builds from scratch, so this is local only** —
   do not go hunting for a real fault, and do not assume production is broken.
-- **`display_name` is dead schema.** Populated as the literal string
-  `'Anonymous'` by the `handle_new_user` trigger and read by nothing; sign-in is
-  email OTP with no name field. Left in place deliberately — see `design.md` §12
-  for why reporter names were not built — but nothing depends on it.
+- **`display_name` was dead schema until Plan B, and is not any more.**
+  Populated as the literal string `'Anonymous'` by the `handle_new_user`
+  trigger, and read by nothing until `0032` made it the responder's name:
+  `responder_roster()` selects `p.display_name`, and the responder form on
+  `/ako` writes it. Reporter names still do not exist — see `design.md` §12 —
+  so the column now means two different things depending on whether the person
+  registered as a responder. Worth tidying, not urgent.
 
 ---
 
