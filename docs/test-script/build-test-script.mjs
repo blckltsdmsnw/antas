@@ -135,6 +135,9 @@ const content = [
     "**No account is required** for any step in this document. Neither test writes data to the database, so both can be run repeatedly and by more than one tester without affecting the map or leaving test reports behind.",
   ),
   note(
+    "Scope, so the omissions are read as choices. Antas also has a moderator console with two triage queues, a master admin's board, a responder register and a trust score for emergency signals. None of it is tested here, for two reasons: every one of those screens requires a signed-in account with a role granted by hand, and working them writes to the live database - a test that confirms or hides a real resident's report is not a test that should be run casually, or twice. What is tested here is the entire surface a member of the public can reach, which is also the surface on which being wrong reaches the most people.",
+  ),
+  note(
     "A note on language. The interface has a full Filipino and English toggle, and the expected messages below are given in both. Check whichever language the interface is showing. The toggle sits in the header, on every screen except the map - the map has no header, so switch language from Gabay, I-report, Ako or Tulong.",
   ),
 
