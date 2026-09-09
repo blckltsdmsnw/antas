@@ -364,6 +364,38 @@ const SCENES = {
   },
 
   /**
+   * A fire report: the same picker, a different vocabulary.
+   *
+   * The point of the shot is that flood is the only hazard measured against a
+   * body. Fire gets three severity words, and the submit button stays disabled
+   * until one is chosen - which is why this scene films the disabled state for
+   * a beat before answering. No photograph: it is optional on /report, and the
+   * fake camera is playing a flood, which would be a lie on a fire report.
+   */
+  async "report-fire"(page) {
+    await injectSession(page, "resident@example.test");
+    await page.goto(`${BASE}/report`, { waitUntil: "domcontentloaded" });
+
+    const sunog = page.getByRole("button", { name: "Sunog", exact: true });
+    await sunog.waitFor({ timeout: 60_000 });
+    await beat(page, 1400);
+    await tap(page, sunog);
+
+    // "Ano ang nakikita mo?" - three answers, not five body levels.
+    await page.getByText("May usok, walang apoy").waitFor({ timeout: 30_000 });
+    await beat(page, 2600); // all three readable, submit still disabled
+
+    await press(page, page.getByRole("button", { name: "Kumakalat sa ibang bahay" }));
+    await beat(page, 1200);
+
+    await press(page, page.getByRole("button", { name: "I-report", exact: true }));
+    await page
+      .getByText("Salamat. Naitala na ang report mo.")
+      .waitFor({ timeout: 30_000 });
+    await beat(page, 2400);
+  },
+
+  /**
    * Ako -> Responder: a signed-in person says they are one, and becomes
    * assignable on the board. Films the half of the workflow the master admin
    * never sees, and has to run before `board` or the roster is empty.
@@ -639,6 +671,7 @@ const wants = (name) => only.length === 0 || only.includes(name);
 if (wants("sos-flood")) await scene(browser, "sos-flood", SCENES["sos-flood"]);
 if (wants("report-flood"))
   await scene(browser, "report-flood", SCENES["report-flood"]);
+if (wants("report-fire")) await scene(browser, "report-fire", SCENES["report-fire"]);
 // Before the board: the roster has to have somebody in it to assign.
 if (wants("responder")) await scene(browser, "responder", SCENES.responder);
 if (wants("board")) {

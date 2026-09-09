@@ -67,12 +67,12 @@ const BEATS: Beat[] = [
     from: sec(6),
     frames: sec(7),
     chapter: "01 · MAPA",
-    title: "One live map of the water",
+    title: "One live map of the street",
     caption:
-      "Live flood reports on one map - search a place, check conditions. No account needed.",
+      "Live reports on one map - search a place, check conditions. No account needed.",
     clip: { src: "captures/scene-search.webm", fromSec: 2.2 },
     accent: DEPTH.knee,
-    stat: { big: "5 depth levels", small: "color-coded on the map" },
+    stat: { big: "6 hazards · 5 depths", small: "the legend, colour by severity" },
   },
   {
     from: sec(13),
@@ -105,9 +105,23 @@ const BEATS: Beat[] = [
     punch: [232, 300],
   },
   {
+    // The same picker, a different vocabulary - and the submit button visibly
+    // disabled until the question is answered. No photograph: it is optional,
+    // and the fake camera is playing a flood, which would be a lie here.
+    from: sec(34.7),
+    frames: sec(8),
+    chapter: "03 · I-REPORT",
+    title: "A fire is not measured on a body",
+    caption:
+      "Fire, earthquake, accident and medical are graded in three steps - and nothing sends until you answer.",
+    clip: { src: "captures/scene-report-fire.webm", fromSec: 0.4 },
+    accent: DEPTH.chest,
+    stat: { big: "3 steps, not 5", small: "flood is the only body scale" },
+  },
+  {
     // One continuous shot from the pin landing to the neighborhood confirming
     // the water is gone.
-    from: sec(34.7),
+    from: sec(42.7),
     frames: sec(8.5),
     chapter: "04 · KOMUNIDAD",
     title: "On the map, kept honest",
@@ -124,7 +138,7 @@ const BEATS: Beat[] = [
     // The whole SOS arc in one take: the live-photo requirement, the flood in
     // the viewfinder, the three-second hold, "Naipadala", and the callback
     // number saved without an account.
-    from: sec(43.2),
+    from: sec(51.2),
     frames: sec(16),
     chapter: "05 · TULONG",
     title: "Hold to call for help",
@@ -139,7 +153,7 @@ const BEATS: Beat[] = [
     stat: { big: "3 seconds", small: "hold to send" },
   },
   {
-    from: sec(59.2),
+    from: sec(67.2),
     frames: sec(8),
     chapter: "06 · CONSOLE",
     title: "Every signal gets a decision",
@@ -152,7 +166,7 @@ const BEATS: Beat[] = [
   {
     // The tap on "Direksyon papunta rito" itself, filmed - then the cut to
     // the Maps route it opened. Click, then result, one continued thought.
-    from: sec(67.2),
+    from: sec(75.2),
     frames: sec(2.5),
     chapter: "06 · CONSOLE",
     title: "Direksyon papunta rito",
@@ -162,7 +176,7 @@ const BEATS: Beat[] = [
     accent: DEPTH.aboveHead,
   },
   {
-    from: sec(69.7),
+    from: sec(77.7),
     frames: sec(5),
     chapter: "06 · CONSOLE",
     title: "Direksyon papunta rito",
@@ -175,7 +189,7 @@ const BEATS: Beat[] = [
   {
     // Ako -> Responder. Filmed before the board on purpose: the name typed
     // here is the name the board assigns two beats later.
-    from: sec(74.7),
+    from: sec(82.7),
     frames: sec(7.5),
     chapter: "07 · RESPONDER",
     title: "Who can be sent",
@@ -188,7 +202,7 @@ const BEATS: Beat[] = [
   {
     // The desk-width capture: four columns, the 48-hour graph and the
     // barangay ranking above them, a card moved and then assigned.
-    from: sec(82.2),
+    from: sec(90.2),
     frames: sec(10.5),
     chapter: "08 · BOARD",
     title: "Reports and signals, one board",
@@ -204,7 +218,7 @@ const BEATS: Beat[] = [
     stat: { big: "48 hours", small: "incidents per hour, by barangay" },
   },
   {
-    from: sec(92.7),
+    from: sec(100.7),
     frames: sec(7.5),
     clip: null,
     accent: DEPTH.chest,
@@ -219,22 +233,24 @@ const NARRATION: { file: string; at: number }[] = [
   // 04a introduces the hazard picker, 04 keeps the depth line it always had.
   { file: "shot-04a.mp3", at: 18.7 },
   { file: "shot-04.mp3", at: 25.6 },
-  { file: "shot-05.mp3", at: 34.9 },
-  { file: "shot-06.mp3", at: 39.1 },
-  { file: "shot-07.mp3", at: 43.4 },
-  { file: "shot-07b.mp3", at: 47.3 },
-  { file: "shot-07c.mp3", at: 54.7 },
-  { file: "shot-08.mp3", at: 59.4 },
-  { file: "shot-08b.mp3", at: 67.6 },
-  { file: "shot-10.mp3", at: 75.0 },
-  { file: "shot-11.mp3", at: 82.5 },
-  { file: "shot-09.mp3", at: 92.9 },
+  // 04c is the fire chapter: three steps, not five.
+  { file: "shot-04c.mp3", at: 35.1 },
+  { file: "shot-05.mp3", at: 42.9 },
+  { file: "shot-06.mp3", at: 47.1 },
+  { file: "shot-07.mp3", at: 51.4 },
+  { file: "shot-07b.mp3", at: 55.3 },
+  { file: "shot-07c.mp3", at: 62.7 },
+  { file: "shot-08.mp3", at: 67.4 },
+  { file: "shot-08b.mp3", at: 75.6 },
+  { file: "shot-10.mp3", at: 83.0 },
+  { file: "shot-11.mp3", at: 90.5 },
+  { file: "shot-09.mp3", at: 100.7 },
 ];
 
 /** Confirmation chimes: report saved, SOS sent, number saved. */
-const DINGS = [33.4, 53.5, 57.9];
+const DINGS = [33.4, 41.6, 61.5, 65.9];
 
-export const DEMO_DURATION = sec(100.2);
+export const DEMO_DURATION = sec(108.2);
 
 const RISE_FRAMES = 16;
 const DRAIN_FRAMES = 22;
@@ -689,7 +705,7 @@ const Intro: React.FC = () => {
             textAlign: "center",
           }}
         >
-          Community flood reporting for barangays
+          Six hazards, street by street, for barangays
         </div>
       </AbsoluteFill>
     </AbsoluteFill>
@@ -731,7 +747,7 @@ const Outro: React.FC = () => {
             textAlign: "center",
           }}
         >
-          Know the depth before you go.
+          Know how bad it is before you go.
         </div>
         <div
           style={{
@@ -815,10 +831,10 @@ export const Thumbnail: React.FC = () => (
         Antas
       </div>
       <div style={{ fontSize: 40, color: "#ffffff", opacity: 0.92 }}>
-        Know the depth before you go.
+        Know how bad it is before you go.
       </div>
       <div style={{ fontSize: 28, color: "#ffffff", opacity: 0.6, letterSpacing: 1 }}>
-        Community flood reporting for barangays
+        Six hazards, street by street, for barangays
       </div>
     </div>
     <div

@@ -215,8 +215,21 @@ const chosen = only.length
   ? Object.fromEntries(Object.entries(SCENES).filter(([n]) => only.includes(n)))
   : SCENES;
 
-rmSync(OUT, { recursive: true, force: true });
+// Clear only the scenes this run is about to replace.
+//
+// This used to be `rmSync(OUT, {recursive: true})`, which emptied the whole
+// directory - including the seven scenes capture-console.mjs films, which this
+// script cannot reproduce because they need an authenticated session. On
+// 2026-09-09 re-filming the single `search` scene deleted all of them, and the
+// render 404'd three minutes later. Delete what is named, nothing else.
 mkdirSync(OUT, { recursive: true });
+for (const name of Object.keys(chosen)) {
+  for (const file of readdirSync(OUT)) {
+    if (file === `scene-${name}.webm` || file.startsWith(`scene-${name}-`)) {
+      rmSync(join(OUT, file), { force: true });
+    }
+  }
+}
 
 const browser = await chromium.launch();
 console.log(`Filming ${Object.keys(chosen).length} scenes from ${BASE}`);

@@ -1,8 +1,8 @@
-# Antas Demonstration Video — Shot-by-Shot Script (v2)
+# Antas Demonstration Video — Shot-by-Shot Script (v3)
 
-**Genre:** SaaS product walkthrough (demonstration, NOT promo). **Length:** ~100s
-(was ~76s; the multi-hazard picker, the responder register and the master
-admin's board were added on 2026-09-09). **Narration:** English — edge-tts
+**Genre:** SaaS product walkthrough (demonstration, NOT promo). **Length:** ~108s
+(76s → 100s → 108s; the multi-hazard picker, the responder register, the master
+admin's board and a fire report were added on 2026-09-09). **Narration:** English — edge-tts
 `en-PH-JamesNeural` at `--rate=+10%`, rendered to
 `video/public/audio/narration/{james,rosa}/shot-*.mp3`. **Footage:** local dev
 only, never production — bot protection, and no demo reports on the public map.
@@ -16,20 +16,21 @@ capture from `capture-console.mjs`; those two are Elijah's phone recording
 
 | # | Start | Dur | Chapter | Footage | Narration |
 |---|-------|-----|---------|---------|-----------|
-| 1 | 0:00 | 6.0s | *(intro card)* | — | "This is Antas — a community flood-reporting app for barangays. Here's how it works." |
-| 2 | 0:06 | 7.0s | 01 · MAPA | `scene-search.webm` | "The map shows live flood reports. Anyone can search a place and check conditions — no account needed." |
+| 1 | 0:00 | 6.0s | *(intro card)* | — | "This is Antas. Residents report what is happening on their street, and how bad it is." |
+| 2 | 0:06 | 7.0s | 01 · MAPA | `scene-search.webm` | "The map shows live reports. Anyone can search a place and check conditions — no account needed." |
 | 3 | 0:13 | 5.5s | 02 · GABAY | `screen.mp4` | "Gabay puts emergency hotlines and a preparedness checklist first — and it works offline." |
 | 4 | 0:18.5 | 16.2s | 03 · I-REPORT | `scene-report-flood.webm` | **shot-04a** "Every report starts with what is happening: flood, fire, earthquake, accident, medical, or other." → **shot-04** the depth line |
-| 5 | 0:34.7 | 8.5s | 04 · KOMUNIDAD | `screen.mp4` | pin lands, neighbours confirm |
-| 6 | 0:43.2 | 16.0s | 05 · TULONG | `scene-sos-flood.webm` | live photo required, hazard chips optional, 3-second hold, callback number |
-| 7 | 0:59.2 | 8.0s | 06 · CONSOLE | `scene-console.webm` | "Only barangay moderators see an SOS — it never appears on the public map." |
-| 8 | 1:07.2 | 2.5s | 06 · CONSOLE | `scene-direksyon.webm` | *(the tap itself)* |
-| 9 | 1:09.7 | 5.0s | 06 · CONSOLE | `scene-direksyon-2.webm` | "One tap opens Google Maps — straight to the caller's exact location." |
-| 10 | 1:14.7 | 7.5s | **07 · RESPONDER** | `scene-responder.webm` | **shot-10** "Anyone signed in can register as a responder — fire service, barangay rescue, medical, or police." |
-| 11 | 1:22.2 | 10.5s | **08 · BOARD** | `scene-board.webm` *(desk width)* | **shot-11** "A master admin works reports and signals on one board, and records which responder was put on each. Antas still sends no rescue — it keeps the record." |
-| 12 | 1:32.7 | 7.5s | *(outro card)* | — | "Fully bilingual, offline-ready, and installable on any phone. Antas — know the depth before you go." |
+| 5 | 0:34.7 | 8.0s | 03 · I-REPORT | `scene-report-fire.webm` | **shot-04c** "A fire is graded in three steps, not five — water can be measured against a body, and a fire cannot." |
+| 6 | 0:42.7 | 8.5s | 04 · KOMUNIDAD | `screen.mp4` | pin lands, neighbours confirm |
+| 7 | 0:51.2 | 16.0s | 05 · TULONG | `scene-sos-flood.webm` | live photo required, hazard chips optional, 3-second hold, callback number |
+| 8 | 1:07.2 | 8.0s | 06 · CONSOLE | `scene-console.webm` | "Only barangay moderators see an SOS — it never appears on the public map." |
+| 9 | 1:15.2 | 2.5s | 06 · CONSOLE | `scene-direksyon.webm` | *(the tap itself)* |
+| 10 | 1:17.7 | 5.0s | 06 · CONSOLE | `scene-direksyon-2.webm` | "One tap opens Google Maps — straight to the caller's exact location." |
+| 11 | 1:22.7 | 7.5s | **07 · RESPONDER** | `scene-responder.webm` | **shot-10** "Anyone signed in can register as a responder — fire service, barangay rescue, medical, or police." |
+| 12 | 1:30.2 | 10.5s | **08 · BOARD** | `scene-board.webm` *(desk width)* | **shot-11** "A master admin works reports and signals on one board, and records which responder was put on each. Antas still sends no rescue — it keeps the record." |
+| 13 | 1:40.7 | 7.5s | *(outro card)* | — | "Fully bilingual, offline-ready, installable on any phone. Antas — know how bad it is before you go." |
 
-Total 100.2s. `DEMO_DURATION` in `src/Demo.tsx` is the single source of truth;
+Total 108.2s. `DEMO_DURATION` in `src/Demo.tsx` is the single source of truth;
 `Root.tsx` reads it.
 
 ## Re-filming
@@ -83,6 +84,35 @@ and `Demo.tsx` draws it in a monitor frame (`DemoScreen`) rather than the phone.
   web" before the route films.
 - **A failed scene now writes `scene-<name>-FAILED.png`.** A missed tap lands
   somewhere, and the URL alone does not say where.
+- **`capture.mjs` used to empty the whole captures directory on startup.** It
+  films only the five public scenes, but its `rmSync(OUT, {recursive: true})`
+  deleted the seven authenticated ones too — which it cannot reproduce, because
+  they need a session. Re-filming the single `search` scene on 2026-09-09 wiped
+  everything and the render 404'd three minutes later. It now deletes only the
+  scenes named on its own command line.
+
+## What the video does NOT show, on purpose
+
+There is no fire, earthquake or accident *footage*. The only incident footage in
+the project is `footage/flood.mp4`, which Elijah sourced, and it is used as the
+camera feed for a flood report — honest, because it is a real flood standing in
+for the one the reporter is photographing. Feeding that same clip to a fire
+report, or dropping stock fire footage in, would present sourced video as a
+resident's evidence, which in a research submission reads as fabricated data.
+
+So the fire chapter films the **app**, not the fire: the picker, the three
+severity words, and the submit button visibly disabled until one is chosen.
+Photographs are optional on `/report`, so it needs no footage at all. If a real
+fire clip is ever sourced, wiring it in is one env var (`FLOOD_Y4M`) and a
+`report-fire` scene that opens the camera.
+
+The intro and outro cards still play over flood footage, for the same reason —
+it is the only clip that exists.
+
+`scene-search.webm` was re-filmed on 2026-09-09 as well: the old take predated
+the hazards, so its map legend showed the five depth colours only, while the
+narration two seconds later claimed six. The poster freezes a frame of that
+capture, so a stale map shot would have been the first thing anyone saw.
 
 ## Known rough edges in the footage
 
