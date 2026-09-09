@@ -239,18 +239,21 @@ const content = [
     [
       ["Test No.", "Function to Test", "Action", "Expected Result", "Actual Result", "Status"],
       ["1", "Place search", "Type Malanday in the search field and tap the result", "Map moves to Malanday, Marikina", "", "Pass / Fail"],
-      ["2", "Report - location guard", "Block location, choose Baha, then tap I-report to submit", "Turn on location message appears; stays on report screen", "", "Pass / Fail"],
-      ["3", "Incident picker", "Open I-report and read the first screen", "Six choices - Baha, Sunog, Lindol, Aksidente, Medikal, Iba pa - and no depth selector until one is tapped", "", "Pass / Fail"],
-      ["4", "Severity guard", "Tap Sunog, then try to submit without choosing what you can see", "The submit button stays disabled; choosing one of the three enables it", "", "Pass / Fail"],
-      ["5", "Search - no match", "Type Zzqxwv in the search field", "Walang tugma. (No matches.) appears - NOT Hindi makahanap ngayon., which means the search itself failed", "", "Pass / Fail"],
-      ["6", "Navigation", "Tap each tab: Mapa, Gabay, I-report, Ako, Tulong", "The matching screen opens each time", "", "Pass / Fail"],
-      ["7", "Guide (Gabay)", "Open Gabay from the tab bar", "Hotline numbers appear first, above the checklist", "", "Pass / Fail"],
-      ["8", "Language toggle", "Switch between Filipino and English from the header", "The whole interface changes, with no half-translated screen", "", "Pass / Fail"],
-      ["9", "Emergency boundary", "Open Tulong and read the notice at the top", "It states plainly that no rescue service receives the signal", "", "Pass / Fail"],
-      ["10", "Offline guide", "Open Gabay, turn off the network, then reload", "The guide still displays from cache", "", "Pass / Fail"],
-      ["11", "Mobile layout", "Open the app on a phone-sized screen", "The tab bar is reachable by thumb and nothing is cut off", "", "Pass / Fail"],
-      ["12", "SOS hold guard", "Open Tulong, press and hold the button for about one second, then release", "The ring fills while held and resets on release; no SOS is sent", "", "Pass / Fail"],
-      ["13", "SOS incident chips", "Open Tulong and tap one of the chips under Ano ang nangyayari? (opsyonal)", "The chip is selected and nothing is sent; the chips are optional and leaving them all unchosen is also allowed", "", "Pass / Fail"],
+      ["2", "Map legend", "Read the legend panel on the map screen", "Lalim ng tubig with five depth colours from Bukong-bukong to Lampas sa ulo, the note Mas madilim, mas malala., then six incident types - Baha, Sunog, Lindol, Aksidente, Medikal, Iba pa", "", "Pass / Fail"],
+      ["3", "Report detail", "Zoom in until single pins appear instead of numbered circles, then tap one", "The depth in words and in centimetres, when it was reported, and either the photo or a line saying the report has none", "", "Pass / Fail"],
+      ["4", "Road passability", "On that same open report, read the lines under the depth", "One of the three MMDA categories - Madaanan ng lahat ng sasakyan / Hindi madaanan ng maliliit na sasakyan / Hindi madaanan ng anumang sasakyan - then Batay sa MMDA Flood Gauge System, then the warning that it is not a guide for people on foot", "", "Pass / Fail"],
+      ["5", "Report - location guard", "Block location, choose Baha, then tap I-report to submit", "Turn on location message appears; stays on report screen", "", "Pass / Fail"],
+      ["6", "Incident picker", "Open I-report and read the first screen", "Six choices - Baha, Sunog, Lindol, Aksidente, Medikal, Iba pa - and no depth selector until one is tapped", "", "Pass / Fail"],
+      ["7", "Severity guard", "Tap Sunog, then try to submit without choosing what you can see", "The submit button stays disabled; choosing one of the three enables it", "", "Pass / Fail"],
+      ["8", "Search - no match", "Type Zzqxwv in the search field", "Walang tugma. (No matches.) appears - NOT Hindi makahanap ngayon., which means the search itself failed", "", "Pass / Fail"],
+      ["9", "Navigation", "Tap each tab: Mapa, Gabay, I-report, Ako, Tulong", "The matching screen opens each time", "", "Pass / Fail"],
+      ["10", "Guide (Gabay)", "Open Gabay from the tab bar", "Hotline numbers appear first, above the checklist", "", "Pass / Fail"],
+      ["11", "Language toggle", "Switch between Filipino and English from the header", "The whole interface changes, with no half-translated screen", "", "Pass / Fail"],
+      ["12", "Emergency boundary", "Open Tulong and read the notice at the top", "It states plainly that no rescue service receives the signal", "", "Pass / Fail"],
+      ["13", "Offline guide", "Open Gabay, turn off the network, then reload", "The guide still displays from cache", "", "Pass / Fail"],
+      ["14", "Mobile layout", "Open the app on a phone-sized screen", "The tab bar is reachable by thumb and nothing is cut off", "", "Pass / Fail"],
+      ["15", "SOS hold guard", "Open Tulong, press and hold the button for about one second, then release", "The ring fills while held and resets on release; no SOS is sent", "", "Pass / Fail"],
+      ["16", "SOS incident chips", "Open Tulong and tap one of the chips under Ano ang nangyayari? (opsyonal)", "The chip is selected and nothing is sent; the chips are optional and leaving them all unchosen is also allowed", "", "Pass / Fail"],
     ],
   ),
 
@@ -328,4 +331,4 @@ execFileSync("powershell", ["-NoProfile", "-Command", ps], { stdio: "inherit" })
 rmSync(BUILD, { recursive: true, force: true });
 
 console.log(`Wrote ${outPath}`);
-console.log("2 detailed scripts (1 positive, 1 negative) + a 13-row summary table");
+console.log("2 detailed scripts (1 positive, 1 negative) + a 16-row summary table");
