@@ -558,7 +558,7 @@ const content = [
     "**Role:** Administrative assistant in an Ortigas office. Commutes daily by jeepney and MRT, leaving home before seven and returning after six.",
   ),
   body(
-    "**Household:** Lives with her mother, who is 61 and has limited mobility, and a nine-year-old son. Her decisions are not only about herself: if the water rises she must decide whether to move her mother upstairs to a neighbour's unit, and whether her son's school route is passable.",
+    "**Household:** Lives with her mother, who is 61 and has limited mobility, and a nine-year-old son. Her decisions are not only about herself: if the water rises she must decide whether to move her mother upstairs to a neighbour's unit, and whether her son's school route is passable. Her mother's mobility is the constant across every hazard rather than a detail of the flood one — it is the reason a fire two doors down, or a road closed by a collision on the route the ambulance would take, is the same problem to her with a different cause.",
   ),
   body(
     "**Device and connectivity:** A mid-range Android phone, three years old, on prepaid mobile data. Storage is nearly full, so she is reluctant to install new applications. During heavy rain her signal degrades and pages that require a network round trip frequently fail to load. Battery is a live concern during a brownout.",
@@ -568,10 +568,10 @@ const content = [
   ),
   body("**Goals:**"),
   bullet(
-    "**Primary:** Decide, within the next few minutes, whether her street and her commute are passable right now.",
+    "**Primary:** Decide, within the next few minutes, what is happening on her street and her commute and whether either is passable right now. In the rainy months that question is almost always about water; it is the same question when it is smoke, or a road closed after a collision.",
   ),
   bullet(
-    "**Secondary:** Know early enough to move her mother and belongings upstairs before the water reaches the doorstep.",
+    "**Secondary:** Know early enough to move her mother — upstairs before the water reaches the doorstep, or out of the building entirely if the hazard is one that does not wait.",
   ),
   bullet(
     "**Tertiary:** Warn her neighbours, which she already does by posting to the barangay group.",
@@ -592,8 +592,14 @@ const content = [
   bullet(
     "She does not know which number to call for her own barangay, and has never found a list she trusted enough to save.",
   ),
+  bullet(
+    "When it is not a flood, she has even less. There is no advisory at all for a fire two streets away or a collision blocking the road her son walks along; there is a siren she cannot place, and a barangay group that will know in twenty minutes. The scale problem she has with PAGASA is at least a scale problem — for these there is no source to be too coarse.",
+  ),
   body(
     "**Contextual frustration:** It is 4:40 in the afternoon and it has been raining for three hours. She has perhaps fifteen minutes to decide whether to leave now, wait for the rain to ease, or stay in the office overnight. Her mother has phoned to say water has reached the gate. Every source available answers a broader question than the one she is asking, and the one channel that is specific enough, the barangay group, gives her photographs she cannot date.",
+  ),
+  body(
+    "**The same fifteen minutes, without rain.** It is a dry Tuesday and she can smell smoke. Somebody in the barangay group says there is a fire near the covered court, which is four streets long. She needs to know where it is and whether it is spreading before she decides whether to go home early, and the question is identical in shape to the flood one: what is on my street, how bad, how long ago, and is my route through it. It is answered by the same map, the same three-step severity, and the same age on every pin — which is the argument for one application taking six hazards rather than six applications taking one each.",
   ),
   body(
     "**Why she might not adopt the tool, which the design must answer:** she will not create an account to look at a map; she will not install anything large; and she will abandon a page that does not load on a weak connection. Antas therefore requires no account to read or to send an emergency signal, is installable but works as a web page, and caches its shell and guide so that something useful survives a failed connection.",
@@ -618,6 +624,9 @@ const content = [
     "He has no basis for judging whether a report is credible. A message claiming chest-deep water may be accurate, exaggerated, or from someone who is not there at all.",
   ),
   bullet(
+    "Nothing he receives is comparable. A flood message, a fire message and a road accident arrive in the same inbox describing different kinds of thing in different words, and he has to hold in his head which is worse than which. What he is doing when he decides whom to call first is ranking them on a scale nobody has written down.",
+  ),
+  bullet(
     "He cannot easily reach a person back once their message arrives, because a Facebook comment carries no phone number.",
   ),
   bullet(
@@ -635,7 +644,7 @@ const content = [
     "A crowdsourced system has a structural problem that neither persona expresses on their own: almost everybody reads and almost nobody contributes. Maricel will open the map far more often than she will file a report, and the map is worthless to her unless somebody else has filed one recently.",
   ),
   body(
-    "Three decisions follow from this, and they are why the interface looks as it does. Reporting is the raised centre action in the tab bar rather than a peer item, because it is the one contribution the system asks for and it must not be buried. The report itself is a single tap on a five-level scale, with the photograph optional, because every additional field costs contributions at exactly the moment people are least willing to give them. And the freshness control on an existing report exists because confirming somebody else's reading is a far smaller ask than filing a new one, yet it produces most of the value: it tells the next reader whether a pin is still true.",
+    "Three decisions follow from this, and they are why the interface looks as it does. Reporting is the raised centre action in the tab bar rather than a peer item, because it is the one contribution the system asks for and it must not be buried. The report itself is two taps — what is happening, then how bad — with the photograph optional, because every additional field costs contributions at exactly the moment people are least willing to give them. The multi-hazard work added exactly one tap to that path and no free text, which was the constraint it was built under: a picker of six, then a scale of five for water or three for everything else. And the freshness control on an existing report exists because confirming somebody else's reading is a far smaller ask than filing a new one, yet it produces most of the value: it tells the next reader whether a pin is still true.",
   ),
 
   pageBreak(),
