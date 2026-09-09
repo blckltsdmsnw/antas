@@ -280,7 +280,7 @@ const content = [
 
   h2("1.2 Related Literature and Studies"),
   body(
-    "The literature relevant to Antas falls into seven areas: the recent record of crowdsourced disaster reporting platforms, the problem of trusting citizen-contributed data, the Philippine flood and warning context, the design of interfaces used under stress, the handling of information that decays with time, the closest comparable system, and the official standard for road passability. Each entry states what the source establishes and which decision in this system it supports. The literature is weighted toward flood for the reason given at the end of 1.1: it is the hazard with a published record to cite. The design decisions it supports — a graded scale rather than a presence report, an explicit age on every reading, a trust score that never counts a gap as evidence against the sender — are hazard-independent, and the built system applies them to all six.",
+    "The literature relevant to Antas falls into eight areas: the recent record of crowdsourced disaster reporting platforms, the problem of trusting citizen-contributed data, the Philippine flood and warning context, the design of interfaces used under stress, the handling of information that decays with time, the closest comparable system, the official standard for road passability, and what an incident record contains across hazards. Each entry states what the source establishes and which decision in this system it supports. The evidence about *flood* is weighted toward flood for the reason given at the end of 1.1: it is the hazard with a published record to cite in this country. The evidence about *scope* is in 1.2A and 1.2H, and it is not flood-specific — Cicek and Kantarci review crowd reporting across earthquakes, floods, wildfires and hurricanes, and Wiegmann et al. review incident records across twenty-seven hazard types. The design decisions the flood sources support — a graded scale rather than a presence report, an explicit age on every reading, a trust score that never counts a gap as evidence against the sender — are hazard-independent, and the built system applies them to all six.",
   ),
 
   h3("A. Crowdsourced and Participatory Disaster Reporting"),
@@ -317,6 +317,9 @@ const content = [
   ),
   body(
     "Cicek and Kantarci draw a distinction between crowdsourcing, which they characterise as gathering unstructured crowd intelligence through social media, and crowdsensing, a more structured type of data generation by crowds. Antas sits on the structured side of that line by design. The review also names a crowd-as-reporters pattern in which a member of the public submits an observation that is then checked, which is the shape of the moderator queue in Section 2.4. Note the scope limit: this review deliberately excludes work scoped solely to social media, so it is cited for the structured-versus-unstructured distinction and not as evidence about informal sharing behaviour.",
+  ),
+  body(
+    "Three further findings bear directly on the scope of this system. First, the twenty-five studies reviewed span earthquakes, floods, wildfires and hurricanes alongside technological emergencies — the crowd-as-reporters pattern is not a flood technique, and that is the precedent for Antas accepting six hazard types on one set of rails rather than building a second application for each. Second, GPS and camera are the dominant sensors across the corpus, and they are exactly the two Antas requires of a reporter: a located observation with a photograph. Third, and most usefully, the authors find that only four of the twenty-five studies offer practical guidance on integrating crowdsensed data into existing decision-support infrastructure. That is the gap the moderator console and the triage board in Section 2.6 are built into: not another way to collect reports, but a defined place for a barangay desk to work them.",
   ),
 
   h3("B. Trust, Verification and Data Quality"),
@@ -441,6 +444,20 @@ const content = [
   ),
   body(
     "Two features of the standard matter here. The first is that it is official and published, so adopting it is citation rather than invention — an important distinction for a safety claim. The second is that MMDA describes its own categories in body terms: nineteen inches is “knee deep”, thirty-seven is “waist deep”, forty-five is “chest deep”. The scale this project chose for its own reasons, described in Section 2.2, turns out to be the vocabulary the national road authority already uses. Antas maps its five levels onto the three MMDA categories, taking the worse category wherever one of its bands straddles two, and shows the result on every flood report.",
+  ),
+
+  h3("H. Incident Information Across Hazards"),
+  body(
+    "**Wiegmann, M., Kersten, J., Senaratne, H., Potthast, M., Klan, F., & Stein, B. (2021). Opportunities and risks of disaster data from social media: A systematic review of incident information. *Natural Hazards and Earth System Sciences, 21*(4), 1431–1444. https://doi.org/10.5194/nhess-21-1431-2021**",
+  ),
+  body(
+    "Wiegmann et al. review thirty-seven disaster and incident databases covering twenty-seven hazard types, and ask what is recorded about an incident and what is missing. Their unit of analysis is the answer to the scope question this project had to settle: the useful record is an *incident* — typed, located, timed, and graded — and the fields that make it useful recur across twenty-seven hazards rather than being particular to any one of them. A system that carries a hazard type on every report and signal, as Antas does after migration 0028, is recording the thing this literature treats as the unit; a system hard-coded to water is recording a special case of it.",
+  ),
+  body(
+    "The review's second finding is the one that shapes how Antas treats a report after it arrives. Traditional authoritative sources offer high precision and incomplete recall — they are right about what they record and silent about most of what happens — while crowd and social sources invert that, covering far more ground at substantially lower accuracy. The response the authors call for is deliberate quality control rather than a choice between the two. That is the division of labour in this system: an ordinary report is published quickly and carries its own age and its own confirmations, because breadth is the point; an emergency signal is scored against rainfall, elevation, corroboration and reporter history and reaches a human before anything is acted on, because at that end of the scale a false positive costs somebody's attention during an emergency.",
+  ),
+  note(
+    "The scope limit is worth stating: this review is about incident databases and social-media-derived data, not about purpose-built reporting applications. It is cited here for what an incident record contains and for the precision-recall trade-off, not as evidence that an application of this kind performs well.",
   ),
 
   h3("Synthesis: The Gap This Project Addresses"),
@@ -700,6 +717,9 @@ const content = [
   ),
   body(
     "One principle governs the scorer, and it is the strongest design argument in this project: a gap in the system's knowledge is never scored as evidence against the person asking for help. An unreachable weather provider, a photograph that could not be fetched, or a question the sender was never asked all score identically to a clean result. The system ranks signals it knows less about lower; it never refuses one.",
+  ),
+  body(
+    "The same principle decides what a hazard chip does to the score. Rainfall and elevation are evidence about water, so they run for a flood and for a signal whose sender chose no chip at all — that being the case the scorer was originally written for — and they withdraw entirely for a fire, an earthquake, an accident or a medical emergency. They are not recorded as unknown in those cases, because unknown is a statement about a question that was asked; rain is simply not evidence about a fire, and a scorer that logged its silence as a gap would be inventing doubt out of its own irrelevance.",
   ),
   body(
     "The distinction matters in practice. The emergency form stopped asking for a depth, so the two checks that exist only to contradict a claimed depth withdraw rather than treating silence as a shallow claim. Otherwise the system would penalise people for a form field it had deliberately chosen not to show them, pushing the fastest askers toward the bottom of the queue.",
@@ -1005,6 +1025,9 @@ const content = [
   ),
   body(
     "Safaei-Moghadam, A., Tarboton, D., & Minsker, B. (2023). Estimating the likelihood of roadway pluvial flood based on crowdsourced traffic data and depression-based DEM analysis. *Natural Hazards and Earth System Sciences, 23*(1), 1-19. https://doi.org/10.5194/nhess-23-1-2023",
+  ),
+  body(
+    "Wiegmann, M., Kersten, J., Senaratne, H., Potthast, M., Klan, F., & Stein, B. (2021). Opportunities and risks of disaster data from social media: A systematic review of incident information. *Natural Hazards and Earth System Sciences, 21*(4), 1431-1444. https://doi.org/10.5194/nhess-21-1431-2021",
   ),
   body(
     "World Bank. (2020). *Concept project information document (PID): Pasig-Marikina River Basin Flood Management Project (P171897)* (Report No. PIDC27692). World Bank Group. https://documents.worldbank.org/curated/en/851731580982488098/pdf/Concept-Project-Information-Document-PID-Pasig-Marikina-River-Basin-Flood-Management-Project-P171897.pdf",
