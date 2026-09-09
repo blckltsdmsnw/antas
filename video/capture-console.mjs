@@ -30,7 +30,15 @@ const OUT = join(import.meta.dirname, "public", "captures");
 // 127.0.0.1 rather than localhost: the local GoTrue's site_url and redirect
 // allow-list name 127.0.0.1:3000, and the PKCE cookie must be set on the same
 // host the magic link redirects back to.
-const BASE = "http://127.0.0.1:3000";
+// `CAPTURE_BASE` exists for one scene: the service worker is deliberately not
+// registered under `next dev` (it would serve stale bundles between edits), so
+// the offline shot has to be filmed against `next start` on another port.
+// Still refuses anything that is not local - this script submits real SOS rows.
+const BASE = process.env.CAPTURE_BASE ?? "http://127.0.0.1:3000";
+if (!/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(BASE)) {
+  console.error(`refusing to run: CAPTURE_BASE is not local (${BASE})`);
+  process.exit(1);
+}
 const MAIL = "http://127.0.0.1:54324";
 
 const FLOOD_Y4M = process.env.FLOOD_Y4M;
@@ -396,6 +404,112 @@ const SCENES = {
   },
 
   /**
+   * The offline claim, actually demonstrated.
+   *
+   * `sw.js` precaches "/", "/gabay" and the manifest and serves them
+   * cache-first, so the guide survives with no network. The first load only
+   * registers the worker - it does not control the page yet - so this reloads
+   * once to come under its control, THEN cuts the network and reloads again.
+   * Without that first reload the second one is served by the network that is
+   * about to be switched off, and the scene proves nothing.
+   *
+   * Nothing on screen says "offline", so the beat card has to: the footage
+   * shows a reload that survives, and the caption is what makes it evidence.
+   */
+  async offline(page) {
+    await page.goto(`${BASE}/gabay`, { waitUntil: "domcontentloaded" });
+    await page
+      .waitForFunction(() => navigator.serviceWorker?.controller != null, null, {
+        timeout: 20_000,
+      })
+      .catch(async () => {
+        await page.reload({ waitUntil: "domcontentloaded" });
+      });
+    await beat(page, 2600); // the guide, hotlines first
+
+    await page.context().setOffline(true);
+    await beat(page, 900);
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await beat(page, 3400); // still here, served from the cache
+    await page.context().setOffline(false);
+  },
+
+  /**
+   * The four hazards no other scene opens: earthquake, accident, medical and
+   * other. Each carries its own three words - the vocabularies ARE the
+   * feature, so the shot is the picker cycling through all of them.
+   */
+  async "report-hazards"(page) {
+    await injectSession(page, "resident@example.test");
+    await page.goto(`${BASE}/report`, { waitUntil: "domcontentloaded" });
+    await page
+      .getByRole("button", { name: "Lindol", exact: true })
+      .waitFor({ timeout: 60_000 });
+    await beat(page, 900);
+
+    for (const hazard of ["Lindol", "Aksidente", "Medikal", "Iba pa"]) {
+      await tap(page, page.getByRole("button", { name: hazard, exact: true }));
+      const back = page.getByRole("button", { name: "Bumalik" });
+      await back.waitFor({ timeout: 20_000 });
+      await beat(page, 2500); // its three words, long enough to read
+      await tap(page, back);
+      await beat(page, 700);
+    }
+  },
+
+  /**
+   * The console's other queue: the depth reports themselves, banded by
+   * priority, with the reporter's number on the row a moderator opens. The
+   * SOS queue is only half of what the desk does.
+   */
+  async "console-reports"(page) {
+    await injectSession(page, MOD_EMAIL);
+    await page.goto(`${BASE}/console`, { waitUntil: "domcontentloaded" });
+    const tab = page.getByRole("tab", { name: /report/i });
+    await tab.waitFor({ timeout: 60_000 });
+    await beat(page, 2000); // both tabs, each carrying its own count
+
+    await press(page, tab);
+    await beat(page, 2400); // the queue, banded urgent / watch / routine
+
+    const first = page.locator("article.report-card button").first();
+    if (await first.count()) {
+      await press(page, first);
+      await beat(page, 3200); // opened: the reading, the number, the decisions
+    }
+  },
+
+  /**
+   * The responder's own console: what has been assigned to them, and nothing
+   * else. Needs the board scene to have run first, or the list is empty and
+   * the shot is the empty state.
+   */
+  async assigned(page) {
+    await injectSession(page, RESPONDER_EMAIL);
+    await page.goto(`${BASE}/console`, { waitUntil: "domcontentloaded" });
+    await page.getByText("Nakatalaga sa akin").waitFor({ timeout: 60_000 });
+    await beat(page, 2800); // the tab, and only their own incidents under it
+    await page.mouse.wheel(0, 260);
+    await beat(page, 2400);
+  },
+
+  /**
+   * Ako: the reports this person filed, and the language toggle - the whole
+   * interface, not half of it.
+   */
+  async ako(page) {
+    await injectSession(page, "resident@example.test");
+    await page.goto(`${BASE}/ako`, { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: "English" }).waitFor({ timeout: 60_000 });
+    await beat(page, 2200); // my reports
+
+    await press(page, page.getByRole("button", { name: "English" }));
+    await beat(page, 2600); // every string flips, none left behind
+    await press(page, page.getByRole("button", { name: "Filipino" }));
+    await beat(page, 1800);
+  },
+
+  /**
    * Ako -> Responder: a signed-in person says they are one, and becomes
    * assignable on the board. Films the half of the workflow the master admin
    * never sees, and has to run before `board` or the roster is empty.
@@ -672,15 +786,25 @@ if (wants("sos-flood")) await scene(browser, "sos-flood", SCENES["sos-flood"]);
 if (wants("report-flood"))
   await scene(browser, "report-flood", SCENES["report-flood"]);
 if (wants("report-fire")) await scene(browser, "report-fire", SCENES["report-fire"]);
+if (wants("report-hazards"))
+  await scene(browser, "report-hazards", SCENES["report-hazards"]);
+if (wants("ako")) await scene(browser, "ako", SCENES.ako);
+if (wants("offline")) await scene(browser, "offline", SCENES.offline);
 // Before the board: the roster has to have somebody in it to assign.
 if (wants("responder")) await scene(browser, "responder", SCENES.responder);
 if (wants("board")) {
   await ensureMaster();
   await scene(browser, "board", SCENES.board, { desktop: true });
 }
+// After the board, so there is an assignment to show.
+if (wants("assigned")) await scene(browser, "assigned", SCENES.assigned);
 if (wants("console")) {
   await ensureModerator();
   await scene(browser, "console", SCENES.console);
+}
+if (wants("console-reports")) {
+  await ensureModerator();
+  await scene(browser, "console-reports", SCENES["console-reports"]);
 }
 if (wants("direksyon")) {
   await ensureModerator();

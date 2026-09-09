@@ -41,15 +41,23 @@ export const shell = dict(
      * open it. A link preview is read by people who have not seen the product,
      * which makes it the easiest place in the whole thing to be quietly wrong.
      *
-     * It also says what Antas does NOT do. A stranger seeing a flood app in a
-     * group chat could reasonably assume it summons help; the guide and the SOS
-     * screen both say otherwise, and the preview is read before either of them.
+     * It also says what Antas does NOT do. A stranger seeing an app like this
+     * in a group chat could reasonably assume it summons help; the guide and
+     * the SOS screen both say otherwise, and the preview is read before either
+     * of them.
+     *
+     * It stopped naming only floods on 2026-09-09, for the same reason it
+     * stopped saying "for Marikina": the product took five more hazards in
+     * migration 0028 and the preview still promised one, so somebody with a
+     * fire in the next street would read it and decide it was not for them.
+     * The title echoes the report screen's own first question, "Ano ang
+     * nangyayari?", so the preview and the app ask the same thing.
      */
-    metaTitle: "Antas - gaano kalalim ang baha",
+    metaTitle: "Antas - ano ang nangyayari sa kalye mo",
     metaDescription:
-      "Mga ulat ng lalim ng tubig mula sa mga taong nasa lugar, sa Metro Manila. Hindi ito nagpapadala ng rescue.",
-    ogTagline: "Gaano kalalim ang baha ngayon",
-    ogAlt: "Antas - mga ulat ng lalim ng baha sa Metro Manila",
+      "Mga ulat ng baha, sunog, lindol, aksidente at medikal mula sa mga taong nasa lugar, sa Metro Manila. Hindi ito nagpapadala ng rescue.",
+    ogTagline: "Ano ang nangyayari sa kalye mo ngayon",
+    ogAlt: "Antas - mga ulat ng insidente sa Metro Manila",
   },
   {
     mapa: "Map",
@@ -67,10 +75,10 @@ export const shell = dict(
     langEnglish: "English",
     langLabel: "Language",
 
-    metaTitle: "Antas - how deep is the flood",
+    metaTitle: "Antas - what is happening on your street",
     metaDescription:
-      "Water-depth reports from people on the ground, across Metro Manila. It does not send rescue.",
-    ogTagline: "How deep is the flood right now",
-    ogAlt: "Antas - flood depth reports across Metro Manila",
+      "Reports of flood, fire, earthquake, accident and medical incidents from people on the ground, across Metro Manila. It does not send rescue.",
+    ogTagline: "What is happening on your street right now",
+    ogAlt: "Antas - street-level incident reports across Metro Manila",
   },
 );

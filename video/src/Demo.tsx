@@ -85,11 +85,26 @@ const BEATS: Beat[] = [
     accent: DEPTH.ankle,
   },
   {
+    // The offline claim, demonstrated rather than asserted. Filmed against
+    // `next start`, because the worker is deliberately not registered under
+    // `next dev`. Nothing on screen says "offline" - the caption is what makes
+    // the reload evidence.
+    from: sec(18.5),
+    frames: sec(7),
+    chapter: "02 · GABAY",
+    title: "Still there with no signal",
+    caption:
+      "Network off, then reload: the guide opens from the phone's own cache. Hotlines first, as always.",
+    clip: { src: "captures/scene-offline.webm", fromSec: 3.4 },
+    accent: DEPTH.ankle,
+    stat: { big: "No network", small: "served by the service worker" },
+  },
+  {
     // The report in one continuous take, paced like the SOS beat (Elijah's
     // note): levels tapped, the real "Kumuha ng larawan" button pressed, the
     // flood photo landing (punch-in), scroll, submit, and the green
     // "Salamat. Naitala na ang report mo." holding the tail.
-    from: sec(18.5),
+    from: sec(25.5),
     frames: sec(16.2),
     chapter: "03 · I-REPORT",
     title: "Six hazards, one scale",
@@ -108,7 +123,7 @@ const BEATS: Beat[] = [
     // The same picker, a different vocabulary - and the submit button visibly
     // disabled until the question is answered. No photograph: it is optional,
     // and the fake camera is playing a flood, which would be a lie here.
-    from: sec(34.7),
+    from: sec(41.7),
     frames: sec(8),
     chapter: "03 · I-REPORT",
     title: "A fire is not measured on a body",
@@ -119,9 +134,23 @@ const BEATS: Beat[] = [
     stat: { big: "3 steps, not 5", small: "flood is the only body scale" },
   },
   {
+    // The other four vocabularies. Nothing is submitted here - the point is
+    // that each hazard asks its own question, and that accident and medical
+    // say plainly that only the barangay will see the photograph.
+    from: sec(49.7),
+    frames: sec(10),
+    chapter: "03 · I-REPORT",
+    title: "Every hazard, its own words",
+    caption:
+      "Earthquake, accident, medical and other each carry three answers of their own.",
+    clip: { src: "captures/scene-report-hazards.webm", fromSec: 1.2 },
+    accent: DEPTH.aboveHead,
+    stat: { big: "6 vocabularies", small: "one shared 1-3 rank" },
+  },
+  {
     // One continuous shot from the pin landing to the neighborhood confirming
     // the water is gone.
-    from: sec(42.7),
+    from: sec(59.7),
     frames: sec(8.5),
     chapter: "04 · KOMUNIDAD",
     title: "On the map, kept honest",
@@ -135,12 +164,25 @@ const BEATS: Beat[] = [
     stat: { big: "Kumusta na?", small: "neighbors update the status" },
   },
   {
+    // The resident's own side: what they filed, and the language toggle that
+    // moves every string rather than the visible ones.
+    from: sec(68.2),
+    frames: sec(7),
+    chapter: "05 · AKO",
+    title: "Your own reports, your own language",
+    caption:
+      "Under Ako a resident manages what they filed - and the whole interface switches language, never half of it.",
+    clip: { src: "captures/scene-ako.webm", fromSec: 0.6 },
+    accent: DEPTH.ankle,
+    stat: { big: "Filipino · English", small: "no half-translated screen" },
+  },
+  {
     // The whole SOS arc in one take: the live-photo requirement, the flood in
     // the viewfinder, the three-second hold, "Naipadala", and the callback
     // number saved without an account.
-    from: sec(51.2),
+    from: sec(75.2),
     frames: sec(16),
-    chapter: "05 · TULONG",
+    chapter: "06 · TULONG",
     title: "Hold to call for help",
     caption:
       "A live photo is required - camera only, never the gallery - so false alarms are hard to fake.",
@@ -153,9 +195,9 @@ const BEATS: Beat[] = [
     stat: { big: "3 seconds", small: "hold to send" },
   },
   {
-    from: sec(67.2),
+    from: sec(91.2),
     frames: sec(8),
-    chapter: "06 · CONSOLE",
+    chapter: "07 · CONSOLE",
     title: "Every signal gets a decision",
     caption:
       "Only barangay moderators see an SOS - it never appears on the public map.",
@@ -164,11 +206,24 @@ const BEATS: Beat[] = [
     stat: { big: "61/100", small: "trust score, auto-assessed" },
   },
   {
+    // The desk's other half: the depth reports, banded by priority, kept or
+    // hidden from the map with a reason that is recorded.
+    from: sec(99.2),
+    frames: sec(9),
+    chapter: "07 · CONSOLE",
+    title: "Two queues, one desk",
+    caption:
+      "The second queue is the reports themselves - urgent, watch, routine - kept, or hidden from the map with a reason.",
+    clip: { src: "captures/scene-console-reports.webm", fromSec: 1.0 },
+    accent: DEPTH.aboveHead,
+    stat: { big: "Kagyat", small: "priority is a stated rule, not a score" },
+  },
+  {
     // The tap on "Direksyon papunta rito" itself, filmed - then the cut to
     // the Maps route it opened. Click, then result, one continued thought.
-    from: sec(75.2),
+    from: sec(108.2),
     frames: sec(2.5),
-    chapter: "06 · CONSOLE",
+    chapter: "07 · CONSOLE",
     title: "Direksyon papunta rito",
     // 1.2, not 0.6: the first half-second is the detail page's loading
     // skeleton, which reads as a glitch at this polish level.
@@ -176,9 +231,9 @@ const BEATS: Beat[] = [
     accent: DEPTH.aboveHead,
   },
   {
-    from: sec(77.7),
+    from: sec(110.7),
     frames: sec(5),
-    chapter: "06 · CONSOLE",
+    chapter: "07 · CONSOLE",
     title: "Direksyon papunta rito",
     caption:
       "One tap opens Google Maps - straight to the caller's exact location.",
@@ -189,9 +244,9 @@ const BEATS: Beat[] = [
   {
     // Ako -> Responder. Filmed before the board on purpose: the name typed
     // here is the name the board assigns two beats later.
-    from: sec(82.7),
+    from: sec(115.7),
     frames: sec(7.5),
-    chapter: "07 · RESPONDER",
+    chapter: "08 · RESPONDER",
     title: "Who can be sent",
     caption:
       "A signed-in person registers as a responder - fire service, barangay rescue, medical, police.",
@@ -202,9 +257,9 @@ const BEATS: Beat[] = [
   {
     // The desk-width capture: four columns, the 48-hour graph and the
     // barangay ranking above them, a card moved and then assigned.
-    from: sec(90.2),
+    from: sec(123.2),
     frames: sec(10.5),
-    chapter: "08 · BOARD",
+    chapter: "09 · BOARD",
     title: "Reports and signals, one board",
     caption:
       "The master admin's four columns: needs checking, not true, needs attention, assigned.",
@@ -218,7 +273,20 @@ const BEATS: Beat[] = [
     stat: { big: "48 hours", small: "incidents per hour, by barangay" },
   },
   {
-    from: sec(100.7),
+    // The other end of the assignment: the responder opens the console and
+    // sees their own incidents and nothing else.
+    from: sec(133.7),
+    frames: sec(6),
+    chapter: "10 · NAKATALAGA",
+    title: "Only what is yours",
+    caption:
+      "A responder opens the same console and sees only the incidents assigned to them.",
+    clip: { src: "captures/scene-assigned.webm", fromSec: 0.8 },
+    accent: DEPTH.waist,
+    stat: { big: "Nakatalaga sa akin", small: "their own tab, nothing wider" },
+  },
+  {
+    from: sec(139.7),
     frames: sec(7.5),
     clip: null,
     accent: DEPTH.chest,
@@ -230,27 +298,30 @@ const NARRATION: { file: string; at: number }[] = [
   { file: "shot-01.mp3", at: 0.2 },
   { file: "shot-02.mp3", at: 6.2 },
   { file: "shot-03.mp3", at: 13.2 },
-  // 04a introduces the hazard picker, 04 keeps the depth line it always had.
-  { file: "shot-04a.mp3", at: 18.7 },
-  { file: "shot-04.mp3", at: 25.6 },
-  // 04c is the fire chapter: three steps, not five.
-  { file: "shot-04c.mp3", at: 35.1 },
-  { file: "shot-05.mp3", at: 42.9 },
-  { file: "shot-06.mp3", at: 47.1 },
-  { file: "shot-07.mp3", at: 51.4 },
-  { file: "shot-07b.mp3", at: 55.3 },
-  { file: "shot-07c.mp3", at: 62.7 },
-  { file: "shot-08.mp3", at: 67.4 },
-  { file: "shot-08b.mp3", at: 75.6 },
-  { file: "shot-10.mp3", at: 83.0 },
-  { file: "shot-11.mp3", at: 90.5 },
-  { file: "shot-09.mp3", at: 100.7 },
+  { file: "shot-03b.mp3", at: 19.4 },
+  { file: "shot-04a.mp3", at: 25.7 },
+  { file: "shot-04.mp3", at: 32.6 },
+  { file: "shot-04c.mp3", at: 42.1 },
+  { file: "shot-04d.mp3", at: 50.2 },
+  { file: "shot-05.mp3", at: 60.0 },
+  { file: "shot-06.mp3", at: 64.0 },
+  { file: "shot-06b.mp3", at: 68.5 },
+  { file: "shot-07.mp3", at: 75.4 },
+  { file: "shot-07b.mp3", at: 79.3 },
+  { file: "shot-07c.mp3", at: 86.7 },
+  { file: "shot-08.mp3", at: 91.4 },
+  { file: "shot-08c.mp3", at: 99.5 },
+  { file: "shot-08b.mp3", at: 108.4 },
+  { file: "shot-10.mp3", at: 115.9 },
+  { file: "shot-11.mp3", at: 123.5 },
+  { file: "shot-12.mp3", at: 134.0 },
+  { file: "shot-09.mp3", at: 139.7 },
 ];
 
 /** Confirmation chimes: report saved, SOS sent, number saved. */
-const DINGS = [33.4, 41.6, 61.5, 65.9];
+const DINGS = [40.4, 48.6, 85.5, 89.9];
 
-export const DEMO_DURATION = sec(108.2);
+export const DEMO_DURATION = sec(147.2);
 
 const RISE_FRAMES = 16;
 const DRAIN_FRAMES = 22;

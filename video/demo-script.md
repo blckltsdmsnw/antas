@@ -1,8 +1,9 @@
-# Antas Demonstration Video — Shot-by-Shot Script (v3)
+# Antas Demonstration Video — Shot-by-Shot Script (v5)
 
-**Genre:** SaaS product walkthrough (demonstration, NOT promo). **Length:** ~108s
-(76s → 100s → 108s; the multi-hazard picker, the responder register, the master
-admin's board and a fire report were added on 2026-09-09). **Narration:** English — edge-tts
+**Genre:** SaaS product walkthrough (demonstration, NOT promo). **Length:** ~147s
+(76s → 100s → 108s → 140s → 147s; the multi-hazard picker, a fire report, the
+other four hazard vocabularies, Ako, the console's report queue, the responder
+register, the board, a responder's own tab, and the offline reload). **Narration:** English — edge-tts
 `en-PH-JamesNeural` at `--rate=+10%`, rendered to
 `video/public/audio/narration/{james,rosa}/shot-*.mp3`. **Footage:** local dev
 only, never production — bot protection, and no demo reports on the public map.
@@ -14,24 +15,60 @@ capture from `capture-console.mjs`; those two are Elijah's phone recording
 
 ## Chapters
 
-| # | Start | Dur | Chapter | Footage | Narration |
-|---|-------|-----|---------|---------|-----------|
-| 1 | 0:00 | 6.0s | *(intro card)* | — | "This is Antas. Residents report what is happening on their street, and how bad it is." |
-| 2 | 0:06 | 7.0s | 01 · MAPA | `scene-search.webm` | "The map shows live reports. Anyone can search a place and check conditions — no account needed." |
-| 3 | 0:13 | 5.5s | 02 · GABAY | `screen.mp4` | "Gabay puts emergency hotlines and a preparedness checklist first — and it works offline." |
-| 4 | 0:18.5 | 16.2s | 03 · I-REPORT | `scene-report-flood.webm` | **shot-04a** "Every report starts with what is happening: flood, fire, earthquake, accident, medical, or other." → **shot-04** the depth line |
-| 5 | 0:34.7 | 8.0s | 03 · I-REPORT | `scene-report-fire.webm` | **shot-04c** "A fire is graded in three steps, not five — water can be measured against a body, and a fire cannot." |
-| 6 | 0:42.7 | 8.5s | 04 · KOMUNIDAD | `screen.mp4` | pin lands, neighbours confirm |
-| 7 | 0:51.2 | 16.0s | 05 · TULONG | `scene-sos-flood.webm` | live photo required, hazard chips optional, 3-second hold, callback number |
-| 8 | 1:07.2 | 8.0s | 06 · CONSOLE | `scene-console.webm` | "Only barangay moderators see an SOS — it never appears on the public map." |
-| 9 | 1:15.2 | 2.5s | 06 · CONSOLE | `scene-direksyon.webm` | *(the tap itself)* |
-| 10 | 1:17.7 | 5.0s | 06 · CONSOLE | `scene-direksyon-2.webm` | "One tap opens Google Maps — straight to the caller's exact location." |
-| 11 | 1:22.7 | 7.5s | **07 · RESPONDER** | `scene-responder.webm` | **shot-10** "Anyone signed in can register as a responder — fire service, barangay rescue, medical, or police." |
-| 12 | 1:30.2 | 10.5s | **08 · BOARD** | `scene-board.webm` *(desk width)* | **shot-11** "A master admin works reports and signals on one board, and records which responder was put on each. Antas still sends no rescue — it keeps the record." |
-| 13 | 1:40.7 | 7.5s | *(outro card)* | — | "Fully bilingual, offline-ready, installable on any phone. Antas — know how bad it is before you go." |
+| # | Start | Dur | Chapter | Footage | What it shows |
+|---|-------|-----|---------|---------|----------------|
+| 1 | 0:00 | 6.0s | *(intro card)* | — | "Residents report what is happening on their street, and how bad it is." |
+| 2 | 0:06 | 7.0s | 01 · MAPA | `scene-search.webm` | live map, place search, the legend — six hazards and five depths |
+| 3 | 0:13 | 5.5s | 02 · GABAY | `screen.mp4` | hotlines first, checklist |
+| 4 | 0:18.5 | 7.0s | 02 · GABAY | `scene-offline.webm` | **network off, then reload — the guide opens from cache** |
+| 5 | 0:25.5 | 16.2s | 03 · I-REPORT | `scene-report-flood.webm` | the six-hazard picker → flood on the body scale → viewfinder → submitted |
+| 6 | 0:41.7 | 8.0s | 03 · I-REPORT | `scene-report-fire.webm` | fire: three severity words, submit disabled until answered |
+| 7 | 0:49.7 | 10.0s | 03 · I-REPORT | `scene-report-hazards.webm` | earthquake, accident, medical, other — each with its own three words |
+| 8 | 0:59.7 | 8.5s | 04 · KOMUNIDAD | `screen.mp4` | the pin lands; neighbours confirm the water is gone |
+| 9 | 1:08.2 | 7.0s | 05 · AKO | `scene-ako.webm` | your own reports, and the language toggle moving every string |
+| 10 | 1:15.2 | 16.0s | 06 · TULONG | `scene-sos-flood.webm` | live photo required, hazard chips optional, 3-second hold, callback number |
+| 11 | 1:31.2 | 8.0s | 07 · CONSOLE | `scene-console.webm` | the SOS queue, trust score, evidence, decision |
+| 12 | 1:39.2 | 9.0s | 07 · CONSOLE | `scene-console-reports.webm` | the second queue: priority bands, keep or hide with a reason |
+| 13 | 1:48.2 | 2.5s | 07 · CONSOLE | `scene-direksyon.webm` | the tap itself |
+| 14 | 1:50.7 | 5.0s | 07 · CONSOLE | `scene-direksyon-2.webm` | the Google Maps route it opened |
+| 15 | 1:55.7 | 7.5s | 08 · RESPONDER | `scene-responder.webm` | Ako → Responder: name, unit, barangay |
+| 16 | 2:03.2 | 10.5s | 09 · BOARD | `scene-board.webm` *(desk width)* | four columns, 48-hour graph, barangay ranking, assignment |
+| 17 | 2:13.7 | 6.0s | 10 · NAKATALAGA | `scene-assigned.webm` | the responder's own tab — only their incidents |
+| 18 | 2:19.7 | 7.5s | *(outro card)* | — | "Antas — know how bad it is before you go." |
 
-Total 108.2s. `DEMO_DURATION` in `src/Demo.tsx` is the single source of truth;
+Total 147.2s. `DEMO_DURATION` in `src/Demo.tsx` is the single source of truth;
 `Root.tsx` reads it.
+
+## Feature coverage, and what is still missing
+
+Covered: the map and its legend, place search, the guide, **the offline
+reload**, all six hazards and all six severity vocabularies, the body-depth
+scale, the in-page viewfinder, freshness answers, a resident's own reports, the
+language toggle, the SOS arc with its chips and callback number, both console
+queues, the trust score and its evidence, the directions hand-off, the
+responder register, the board with its graph and assignment, and a responder's
+own tab.
+
+The offline scene is the one shot that cannot be filmed against `next dev`:
+`ServiceWorkerRegistration.tsx` deliberately skips registration outside
+production, because a worker serving stale bundles between edits reads as the
+app being broken. Film it against `next start` on another port and point the
+rig at it with `CAPTURE_BASE=http://127.0.0.1:3001`.
+
+**Not filmed, and the video should not imply otherwise:**
+
+- **Install to home screen.** Claimed in the outro and deliberately not shown.
+  The app has no `beforeinstallprompt` handler and no install button, so the
+  affordance is Chrome's own browser chrome — which Playwright never captures
+  and headless Chromium never draws. The only honest ways to film it are a real
+  phone recording or building an in-app install button; Elijah decided on
+  2026-09-09 to do neither. The claim stays because it is true: there is a
+  manifest and the app does install.
+- **The GPS accuracy warning** on `/report`, which only appears on an imprecise
+  fix and cannot be forced from a scripted geolocation.
+- **Road passability in MMDA categories**, which lives on the report detail —
+  arguably the strongest single claim in the paper and absent from the video.
+- **The day/night map theme**, because every scene is filmed at a fixed 10:20.
 
 ## Re-filming
 
