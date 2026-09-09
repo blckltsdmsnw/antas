@@ -21,7 +21,20 @@ export const guide = dict(
       "Paghahanda bago, habang, at pagkatapos ng baha. Kasama ang mga numerong dapat tawagan.",
 
     title: "Handa ka ba?",
-    lede: "Ang Antas ay nagsasabi kung gaano kalalim ang tubig. Hindi ito nagpapadala ng rescue at walang nakabantay dito. Ito ang dapat gawin - at ang mga numerong dapat tawagan.",
+    /**
+     * The lede describes the APP; the rest of this page describes floods.
+     *
+     * It opened "Ang Antas ay nagsasabi kung gaano kalalim ang tubig" until
+     * 2026-09-09, which stopped being true in migration 0028 - the product
+     * takes six hazards now, and a reader with a fire would have been told, on
+     * the most authoritative screen in the app, that it was not for them.
+     *
+     * The advice below is still flood advice and is scoped as such ("sa
+     * baha"): a go bag and before/during/after guidance for a flood is not
+     * guidance for an earthquake, and pretending otherwise on a safety screen
+     * would be worse than the narrow lede was.
+     */
+    lede: "Ang Antas ay nagsasabi kung ano ang nangyayari sa kalye ninyo, at kung gaano kalalim ang baha. Hindi ito nagpapadala ng rescue at walang nakabantay dito. Ito ang dapat gawin sa baha - at ang mga numerong dapat tawagan.",
 
     hotlinesHeading: "Mga numerong umaabot sa tao",
     role911:
@@ -102,7 +115,7 @@ export const guide = dict(
     // "Nobody is watching this" is kept, and kept blunt. It is the sentence the
     // whole page is built around; softening it to "this is not a monitored
     // service" would let somebody read it as a service that is merely slow.
-    lede: "Antas tells you how deep the water is. It does not send rescue, and nobody is watching it. Here is what to do - and the numbers to call.",
+    lede: "Antas tells you what is happening on your street, and how deep the water is. It does not send rescue, and nobody is watching it. Here is what to do in a flood - and the numbers to call.",
 
     hotlinesHeading: "Numbers that reach a person",
     role911:

@@ -189,7 +189,7 @@ export function PhotoCapture({
         <img className="capture-shot" src={shot.url} alt={copy.screens.yourPhoto} />
         <figcaption className="capture-actions">
           <button type="button" className="btn" onClick={() => onCapture(shot.file)}>
-            Gamitin ang larawang ito
+            {copy.screens.photoUse}
           </button>
           <button
             type="button"
@@ -199,7 +199,7 @@ export function PhotoCapture({
               void open();
             }}
           >
-            Kumuha ulit
+            {copy.screens.photoRetake}
           </button>
         </figcaption>
       </figure>

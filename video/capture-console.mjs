@@ -143,6 +143,11 @@ async function scene(browser, name, steps, opts = {}) {
     permissions: ["geolocation", "camera"],
   });
 
+  // Film in English. Language is a server-read cookie (`antas.lang`), so it
+  // has to be set before the first navigation or the first paint is Filipino.
+  // Tagalog is the product's default and stays so - this is the demo cut only.
+  await context.addCookies([{ name: "antas.lang", value: "en", url: BASE }]);
+
   const page = await context.newPage();
 
   // Same daylight shift as capture.mjs: Date alone, never the timers.
@@ -192,7 +197,9 @@ async function scene(browser, name, steps, opts = {}) {
     // A still of the moment it gave up: a missed tap lands somewhere, and the
     // URL alone does not say where.
     await page
-      .screenshot({ path: join(OUT, `scene-${name}-FAILED.png`), fullPage: true })
+      // Viewport, not fullPage: the board is 30,000px tall and a full-page
+      // capture of it is unreadable. What matters is what the click saw.
+      .screenshot({ path: join(OUT, `scene-${name}-FAILED.png`) })
       .then(() => console.error(`    screenshot: scene-${name}-FAILED.png`))
       .catch(() => {});
   }
@@ -224,16 +231,16 @@ const SCENES = {
    */
   async "sos-flood"(page) {
     await page.goto(`${BASE}/sos`, { waitUntil: "domcontentloaded" });
-    const hold = page.getByRole("button", { name: /Pindutin nang 3 segundo/ });
+    const hold = page.getByRole("button", { name: /Press and hold for 3 seconds/ });
     await hold.waitFor({ timeout: 60_000 });
     await beat(page, 1300); // the "live photo required, never gallery" card
 
-    await tap(page, page.getByRole("button", { name: "Buksan ang camera" }));
+    await tap(page, page.getByRole("button", { name: "Open the camera" }));
     await page.locator("video.capture-view").waitFor({ timeout: 15_000 });
     await beat(page, 2400); // the flood plays in the viewfinder
 
     await press(page, page.locator("button.shutter"));
-    const useIt = page.getByRole("button", { name: "Gamitin ang larawang ito" });
+    const useIt = page.getByRole("button", { name: "Use this photo" });
     await useIt.waitFor({ timeout: 10_000 });
     await beat(page, 1000);
     await press(page, useIt);
@@ -242,7 +249,7 @@ const SCENES = {
     // The six optional chips, above the hold. Tapping one is worth filming and
     // tapping none is a real answer too - a chip-less signal is corroborated by
     // any active report nearby rather than by floods only.
-    const chip = page.getByRole("radio", { name: "Baha", exact: true });
+    const chip = page.getByRole("radio", { name: "Flood", exact: true });
     if (await chip.count()) {
       await chip.first().scrollIntoViewIfNeeded();
       await beat(page, 1200); // all six readable
@@ -265,7 +272,7 @@ const SCENES = {
     await tap(page, phone);
     await phone.type("09171234567", { delay: 70 });
     await beat(page, 500);
-    await tap(page, page.getByRole("button", { name: "I-save ang numero ko" }));
+    await tap(page, page.getByRole("button", { name: "Save my number" }));
     await beat(page, 2000);
   },
 
@@ -287,7 +294,7 @@ const SCENES = {
       waitUntil: "domcontentloaded",
     });
     const directions = page.getByRole("link", {
-      name: "Direksyon papunta rito",
+      name: "Directions to here",
     });
     await directions.waitFor({ timeout: 30_000 });
     await beat(page, 1600);
@@ -331,11 +338,11 @@ const SCENES = {
     // /report opens on the hazard picker now, not on the depth gauge. There is
     // no submit button on this screen at all, so the old wait for "I-report"
     // timed out here rather than at the end.
-    await page.getByRole("button", { name: "Baha", exact: true }).waitFor({ timeout: 60_000 });
+    await page.getByRole("button", { name: "Flood", exact: true }).waitFor({ timeout: 60_000 });
     await beat(page, 1800); // all six hazards readable before anything is tapped
-    await tap(page, page.getByRole("button", { name: "Baha", exact: true }));
+    await tap(page, page.getByRole("button", { name: "Flood", exact: true }));
     await page
-      .getByRole("button", { name: "I-report", exact: true })
+      .getByRole("button", { name: "Report", exact: true })
       .waitFor({ timeout: 30_000 });
     await beat(page, 1100);
 
@@ -349,12 +356,12 @@ const SCENES = {
     // and a filechooser until Mr. Peralta asked that reports be captured with
     // the built-in camera; the flow is now the same three taps as /sos, and
     // the fake-camera y4m feeds it.
-    const openCamera = page.getByRole("button", { name: "Kumuha ng larawan" });
+    const openCamera = page.getByRole("button", { name: "Take a photo" });
     await press(page, openCamera);
     await page.locator("video.capture-view").waitFor({ timeout: 15_000 });
     await beat(page, 2200); // the flood plays in the viewfinder
     await press(page, page.locator("button.shutter"));
-    const usePhoto = page.getByRole("button", { name: "Gamitin ang larawang ito" });
+    const usePhoto = page.getByRole("button", { name: "Use this photo" });
     await usePhoto.waitFor({ timeout: 10_000 });
     await beat(page, 900);
     await press(page, usePhoto);
@@ -362,11 +369,11 @@ const SCENES = {
 
     // The attached photo pushes the submit button below the fold, under the
     // fixed nav; press() wheels it clear before clicking.
-    await press(page, page.getByRole("button", { name: "I-report", exact: true }));
+    await press(page, page.getByRole("button", { name: "Report", exact: true }));
     // The upload takes a moment; the finished video must SHOW the report being
     // accepted, so wait for the app's own confirmation and hold on it.
     await page
-      .getByText("Salamat. Naitala na ang report mo.")
+      .getByText("Thank you. Your report has been recorded.")
       .waitFor({ timeout: 30_000 });
     await beat(page, 2600);
   },
@@ -384,21 +391,21 @@ const SCENES = {
     await injectSession(page, "resident@example.test");
     await page.goto(`${BASE}/report`, { waitUntil: "domcontentloaded" });
 
-    const sunog = page.getByRole("button", { name: "Sunog", exact: true });
+    const sunog = page.getByRole("button", { name: "Fire", exact: true });
     await sunog.waitFor({ timeout: 60_000 });
     await beat(page, 1400);
     await tap(page, sunog);
 
     // "Ano ang nakikita mo?" - three answers, not five body levels.
-    await page.getByText("May usok, walang apoy").waitFor({ timeout: 30_000 });
+    await page.getByText("Smoke, no flames").waitFor({ timeout: 30_000 });
     await beat(page, 2600); // all three readable, submit still disabled
 
-    await press(page, page.getByRole("button", { name: "Kumakalat sa ibang bahay" }));
+    await press(page, page.getByRole("button", { name: "Spreading to other houses" }));
     await beat(page, 1200);
 
-    await press(page, page.getByRole("button", { name: "I-report", exact: true }));
+    await press(page, page.getByRole("button", { name: "Report", exact: true }));
     await page
-      .getByText("Salamat. Naitala na ang report mo.")
+      .getByText("Thank you. Your report has been recorded.")
       .waitFor({ timeout: 30_000 });
     await beat(page, 2400);
   },
@@ -443,13 +450,13 @@ const SCENES = {
     await injectSession(page, "resident@example.test");
     await page.goto(`${BASE}/report`, { waitUntil: "domcontentloaded" });
     await page
-      .getByRole("button", { name: "Lindol", exact: true })
+      .getByRole("button", { name: "Earthquake", exact: true })
       .waitFor({ timeout: 60_000 });
     await beat(page, 900);
 
-    for (const hazard of ["Lindol", "Aksidente", "Medikal", "Iba pa"]) {
+    for (const hazard of ["Earthquake", "Accident", "Medical", "Other"]) {
       await tap(page, page.getByRole("button", { name: hazard, exact: true }));
-      const back = page.getByRole("button", { name: "Bumalik" });
+      const back = page.getByRole("button", { name: "Back" });
       await back.waitFor({ timeout: 20_000 });
       await beat(page, 2500); // its three words, long enough to read
       await tap(page, back);
@@ -487,7 +494,7 @@ const SCENES = {
   async assigned(page) {
     await injectSession(page, RESPONDER_EMAIL);
     await page.goto(`${BASE}/console`, { waitUntil: "domcontentloaded" });
-    await page.getByText("Nakatalaga sa akin").waitFor({ timeout: 60_000 });
+    await page.getByText("Assigned to me").waitFor({ timeout: 60_000 });
     await beat(page, 2800); // the tab, and only their own incidents under it
     await page.mouse.wheel(0, 260);
     await beat(page, 2400);
@@ -500,12 +507,12 @@ const SCENES = {
   async ako(page) {
     await injectSession(page, "resident@example.test");
     await page.goto(`${BASE}/ako`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("button", { name: "English" }).waitFor({ timeout: 60_000 });
+    await page.getByRole("button", { name: "Filipino" }).waitFor({ timeout: 60_000 });
     await beat(page, 2200); // my reports
 
-    await press(page, page.getByRole("button", { name: "English" }));
-    await beat(page, 2600); // every string flips, none left behind
     await press(page, page.getByRole("button", { name: "Filipino" }));
+    await beat(page, 2600); // every string flips, none left behind
+    await press(page, page.getByRole("button", { name: "English" }));
     await beat(page, 1800);
   },
 
@@ -527,8 +534,12 @@ const SCENES = {
     await card.scrollIntoViewIfNeeded();
     await beat(page, 2200); // the note: only the master admin sees name and number
 
+    // The field pre-fills with whatever was saved last time, and type() appends
+    // to it - re-running this scene produced "Ka RamonKa RamonKa Ramon" in the
+    // roster. Clear it first, then type so the keystrokes are still filmed.
     const name = card.getByRole("textbox").first();
     await tap(page, name);
+    await name.fill("");
     await name.type("Ka Ramon", { delay: 90 });
     await beat(page, 700);
 
@@ -538,11 +549,11 @@ const SCENES = {
     // The fixed bottom nav sits over anything near the page end: a raw tap on
     // the save button lands on the I-report tab instead and navigates away.
     // Centre it in the viewport first, then tap.
-    const save = card.getByRole("button", { name: "I-save" });
+    const save = card.getByRole("button", { name: "Save", exact: true });
     await save.evaluate((el) => el.scrollIntoView({ block: "center" }));
     await beat(page, 500);
     await tap(page, save);
-    await card.getByText("Naka-save.").waitFor({ timeout: 30_000 });
+    await card.getByText("Saved.").waitFor({ timeout: 30_000 });
     await beat(page, 2200);
   },
 
@@ -556,11 +567,11 @@ const SCENES = {
     await injectSession(page, MASTER_EMAIL);
     await page.goto(`${BASE}/console/board`, { waitUntil: "domcontentloaded" });
 
-    await page.getByText("Kailangang suriin").first().waitFor({ timeout: 60_000 });
+    await page.getByText("Needs checking").first().waitFor({ timeout: 60_000 });
     await beat(page, 2600); // the four columns, and the graph above them
 
     // Incidents per hour and the barangay ranking, both drawn by hand in SVG.
-    const graph = page.getByText("Nakaraang 48 oras");
+    const graph = page.getByText("Last 48 hours");
     if (await graph.count()) {
       await graph.first().scrollIntoViewIfNeeded();
       await beat(page, 2400);
@@ -571,7 +582,7 @@ const SCENES = {
     // the Mapa tab and the scene silently films the map instead - use the
     // element click, which scrolls, hit-tests, and fails loudly if covered.
     // Move one card: needs checking -> needs attention.
-    const toAttention = page.getByRole("button", { name: /Kailangan ng atensyon/ });
+    const toAttention = page.getByRole("button", { name: /Needs attention/ });
     if (await toAttention.count()) {
       await press(page, toAttention.first());
       await beat(page, 2200); // the card lands in its new column
@@ -579,22 +590,33 @@ const SCENES = {
 
     // Then assign it: the panel asks who, the roster answers with the
     // responder registered in the scene before this one.
-    const toAssigned = page.getByRole("button", { name: /May nakatalaga/ });
+    const toAssigned = page.getByRole("button", { name: /Assigned/ });
     if (await toAssigned.count()) {
       await press(page, toAssigned.first());
-      await page.getByText("Sino ang itatalaga?").waitFor({ timeout: 15_000 });
+      await page.getByText("Who is being assigned?").waitFor({ timeout: 15_000 });
       await beat(page, 1600);
       // By name, not by position: this is the responder the scene before this
       // one filmed registering, so the two halves read as one story.
+      // The roster and its Assign button live inside the move panel, which has
+      // its own scroll area. press() wheels the WINDOW, which does not move the
+      // panel and can leave the target covered - click these directly and let
+      // Playwright scroll the panel itself.
       const named = page.getByRole("radio", { name: /Ka Ramon/ });
       const who = (await named.count()) ? named.first() : page.getByRole("radio").first();
       if (await who.count()) {
-        await press(page, who);
+        await who.scrollIntoViewIfNeeded();
+        await beat(page, 600);
+        await who.click();
         await beat(page, 800);
       }
-      const assign = page.getByRole("button", { name: "Italaga" });
+      // exact: role-name matching is substring-based, so a bare "Assign" also
+      // matches every card's "→ Assigned" button, and .first() picked one of
+      // those - behind the modal, so the click waited out its timeout.
+      const assign = page.getByRole("button", { name: "Assign", exact: true });
       if (await assign.count()) {
-        await press(page, assign.first());
+        await assign.first().scrollIntoViewIfNeeded();
+        await beat(page, 600);
+        await assign.first().click();
         await beat(page, 2600); // the card now names its responder
       }
     }
@@ -625,14 +647,14 @@ const SCENES = {
     await injectSession(page, MOD_EMAIL);
 
     await page.goto(`${BASE}/console`, { waitUntil: "domcontentloaded" });
-    await page.getByText("Mga SOS").waitFor({ timeout: 60_000 });
+    await page.getByText("SOS signals").waitFor({ timeout: 60_000 });
     await beat(page, 2600); // the queue, with the flood signal on it
 
     const card = page.locator('a[href^="/console/"]').first();
     await card.waitFor({ timeout: 15_000 });
     await tap(page, card);
     await page
-      .getByRole("button", { name: "Kumpirmahin" })
+      .getByRole("button", { name: "Confirm" })
       .waitFor({ timeout: 30_000 });
     await beat(page, 2200); // the photo and assessment
     await page.mouse.wheel(0, 500);
@@ -643,7 +665,7 @@ const SCENES = {
     // the whole page out first so the button is clear of the overlay.
     await page.mouse.wheel(0, 2000);
     await beat(page, 900);
-    const confirm = page.getByRole("button", { name: "Kumpirmahin" });
+    const confirm = page.getByRole("button", { name: "Confirm" });
     const confirmBox = await confirm.boundingBox();
     if (confirmBox && confirmBox.y + confirmBox.height / 2 > 720) {
       await page.mouse.wheel(0, 400);

@@ -1,4 +1,4 @@
-# Antas Demonstration Video — Shot-by-Shot Script (v5)
+# Antas Demonstration Video — Shot-by-Shot Script (v6)
 
 **Genre:** SaaS product walkthrough (demonstration, NOT promo). **Length:** ~147s
 (76s → 100s → 108s → 140s → 147s; the multi-hazard picker, a fire report, the
@@ -69,6 +69,32 @@ rig at it with `CAPTURE_BASE=http://127.0.0.1:3001`.
 - **Road passability in MMDA categories**, which lives on the report detail —
   arguably the strongest single claim in the paper and absent from the video.
 - **The day/night map theme**, because every scene is filmed at a fixed 10:20.
+
+## The cut is in English; the product is not
+
+Every scene films with an `antas.lang=en` cookie set on the Playwright context
+before the first navigation, because the language is resolved on the SERVER
+(`getLang()` reads the cookie in the root layout) and a client-side toggle would
+put a Filipino frame at the head of every clip.
+
+**Nothing about the product changed.** `DEFAULT_LANG` is still `"tl"`, an unset
+cookie still means Tagalog for every real visitor, and `lang.ts` still says why.
+The cookie lives only in the throwaway browser profile Playwright creates per
+scene. The `05 · ME` chapter films the toggle switching to Filipino and back, so
+the Tagalog interface is still on screen and the bilingual claim is shown rather
+than asserted.
+
+Selector traps this introduced, all of them found the hard way:
+
+- **Role-name matching is substring-based.** `getByRole("button", {name: "Assign"})`
+  also matches every board card's "→ Assigned", and `.first()` picked one behind
+  the modal, so the click waited out its full timeout. Filipino never hit this
+  because "Italaga" is not a substring of "May nakatalaga". Use `exact: true`
+  for any English name that is a prefix of another.
+- **`press()` wheels the window**, which does nothing for a target inside the
+  move panel's own scroll area. Click those directly.
+- **The responder name field pre-fills**, so `type()` appends: re-running that
+  scene wrote "Ka RamonKa RamonKa Ramon" into the roster. `fill("")` first.
 
 ## Re-filming
 

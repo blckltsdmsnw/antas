@@ -31,6 +31,17 @@ export const screens = dict(
     reportPhotoOpen: "Kumuha ng larawan",
     reportPhotoRemove: "Alisin ang larawan",
     yourPhoto: "Ang larawang kinuha mo",
+    /**
+     * The two buttons under a captured photo.
+     *
+     * They were written straight into PhotoCapture.tsx in Filipino and never
+     * went through the dictionary, so the confirm step stayed Tagalog with the
+     * interface in English - on the camera flows for /report and /sos, which
+     * are the screens this product can least afford to be half-translated on.
+     * Found on 2026-09-09 while preparing an English cut of the demo video.
+     */
+    photoUse: "Gamitin ang larawang ito",
+    photoRetake: "Kumuha ulit",
     choosePhoto: "Pumili ng larawan",
     openingCamera: "Binubuksan ang camera...",
     takePhoto: "Kumuha ng larawan",
@@ -263,6 +274,8 @@ export const screens = dict(
     reportPhotoOpen: "Take a photo",
     reportPhotoRemove: "Remove the photo",
     yourPhoto: "The photo you took",
+    photoUse: "Use this photo",
+    photoRetake: "Take another",
     choosePhoto: "Choose a photo",
     openingCamera: "Opening the camera...",
     takePhoto: "Take a photo",

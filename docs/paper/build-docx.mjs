@@ -239,7 +239,7 @@ function figure(n, caption) {
 
 const content = [
   // --- Front matter, centred, matching the reference's title block --------
-  title("Antas: A Street-Level Flood Depth Reporting System"),
+  title("Antas: A Street-Level Hazard Severity Reporting System"),
   title("for"),
   title("Metro Manila"),
   centred("Gerald Elijah Olores"),
@@ -257,7 +257,7 @@ const content = [
 
   h2("1.1 Problem Statement"),
   body(
-    "During a flood, the question a Metro Manila resident actually needs answered is narrow and local: is the water on my street passable right now? Every information source available to them answers a different question.",
+    "In an emergency, the question a Metro Manila resident actually needs answered is narrow and local: what is happening on my street right now, and how bad is it? During a flood it takes its sharpest form — is the water on my street passable? — and that is the form this project began with and the one the following evidence describes. Every information source available to them answers a different question.",
   ),
   body(
     "Official warnings operate at the scale of a river basin or a city. They are authoritative about rainfall and river level, and silent about the two hundred metres between a person and the main road. A resident who knows the Marikina River is at second alarm still does not know whether the corner of their own street is ankle-deep or waist-deep. PAGASA issues its flood products by river basin: its national flood picture resolves to a table of eighteen major river basins, in which the capital region appears as the entry NCR/Pasig Marikina Laguna de Bay. Its bulletins are graded on river discharge crossing Alert, Alarm and Critical water levels within a flood warning zone, and are disseminated to local, municipal, and provincial government offices (PAGASA, n.d.).",
@@ -272,12 +272,15 @@ const content = [
     "Platforms built on resident reporting are already documented as viable at city scale. Esparza et al. (2024) show that crowdsourced flood reports improve inundation monitoring of road networks precisely in the blind spots where no flood gauge exists, reducing the number of physical sensors required by 32 per cent. Chow et al. (2023) report that volunteers marking flooded street segments across the Houston metropolitan area produced 399 to 479 data points per day, of which 85.9 per cent fell within one metre of a calibrated hydraulic model. Chow et al. describe their study as a preliminary assessment and recommend caution in interpreting the volunteered data against a hydraulic model, so it is cited here as evidence of collection at scale rather than as an endorsement of accuracy. In that platform volunteers marked street segments as flooded without recording a depth, which the researchers reconstructed afterwards from an elevation model. Antas instead asks the contributor for the depth directly, on a fixed five-level scale, trading reach for comparability between reports. Residents in Metro Manila already have the channel habit this depends on: Facebook reaches 81.9 per cent of the population and Messenger 56.2 per cent (Kemp, 2025).",
   ),
   body(
-    "There is a clear need for a tool that collects what residents already report informally, but does so in a structured, located, and time-stamped form, and that is honest about the limits of what it knows. This is the gap Antas aims to fill.",
+    "There is a clear need for a tool that collects what residents already report informally, but does so in a structured, located, and time-stamped form, and that is honest about the limits of what it knows. This is the gap Antas fills, and it is not a gap about water. Every failure described above — the wrong scale, the missing location, the unmarked age — is a failure of *street-level* information, and it recurs unchanged in front of a burning house, a collapsed wall, or a person face-down on a road. Antas therefore accepts six kinds of incident: flood, fire, earthquake, accident, medical, and other.",
+  ),
+  body(
+    "**Why the evidence in this section is nevertheless flood evidence.** PAGASA issues by river basin, the NDRRMC counted flood-affected families, and Esparza et al. and Chow et al. both studied crowdsourced *flood* reporting. None of it is restated here as though it were about fires, because it is not, and a citation stretched to cover a hazard its authors never studied would be worth less than no citation. Flood is the case this project began with, the case the published record actually documents, and the case Antas measures most precisely — water is the one hazard here that can be graded against a human body, which is why it keeps a five-level scale while the other five are graded in three steps and ordered against it on a shared rank. Where this report says \"flood\", it means the worked case, not the boundary of what the application accepts.",
   ),
 
   h2("1.2 Related Literature and Studies"),
   body(
-    "The literature relevant to Antas falls into five areas: the recent record of crowdsourced disaster reporting platforms, the problem of trusting citizen-contributed data, the Philippine flood and warning context, the design of interfaces used under stress, and the handling of information that decays with time. Each entry states what the source establishes and which decision in this system it supports.",
+    "The literature relevant to Antas falls into seven areas: the recent record of crowdsourced disaster reporting platforms, the problem of trusting citizen-contributed data, the Philippine flood and warning context, the design of interfaces used under stress, the handling of information that decays with time, the closest comparable system, and the official standard for road passability. Each entry states what the source establishes and which decision in this system it supports. The literature is weighted toward flood for the reason given at the end of 1.1: it is the hazard with a published record to cite. The design decisions it supports — a graded scale rather than a presence report, an explicit age on every reading, a trust score that never counts a gap as evidence against the sender — are hazard-independent, and the built system applies them to all six.",
   ),
 
   h3("A. Crowdsourced and Participatory Disaster Reporting"),
@@ -449,7 +452,7 @@ const content = [
   ),
   h2("1.3 How Antas Improves Upon Existing Solutions"),
   body(
-    "Two comparisons are needed rather than one. The tools a Metro Manila resident reaches for during a flood — official warnings, news, neighbourhood groups, navigation apps — differ from Antas in the ways set out below. LyfSaver, described in Section 1.2F, is a different case: it is a purpose-built crowdsourced reporting platform and shares this project’s premise. The differences that matter against it are the third, the seventh and the eighth.",
+    "Two comparisons are needed rather than one. The tools a Metro Manila resident reaches for when something is happening on their street — official warnings, news, neighbourhood groups, navigation apps — differ from Antas in the ways set out below. LyfSaver, described in Section 1.2F, is a different case: it is a purpose-built crowdsourced reporting platform and shares this project’s premise. The differences that matter against it are the third, the seventh and the eighth.",
   ),
   numbered(
     1,
@@ -489,7 +492,7 @@ const content = [
 
   h2("1.4 Functionality Comparison"),
   body(
-    "The table compares Antas with the sources a Metro Manila resident currently relies on during a flood, and with LyfSaver, the purpose-built platform described in Section 1.2F. LyfSaver is given its own column because it is the only entry that shares this project’s premise, and the rows where it is the stronger system are marked as such.",
+    "The table compares Antas with the sources a Metro Manila resident currently relies on during an emergency, and with LyfSaver, the purpose-built platform described in Section 1.2F. LyfSaver is given its own column because it is the only entry that shares this project’s premise, and the rows where it is the stronger system are marked as such.",
   ),
   table(
     [2400, 1120, 1120, 1120, 1120, 1320, 1120],
@@ -585,7 +588,7 @@ const content = [
   h3("1.5.2 Secondary Persona: Ronnel Diaz, Barangay Disaster Desk Officer"),
   body("**Age and role:** 45, a barangay disaster risk reduction officer in Marikina."),
   body(
-    "**Context:** During a flood he is at a desk with a laptop and a phone, fielding calls and messages from residents while coordinating a small number of volunteers with one truck. He is not a dispatcher for the city; he escalates, and he decides who among his neighbours gets attention first.",
+    "**Context:** During an emergency — most often a flood, but equally a fire or an accident on his barangay's roads — he is at a desk with a laptop and a phone, fielding calls and messages from residents while coordinating a small number of volunteers with one truck. He is not a dispatcher for the city; he escalates, and he decides who among his neighbours gets attention first.",
   ),
   body(
     "**Technical profile:** Comfortable with a browser and a spreadsheet. No training in any specialist system, and no time to learn one during an event.",
@@ -747,10 +750,10 @@ const content = [
     ],
   ),
   body(
-    "**Priority is a stated rule, not a score.** A report is urgent when it is chest-deep or deeper and less than six hours old, watch when it is waist-deep and fresh or deep but older, and routine otherwise. Six hours is not a new threshold: it is the same age at which the map already refuses to draw a cached reading, on the argument that floodwater moves in far less time than that. Contested readings sort above every band regardless of depth, because a contested report is waiting on a person rather than on the water.",
+    "**Priority is a stated rule, not a score.** A report is urgent at severity 3 and less than six hours old, watch at severity 2 and fresh or severity 3 and older, and routine otherwise. The rule is written on the shared one-to-three rank rather than on depth, which is what lets a spreading fire and a chest-deep flood queue against each other at all; for a flood, severity 3 is chest-deep or above-head, so the behaviour the earlier draft described in depth terms is unchanged for the hazard it described. Six hours is not a new threshold: it is the same age at which the map already refuses to draw a cached reading, on the argument that floodwater moves in far less time than that. Contested readings sort above every band regardless of severity, because a contested report is waiting on a person rather than on the hazard.",
   ),
   body(
-    "The deliberate omission is a trust score. Emergency signals carry one because they are weighed against rainfall, elevation and reporter history before a human sees them; a depth reading has no comparable evidence behind it, and a number computed from severity and age alone would present an ordering rule as an assessment. The bands are shown as words for the same reason the console never shows a bare score: a moderator can argue with a sentence.",
+    "The deliberate omission is a trust score. Emergency signals carry one because they are weighed against rainfall, elevation and reporter history before a human sees them; an ordinary report has no comparable evidence behind it, and a number computed from severity and age alone would present an ordering rule as an assessment. The bands are shown as words for the same reason the console never shows a bare score: a moderator can argue with a sentence.",
   ),
   body(
     "**The contact number was already collected, and the recommendation identified where it was missing.** A reporter’s number has been stored since the emergency work, constrained to a single dialable form, and exposed only through the function that serves a moderator who may act on that signal. What did not exist was any path from a depth report to the person who filed it. That path now exists on the same terms: the number is absent from the queue listing and present on the report a moderator opens, and every opening is recorded, because the record of who saw a number is also the record of who could have called it.",
@@ -776,7 +779,11 @@ const content = [
   // === SECTION III =========================================================
   h1("Section III: Design Prompt and Rationale"),
 
-  body("**Project Name:** Antas, a street-level flood depth reporting system."),
+  body(
+    "**This section is a record, and is reproduced as it was written.** The brief and the prompts below were submitted to the generator while Antas was a flood-depth system and nothing else; the expansion to six hazards came later, out of the review described in Section 2.6. They are not updated here to match the product, because a design prompt rewritten after the fact is no longer evidence of anything — the point of quoting them is to show what was asked for and what came back. Read \"flood\" in this section as the scope of the brief at the time. Section II describes what the application accepts now.",
+  ),
+
+  body("**Project Name (as submitted):** Antas, a street-level flood depth reporting system."),
   body("**App Type:** A mobile-first public safety web application, installable as a PWA."),
   body("**Design Style and UI Guidelines:**"),
   bullet(

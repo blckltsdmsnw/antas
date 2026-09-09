@@ -118,7 +118,7 @@ const detail = (rows) => table(FIELD, rows, { headerRow: false, size: 20 });
 
 const content = [
   title("Software Test Script"),
-  centred("Antas: A Street-Level Flood Depth Reporting System for Metro Manila"),
+  centred("Antas: A Street-Level Hazard Severity Reporting System for Metro Manila"),
   centred("Gerald Elijah Olores"),
   centred("Centro Escolar University"),
   centred("Empirical Software Innovation and Interface Prototyping"),

@@ -53,6 +53,11 @@ async function scene(browser, name, steps) {
     timezoneId: "Asia/Manila",
   });
 
+  // Film in English, same as capture-console.mjs. `antas.lang` is read on the
+  // server, so it must be set before the first navigation. Tagalog remains the
+  // product's default; this is the demo cut only.
+  await context.addCookies([{ name: "antas.lang", value: "en", url: BASE }]);
+
   const page = await context.newPage();
 
   /**

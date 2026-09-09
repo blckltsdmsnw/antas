@@ -66,7 +66,7 @@ const BEATS: Beat[] = [
   {
     from: sec(6),
     frames: sec(7),
-    chapter: "01 · MAPA",
+    chapter: "01 · MAP",
     title: "One live map of the street",
     caption:
       "Live reports on one map - search a place, check conditions. No account needed.",
@@ -77,11 +77,13 @@ const BEATS: Beat[] = [
   {
     from: sec(13),
     frames: sec(5.5),
-    chapter: "02 · GABAY",
+    chapter: "02 · GUIDE",
     title: "Hotlines first, offline always",
     caption:
-      "Gabay puts emergency hotlines and a preparedness checklist first - and it works offline.",
-    clip: { src: "footage/screen.mp4", fromSec: 28.6 },
+      "The guide puts emergency hotlines and a preparedness checklist first - and it works offline.",
+    // Re-filmed 2026-09-09: the August phone take still carried the old lede,
+    // which described Antas as a flood-depth app.
+    clip: { src: "captures/scene-gabay.webm", fromSec: 0.6 },
     accent: DEPTH.ankle,
   },
   {
@@ -91,7 +93,7 @@ const BEATS: Beat[] = [
     // the reload evidence.
     from: sec(18.5),
     frames: sec(7),
-    chapter: "02 · GABAY",
+    chapter: "02 · GUIDE",
     title: "Still there with no signal",
     caption:
       "Network off, then reload: the guide opens from the phone's own cache. Hotlines first, as always.",
@@ -106,7 +108,7 @@ const BEATS: Beat[] = [
     // "Salamat. Naitala na ang report mo." holding the tail.
     from: sec(25.5),
     frames: sec(16.2),
-    chapter: "03 · I-REPORT",
+    chapter: "03 · REPORT",
     title: "Six hazards, one scale",
     caption:
       "Every report starts with what is happening - flood, fire, earthquake, accident, medical, other.",
@@ -116,7 +118,7 @@ const BEATS: Beat[] = [
     },
     clip: { src: "captures/scene-report-flood.webm", fromSec: 0.2 },
     accent: DEPTH.knee,
-    stat: { big: "Tuhod · 16–50 cm", small: "knee-deep, on a body scale" },
+    stat: { big: "Knee · 16–50 cm", small: "knee-deep, on a body scale" },
     punch: [232, 300],
   },
   {
@@ -125,7 +127,7 @@ const BEATS: Beat[] = [
     // and the fake camera is playing a flood, which would be a lie here.
     from: sec(41.7),
     frames: sec(8),
-    chapter: "03 · I-REPORT",
+    chapter: "03 · REPORT",
     title: "A fire is not measured on a body",
     caption:
       "Fire, earthquake, accident and medical are graded in three steps - and nothing sends until you answer.",
@@ -139,7 +141,7 @@ const BEATS: Beat[] = [
     // say plainly that only the barangay will see the photograph.
     from: sec(49.7),
     frames: sec(10),
-    chapter: "03 · I-REPORT",
+    chapter: "03 · REPORT",
     title: "Every hazard, its own words",
     caption:
       "Earthquake, accident, medical and other each carry three answers of their own.",
@@ -152,7 +154,7 @@ const BEATS: Beat[] = [
     // the water is gone.
     from: sec(59.7),
     frames: sec(8.5),
-    chapter: "04 · KOMUNIDAD",
+    chapter: "04 · COMMUNITY",
     title: "On the map, kept honest",
     caption: "The report appears on the map instantly, photo included.",
     caption2: {
@@ -161,17 +163,17 @@ const BEATS: Beat[] = [
     },
     clip: { src: "footage/screen.mp4", fromSec: 93.6, playbackRate: 1.46 },
     accent: DEPTH.waist,
-    stat: { big: "Kumusta na?", small: "neighbors update the status" },
+    stat: { big: "How is it now?", small: "neighbors update the status" },
   },
   {
     // The resident's own side: what they filed, and the language toggle that
     // moves every string rather than the visible ones.
     from: sec(68.2),
     frames: sec(7),
-    chapter: "05 · AKO",
+    chapter: "05 · ME",
     title: "Your own reports, your own language",
     caption:
-      "Under Ako a resident manages what they filed - and the whole interface switches language, never half of it.",
+      "Under Me a resident manages what they filed - and the whole interface switches language, never half of it.",
     clip: { src: "captures/scene-ako.webm", fromSec: 0.6 },
     accent: DEPTH.ankle,
     stat: { big: "Filipino · English", small: "no half-translated screen" },
@@ -182,7 +184,7 @@ const BEATS: Beat[] = [
     // number saved without an account.
     from: sec(75.2),
     frames: sec(16),
-    chapter: "06 · TULONG",
+    chapter: "06 · HELP",
     title: "Hold to call for help",
     caption:
       "A live photo is required - camera only, never the gallery - so false alarms are hard to fake.",
@@ -216,7 +218,7 @@ const BEATS: Beat[] = [
       "The second queue is the reports themselves - urgent, watch, routine - kept, or hidden from the map with a reason.",
     clip: { src: "captures/scene-console-reports.webm", fromSec: 1.0 },
     accent: DEPTH.aboveHead,
-    stat: { big: "Kagyat", small: "priority is a stated rule, not a score" },
+    stat: { big: "Urgent", small: "priority is a stated rule, not a score" },
   },
   {
     // The tap on "Direksyon papunta rito" itself, filmed - then the cut to
@@ -224,7 +226,7 @@ const BEATS: Beat[] = [
     from: sec(108.2),
     frames: sec(2.5),
     chapter: "07 · CONSOLE",
-    title: "Direksyon papunta rito",
+    title: "Directions to here",
     // 1.2, not 0.6: the first half-second is the detail page's loading
     // skeleton, which reads as a glitch at this polish level.
     clip: { src: "captures/scene-direksyon.webm", fromSec: 1.2 },
@@ -234,7 +236,7 @@ const BEATS: Beat[] = [
     from: sec(110.7),
     frames: sec(5),
     chapter: "07 · CONSOLE",
-    title: "Direksyon papunta rito",
+    title: "Directions to here",
     caption:
       "One tap opens Google Maps - straight to the caller's exact location.",
     clip: { src: "captures/scene-direksyon-2.webm", fromSec: 2.4 },
@@ -277,13 +279,13 @@ const BEATS: Beat[] = [
     // sees their own incidents and nothing else.
     from: sec(133.7),
     frames: sec(6),
-    chapter: "10 · NAKATALAGA",
+    chapter: "10 · ASSIGNED",
     title: "Only what is yours",
     caption:
       "A responder opens the same console and sees only the incidents assigned to them.",
     clip: { src: "captures/scene-assigned.webm", fromSec: 0.8 },
     accent: DEPTH.waist,
-    stat: { big: "Nakatalaga sa akin", small: "their own tab, nothing wider" },
+    stat: { big: "Assigned to me", small: "their own tab, nothing wider" },
   },
   {
     from: sec(139.7),
